@@ -113,7 +113,7 @@ mod tests {
     }
     #[test] fn urls_paths_and_rejections() {
         let v=connection(Path::new("/project"),"DB_CONNECTION=mysql\nDB_URL=postgres://user:p%40ss+word@localhost:5434/app").unwrap();assert_eq!(v["password"],"p@ss+word");assert_eq!(v["driver"],"postgres");
-        let v=connection(Path::new("/project"),"DB_CONNECTION=sqlite\nDB_DATABASE=database/test.sqlite").unwrap();assert_eq!(v["file"],"/project/database/test.sqlite");
+        let v=connection(Path::new("/project"),"DB_CONNECTION=sqlite\nDB_DATABASE=database/test.sqlite").unwrap();assert_eq!(v["file"],Path::new("/project").join("database/test.sqlite").to_string_lossy().as_ref());
         for text in ["DB_CONNECTION=unknown", "DB_CONNECTION=sqlite\nDB_DATABASE=:memory:", "DB_CONNECTION=mysql\nDB_PORT=99999", "DB_URL=mysql://u:secret@host/db?sslmode=require", "DB_CONNECTION=mysql\nDB_PASSWORD=${SECRET}"] { let error=connection(Path::new("/project"),text).unwrap_err();assert!(!error.contains("secret")); }
     }
     #[test] fn project_confinement_and_no_writes() {

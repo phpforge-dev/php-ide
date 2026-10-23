@@ -6,8 +6,16 @@ on:
       release_tag:
         description: Existing release tag to build (must match the app version)
         required: true
-        default: v0.2.7
+        default: v0.2.8
         type: string
+      source_ref:
+        description: Optional source ref for validation before tagging
+        default: ''
+        type: string
+      publish:
+        description: Attach installers to the release (source must match its tag)
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -36,13 +44,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.release_tag }}
+          ref: ${{ inputs.source_ref || inputs.release_tag }}
+          fetch-depth: 0
       - name: Verify source and version
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
           node -e 'const p = require("./package.json"); if (!/^v\d+\.\d+\.\d+$/.test(process.env.RELEASE_TAG) || process.env.RELEASE_TAG !== "v" + p.version) throw Error("Release tag must match package version");'
           git rev-parse HEAD
+          if [ "$PUBLISH" = true ]; then
+            test "$(git rev-parse HEAD)" = "$(git rev-parse "$RELEASE_TAG^{commit}")"
+          fi
           git config --global core.autocrlf false
       - uses: actions/setup-node@v6
         with:
@@ -123,6 +136,7 @@ jobs:
 
   publish:
     needs: build
+    if: inputs.publish
     runs-on: ubuntu-latest
     permissions:
       contents: write

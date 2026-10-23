@@ -490,7 +490,7 @@ mod test {
         assert_eq!(runner(&json!({})).unwrap(), Runner::Auto);
         assert!(runner(&json!({"mode":"path","path":"composer"})).is_err(), "relativo");
         assert!(runner(&json!({"mode":"path","path":"/bin/sh"})).is_err(), "nome fora do contrato");
-        assert!(runner(&json!({"mode":"path","path":"/nao/existe/composer"})).unwrap_err().contains("não encontrado"));
+        assert!(runner(&json!({"mode":"path","path":root.join("missing/composer")})).unwrap_err().contains("não encontrado"));
         let phar = root.join("composer.phar");
         std::fs::write(&phar, "<?php").unwrap();
         let r = runner(&json!({"mode":"path","path":phar})).unwrap();

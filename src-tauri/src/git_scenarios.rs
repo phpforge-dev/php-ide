@@ -243,36 +243,37 @@ async fn cherry_pick_clean_conflict_commit_and_abort() {
 
 #[tokio::test]
 async fn delete_and_binary_conflicts_accept_a_side() {
+    let binary = if cfg!(windows) { "bin literal.dat" } else { "bin*.dat" };
     let (_d, root) = repo();
     commit(&root, "gone.txt", "base\n", "Base");
-    fs::write(root.join("bin*.dat"), [0u8, 1, 2]).unwrap();
+    fs::write(root.join(binary), [0u8, 1, 2]).unwrap();
     fs::write(root.join("bin1.dat"), [9u8]).unwrap();
     command(&root, &["add", "."]);
     command(&root, &["commit", "-qm", "Binary"]);
     command(&root, &["switch", "-qc", "feature"]);
     command(&root, &["rm", "-q", "gone.txt"]);
-    fs::write(root.join("bin*.dat"), [0u8, 3]).unwrap();
+    fs::write(root.join(binary), [0u8, 3]).unwrap();
     command(&root, &["commit", "-qam", "Delete and binary"]);
     command(&root, &["switch", "-q", "main"]);
     fs::write(root.join("gone.txt"), "edited\n").unwrap();
-    fs::write(root.join("bin*.dat"), [0u8, 4]).unwrap();
+    fs::write(root.join(binary), [0u8, 4]).unwrap();
     fs::write(root.join("bin1.dat"), [8u8]).unwrap();
     command(&root, &["commit", "-qam", "Edit both"]);
     assert!(op(&root, "merge", "feature").await.is_err());
     let st = status(&root).await.unwrap();
     let mut conflicts = paths(&st, true);
     conflicts.sort();
-    assert_eq!(conflicts, vec!["bin*.dat", "gone.txt"]);
+    assert_eq!(conflicts, vec![binary, "gone.txt"]);
     // O merge editor textual recusa; aceitar um lado resolve.
     assert!(dispatch(&root, "gitConflict", &[json!("gone.txt")]).await.is_err());
-    assert!(dispatch(&root, "gitConflict", &[json!("bin*.dat")]).await.is_err());
+    assert!(dispatch(&root, "gitConflict", &[json!(binary)]).await.is_err());
     assert!(dispatch(&root, "gitResolveSide", &[json!("gone.txt"), json!("left"), st["indexToken"].clone()]).await.is_err());
     assert!(dispatch(&root, "gitResolveSide", &[json!("gone.txt"), json!("theirs"), json!("stale")]).await.is_err());
     dispatch(&root, "gitResolveSide", &[json!("gone.txt"), json!("theirs"), st["indexToken"].clone()]).await.unwrap();
     assert!(!root.join("gone.txt").exists());
     let st = status(&root).await.unwrap();
-    dispatch(&root, "gitResolveSide", &[json!("bin*.dat"), json!("theirs"), st["indexToken"].clone()]).await.unwrap();
-    assert_eq!(fs::read(root.join("bin*.dat")).unwrap(), vec![0u8, 3]);
+    dispatch(&root, "gitResolveSide", &[json!(binary), json!("theirs"), st["indexToken"].clone()]).await.unwrap();
+    assert_eq!(fs::read(root.join(binary)).unwrap(), vec![0u8, 3]);
     // Pathspec literal: `bin1.dat` (casaria com o glob) fica intacto.
     assert_eq!(fs::read(root.join("bin1.dat")).unwrap(), vec![8u8]);
     assert!(paths(&status(&root).await.unwrap(), true).is_empty());

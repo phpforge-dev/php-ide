@@ -35,7 +35,7 @@ pub async fn prepare(parent: &str, name: &str, repository: Option<&str>) -> Res<
             return Err("Informe um repositório Git válido".into());
         }
         // Git receives distinct argv values. No shell, hooks or project commands are run by the IDE.
-        process::git(&parent,&["-c","core.hooksPath=","-c","protocol.ext.allow=never","clone","--",url,target.to_str().ok_or("Caminho inválido")?]).await.map_err(|e|format!("Não foi possível clonar: {e}. Se uma pasta parcial existir, verifique-a antes de tentar novamente."))?;
+        process::git(&parent,&["-c","core.hooksPath=","-c","protocol.ext.allow=never","clone","--",url,dunce::simplified(&target).to_str().ok_or("Caminho inválido")?]).await.map_err(|e|format!("Não foi possível clonar: {e}. Se uma pasta parcial existir, verifique-a antes de tentar novamente."))?;
     } else {
         std::fs::create_dir(&target).map_err(err)?;
         std::fs::write(

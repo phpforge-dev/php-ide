@@ -20,12 +20,12 @@ pub fn read(tools: &Path, uri: &str) -> Res<Value> {
         .and_then(|u| u.to_file_path().ok())
         .ok_or("URI de stub inválida")?;
     let phar = tools.join("phpactor.phar");
-    let entry = rest
-        .strip_prefix(&phar)
+    let entry = dunce::simplified(&rest)
+        .strip_prefix(dunce::simplified(&phar))
         .or_else(|_| {
             phar.canonicalize()
                 .map_err(err)
-                .and_then(|p| rest.strip_prefix(p).map_err(err))
+                .and_then(|p| dunce::simplified(&rest).strip_prefix(dunce::simplified(&p)).map_err(err))
         })
         .map_err(|_| "Stub fora do pacote de stubs do Phpactor")?;
     if entry

@@ -1239,7 +1239,7 @@ mod tests {
         // Sem mapeamento: o mesmo caminho no disco local (PHP local).
         let local = root.join("index.php").to_string_lossy().to_string();
         assert_eq!(to_local(&root, &[], &local).as_deref(), Some("index.php"));
-        assert_eq!(to_server(&root, &[], &root.join("index.php")), local);
+        assert_eq!(to_server(&root, &[], &root.join("index.php")), local.replace('\\', "/"));
         assert_eq!(to_local(&root, &[], "/etc/hosts"), None);
         let all = vec![Mapping { server: "/".into(), local: "".into() }];
         assert_eq!(to_server(&root, &all, &root.join("index.php")), "/index.php");

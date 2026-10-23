@@ -48,7 +48,7 @@ pub fn plan(root: &Path, framework: &str, path: &str, filter: &str) -> Res<Plan>
         .strip_prefix(root)
         .map_err(err)?
         .to_string_lossy()
-        .to_string();
+        .replace('\\', "/");
     if filter.len() > 1000 || filter.contains(['\n', '\r', '\0']) {
         return Err("Filtro de teste inválido".into());
     }

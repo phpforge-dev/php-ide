@@ -552,7 +552,7 @@ async fn save_account(root: &Path, input: &Value) -> Res<Value> {
         let mut args = vec![
             "config".into(),
             "--file".into(),
-            lock.to_string_lossy().to_string(),
+            dunce::simplified(&lock).to_string_lossy().to_string(),
         ];
         if let Some(v) = value {
             args.extend(["--replace-all".into(), key.into(), v]);
@@ -563,7 +563,7 @@ async fn save_account(root: &Path, input: &Value) -> Res<Value> {
             &[
                 "config".into(),
                 "--file".into(),
-                lock.to_string_lossy().to_string(),
+                dunce::simplified(&lock).to_string_lossy().to_string(),
                 "--get-all".into(),
                 key.into(),
             ],
@@ -1372,16 +1372,17 @@ mod ignored_tree_tests {
     #[tokio::test]
     async fn git_ignore_rules_tracked_exceptions_nested_and_literal_names() {
         let dir=tempfile::tempdir().unwrap();let root=dir.path().canonicalize().unwrap();
+        let literal = if cfg!(windows) { "line space.ignored" } else { "line\nname.ignored" };
         git(&root,&["init","-q"]).await.unwrap();
         fs::create_dir_all(root.join("node_modules/pkg")).unwrap();fs::create_dir_all(root.join("folder")).unwrap();
         fs::write(root.join(".gitignore"),"node_modules/\n*.ignored\nfolder/*\n!folder/keep.txt\n").unwrap();
         fs::write(root.join("node_modules/pkg/file.txt"),"fixture").unwrap();
-        for path in ["cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt","line\nname.ignored"] { fs::write(root.join(path),"fixture").unwrap(); }
+        for path in ["cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt",literal] { fs::write(root.join(path),"fixture").unwrap(); }
         fs::write(root.join(".git/info/exclude"),"local.txt\n").unwrap();
         git(&root,&["add","-f","--","tracked.ignored"]).await.unwrap();
-        let paths=json!(["node_modules","node_modules/pkg/file.txt","cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt","line\nname.ignored"]);
+        let paths=json!(["node_modules","node_modules/pkg/file.txt","cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt",literal]);
         let found=ignored(&root,&paths).await.unwrap();let found=found.as_array().unwrap();
-        for path in ["node_modules","node_modules/pkg/file.txt","cache.ignored","folder/drop.txt","local.txt","line\nname.ignored"] { assert!(found.contains(&json!(path)),"{path}"); }
+        for path in ["node_modules","node_modules/pkg/file.txt","cache.ignored","folder/drop.txt","local.txt",literal] { assert!(found.contains(&json!(path)),"{path}"); }
         assert!(!found.contains(&json!("tracked.ignored")));assert!(!found.contains(&json!("folder/keep.txt")));
         fs::write(root.join(".gitignore"),"").unwrap();assert_eq!(ignored(&root,&json!(["cache.ignored"])).await.unwrap(),json!([]));
         assert_eq!(ignored(&root,&json!(["removed-row.txt"])).await.unwrap(),json!([]));

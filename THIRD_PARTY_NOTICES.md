@@ -96,3 +96,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 
 ```
+
+## Windows path compatibility
+
+`dunce` (1.x), used to simplify Windows verbatim paths for external tools, is licensed under CC0-1.0 OR MIT-0 OR Apache-2.0. This distribution uses the MIT-0 option. Source and license: https://github.com/kornelski/dunce.
