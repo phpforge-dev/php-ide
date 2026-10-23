@@ -2,21 +2,17 @@
 
 A base ativa usa Tauri 2/Rust, WebView do sistema, Monaco, xterm.js, portable-pty, SQLx, Tokio e demais crates do Cargo.lock. Cada dependência mantém sua própria licença e avisos; esses arquivos devem acompanhar a distribuição. O código próprio usa MIT. Os adaptadores/CLIs externos têm licenças e requisitos próprios.
 
-Electron, node-pty, pg e mysql2 pertenciam à implementação anterior, preservada apenas como fonte histórica. Não integram as dependências/runtime ativos. A lista abaixo preserva o registro histórico e precisa ser interpretada nesse contexto.
+A implementação Electron e suas dependências exclusivas foram removidas do fonte ativo. Seu registro histórico permanece no Git. Os avisos abaixo descrevem componentes utilizados ou referências documentais identificadas explicitamente.
 
-O código próprio está sob MIT. As dependências mantêm licenças próprias, arquivos LICENSE e avisos, que devem acompanhar a distribuição. Este repositório ainda não contém pacote instalável de distribuição.
-
-- Electron: MIT; Chromium e Node possuem avisos adicionais no runtime distribuído.
 - Monaco Editor: MIT, inclui codicons/recursos próprios e dependências com avisos próprios.
 - Phpactor: MIT. PHAR baixado separadamente pelo setup, versão 2026.10.07.0; SHA-256 `b28bf6166e016d539fc2f2aec18ef918b12590e436a6f1ccbdf30b5bbdbdb16b`. O artefato distribuído recebe a correção local MIT `function-query-missing-record-v1` para verificar registro nulo antes de consultar referências. `scripts/patch-phpactor.php` valida a origem e registra o hash final em `phpactor.phar.patch.json`, incluído no pacote. Dependências internas do PHAR mantêm seus avisos.
-- node-pty, @xterm/xterm e @xterm/addon-fit: MIT; avisos e licenças dos pacotes devem acompanhar a distribuição. node-pty inclui componentes nativos específicos da plataforma.
-- pg e mysql2: MIT; versões efetivas em package-lock.json.
+- @xterm/xterm e @xterm/addon-fit: MIT; avisos e licenças dos pacotes devem acompanhar a distribuição.
 - Codex CLI: executável externo instalado/autenticado pelo usuário; não redistribuído por este projeto. Uso do serviço depende da conta do usuário.
 - Mermaid 11.17.2: MIT; carregado sob demanda pela prévia Markdown. Traz dependências próprias (DOMPurify, d3, dagre, KaTeX, entre outras) com licenças MIT/BSD/Apache/MPL listadas em package-lock.json. `npm audit` em 22/10/2026 aponta aviso de severidade baixa no KaTeX (GHSA-238p-pmpm-9mq7), corrigido só na série 12.
 - Plugin Pest para IntelliJ/PhpStorm (`JetBrains/pest-intellij`, antes `pestphp/pest-intellij`): MIT, copyright Oliver Nybroe. Usado só como referência de escopo pelo README/CHANGELOG públicos ([recorte 15](docs/research/implementation-slice-15.md)); nenhum código ou asset foi copiado ou distribuído, então não há aviso de licença a reproduzir. PHPUnit e Pest não são distribuídos: a IDE executa os binários instalados pelo Composer no projeto do usuário.
 - Imagens Docker: ferramentas externas de desenvolvimento/teste, não incorporadas ao código da IDE.
 
-PhpStorm é produto/marca JetBrains. Nenhum componente proprietário, asset visual ou instalação de trial é distribuído. Referências documentais não transferem licença de recursos do produto. A avaliação de redistribuição completa deve ser repetida quando houver empacotamento.
+PhpStorm é produto/marca JetBrains. Nenhum componente proprietário, asset visual ou instalação de trial é distribuído. Referências documentais não transferem licença de recursos do produto. A avaliação de redistribuição deve acompanhar cada atualização das dependências e do empacotamento.
 
 
 ## jsdiff / diff 9.0.0

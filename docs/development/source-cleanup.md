@@ -18,6 +18,8 @@ O runtime ativo permanece Rust + Tauri 2. Esta mudança remove implementação s
 - `npm run lint:rust` executa Clippy em todos os targets de teste do host, sem warnings. Refatorações pequenas preservam os contratos IPC: agrupamento da expressão/posição da consulta sintética, dimensões do PTY, `Default` derivado e remoção de alocações/clones dispensáveis.
 - Os wrappers Cargo/Tauri/start compartilham a execução sem shell e o tratamento de falhas. Argumentos de Cargo são montados antes de `--`, e executáveis Windows usam `.exe`.
 - Scripts de navegador importam a dependência declarada `@playwright/test`, em vez de depender de um pacote transitivo diretamente.
+- O smoke nativo completo prepara também as fixtures de SVG, Bash, Docker, DotEnv e arquivos ignorados. Todas entram na base Git sintética antes dos cenários de branches; edições deliberadas dos plugins são restauradas entre cenários. O Compose seleciona explicitamente seu arquivo de exemplo.
+- Os avisos de terceiros refletem a remoção das dependências exclusivas de Electron; licenças dos componentes ativos foram mantidas.
 - O workflow **Source quality** executa as verificações e o build web em pushes/PRs de código, em Ubuntu 22.04. Não gera uma release automaticamente.
 
 ## Verificar e continuar
@@ -33,3 +35,7 @@ npm run test:native -- --no-db
 Os testes de backend Electron foram retirados porque não validavam a aplicação atual. Isso não torna cada cenário antigo automaticamente coberto em Rust. Os 5 testes Rust de integração marcados como ignorados continuam fora da execução padrão; testes nativos e bancos descartáveis têm seus próprios requisitos. O teste TypeScript que depende de PHPUnit externo pode permanecer ignorado quando ele não estiver instalado.
 
 Resultados desta limpeza são evidência própria. Não há nova validação comparativa com PhpStorm, nem nova versão de instalador por esta alteração de fonte.
+
+## Resultado local
+
+Em macOS, `npm run check` passou com 133 testes TypeScript e 72 testes Rust; ficaram 1 teste TypeScript e 5 testes Rust ignorados conforme os requisitos acima. O build web passou. A execução real `npm run test:native -- --no-db` passou nos 33 cenários, com CLI Docker e agente sintéticos, sem bancos reais. Esse resultado não valida a janela em Windows/Linux nem uma conexão com Docker real.

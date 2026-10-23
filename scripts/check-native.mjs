@@ -10,7 +10,6 @@ try{
  await mkdir(join(root,'vendor','bin'),{recursive:true});await writeFile(join(root,'vendor','bin','phpunit'),'<?php\n$f = getcwd() . "/SmokeTest.php";\n$i = array_search("--log-junit", $argv);\nfile_put_contents($argv[$i + 1], "<testsuites><testsuite><testcase name=\\"testPasses\\" class=\\"SmokeTest\\" file=\\"$f\\" line=\\"4\\" time=\\"0.01\\"/><testcase name=\\"testFails\\" class=\\"SmokeTest\\" file=\\"$f\\" line=\\"5\\" time=\\"0.02\\"><failure type=\\"X\\">SmokeTest::testFails\\nFailed asserting that false is true.\\n\\n$f:5</failure></testcase></testsuite></testsuites>");\necho "fake phpunit " . implode(" ", array_slice($argv, 1, 2)) . "\\n";\nexit(1);\n');
  await writeFile(join(root,'SmokeTest.php'),'<?php\nuse PHPUnit\\Framework\\TestCase;\nfinal class SmokeTest extends TestCase {\n public function testPasses(): void { $this->assertTrue(true); }\n public function testFails(): void { $this->assertTrue(false); }\n}\n');await writeFile(join(root,'scratch.txt'),'initial\n');
  await writeFile(join(root,'notes.md'),'# Notas\n\nVeja o [guia](md-guide.md#seção) e <script>alert(1)</script>.\n\n![logo](md-logo.svg)\n');await writeFile(join(root,'md-guide.md'),'# Guia\n\n## Seção\n\nTexto.\n');await writeFile(join(root,'md-diagram.md'),'# Diagrama\n\n```mermaid\nflowchart LR\n  A[Início] --> B{Ok?}\n  B -- sim --> C[Fim]\n```\n\n```mermaid\nflowchart LR\n  A -->\n```\n\n[quebrado](nao-existe.md)\n');await writeFile(join(root,'md-logo.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>\n');
- for(const args of [['init','-q','-b','main'],['config','user.name','Native Fixture'],['config','user.email','native@example.invalid'],['add','.'],['commit','-qm','Initial native fixture']])run('git',['-C',root,...args]);
  if(allFeatures || process.argv.includes('--svg-only')){
   await writeFile(join(root,'preview.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="128" viewBox="0 0 256 128"><rect width="256" height="128" fill="#3871e1"/><circle cx="128" cy="64" r="32" fill="white"/></svg>');
   await writeFile(join(root,'active-content.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" onload="parent.__svgExecuted=true"><script>parent.__svgExecuted=true</script><rect width="32" height="32" fill="red"/></svg>');
@@ -44,6 +43,7 @@ try{
  }
  const second=join(temp,'recent-fixture');await mkdir(second);await writeFile(join(second,'index.php'),'<?php echo "Recent project";\n');
  await mkdir(join(temp,'profile'));await writeFile(join(temp,'profile','recent-projects.json'),JSON.stringify([{path:await realpath(second),name:'recent-fixture'},{path:join(temp,'missing-project'),name:'missing-project'}]));
+ for(const args of [['init','-q','-b','main'],['config','user.name','Native Fixture'],['config','user.email','native@example.invalid'],['add','.'],['commit','-qm','Initial native fixture']])run('git',['-C',root,...args]);
  const remote=join(temp,'remote.git');run('git',['init','--bare','-q',remote]);run('git',['-C',root,'remote','add','origin',remote]);
  const dockerReal=process.argv.includes('--docker-real');let dockerFixture;
  const dockerState=join(temp,'docker-state.json');
@@ -58,6 +58,7 @@ try{
   await writeFile(dockerState,JSON.stringify({containers:[{ID:dockerFixture.id,Names:dockerFixture.name,Image:'php:8.3-cli',State:'exited',Status:'Exited (0)',Ports:''}],images:[{ID:'sha256:'+'d'.repeat(64),Repository:'php',Tag:'8.3-cli',Size:'120 MB'}]}));
   await writeFile(join(root,'compose.yaml'),'services:\n  app:\n    image: php:8.3-cli\n');
  }
+ run('git',['-C',root,'add','.']);run('git',['-C',root,'commit','-qm','Complete synthetic fixtures']);
  dockerFixture.svgOnly=process.argv.includes('--svg-only');
  dockerFixture.ignoredTreeOnly=process.argv.includes('--ignored-tree-only');
  dockerFixture.bashOnly=process.argv.includes('--bash-only');
