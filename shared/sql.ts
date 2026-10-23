@@ -112,7 +112,7 @@ export function sqlComplete(model: SqlModel, text: string, offset: number): { fr
  const items: SqlItem[] = [];
  const qualified = (s: SqlSchema, t: SqlTable) => ` (${model.database}.${s.name}${t ? '.' + t.name : ''})`;
  const tableItem = (s: SqlSchema, t: SqlTable): SqlItem => ({ label: t.name, kind: t.kind, detail: ` (${model.database}.${s.name})`, description: model.label });
- const columns = (s: SqlSchema, t: SqlTable, tail: string) => t.columns.map(c => ({ label: c.name, kind: 'column' as const, detail: tail, description: c.type }));
+ const columns = (_schema: SqlSchema, t: SqlTable, tail: string) => t.columns.map(c => ({ label: c.name, kind: 'column' as const, detail: tail, description: c.type }));
  // Qualificador antes do cursor: alias/tabela → colunas; schema → tabelas.
  const last = before.at(-1);
  if (last?.value === '.' && (before.at(-2)?.type === 'word' || before.at(-2)?.type === 'quoted')) {

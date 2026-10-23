@@ -1,4 +1,4 @@
-import { t as tr, msg, html, mountLanguageSettings } from './i18n';
+import { t as tr, html, mountLanguageSettings } from './i18n';
 import { editorColors, resolvedTheme, setThemePreference, themePreference, type ThemePreference } from './theme';
 import { editorFont, editorRules } from './editor-theme';
 import * as monaco from 'monaco-editor';

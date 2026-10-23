@@ -8,6 +8,7 @@ IDE experimental em Rust + Tauri 2. Estes guias descrevem o projeto atual; os re
 |---|---|
 | Executar ou compilar a IDE | [README do projeto](../README.md) |
 | Entender as pastas e os componentes ativos | [Estrutura e arquitetura](development/project-structure.md) |
+| Consultar a remoção do legado e as verificações de qualidade | [Limpeza do fonte](development/source-cleanup.md) |
 | Contribuir, testar e preparar uma entrega | [Desenvolvimento](development/contributing.md) |
 | Gerar e verificar o instalador macOS | [Build e instalador](development/contributing.md#build-e-instalador-macos) |
 | Gerar instaladores Windows e Linux | [Builds no GitHub Actions](development/windows-linux-builds.md) |

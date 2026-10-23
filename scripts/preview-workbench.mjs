@@ -1,5 +1,5 @@
 // Visual fixture only: native behavior is verified separately by check-native.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1421','--strictPort'],{stdio:'pipe'});

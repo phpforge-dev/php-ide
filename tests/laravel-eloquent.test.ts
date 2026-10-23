@@ -91,7 +91,10 @@ test('completion de membros: instância, estático, Builder, relação e coleç�
  assert.equal(item(statics, 'whereEmail').detail, "where('email', …)");
 
  const prefixed = await php('User::wh');
- assert.equal(prefixed.items[0].textEdit.range.start.character, 'User::'.length, 'substitui só o prefixo');
+ assert.ok(prefixed);
+ const prefixedEdit = prefixed.items[0].textEdit;
+ assert.ok('range' in prefixedEdit);
+ assert.equal(prefixedEdit.range.start.character, 'User::'.length, 'substitui só o prefixo');
 
  const chained = await php("User::verified()->whereEmail('x')->first()->");
  assert.ok(item(chained, 'posts') && item(chained, 'email'), 'scope → dynamic where → first() devolve User');

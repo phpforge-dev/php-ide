@@ -61,7 +61,7 @@ function ask(title: string, fields: Field[], options: { note?: string; ok?: stri
   const error = document.createElement('p'); error.className = 'project-dialog-error'; error.setAttribute('role', 'alert'); form.append(error);
   const footer = document.createElement('footer'); const buttons: HTMLButtonElement[] = [];
   const button = (value: string, label: string, primary = false) => { const b = document.createElement('button'); b.value = value; b.textContent = label; if (primary) b.className = 'primary'; if (value === 'cancel') b.formNoValidate = true; footer.append(b); buttons.push(b); return b; };
-  button('cancel', tr('Cancelar')); if (options.preview) button('preview', tr('Visualizar')); const ok = button('ok', options.ok ?? tr('Refatorar'), true);
+  button('cancel', tr('Cancelar')); if (options.preview) button('preview', tr('Visualizar')); button('ok', options.ok ?? tr('Refatorar'), true);
   form.append(footer); d.append(form); document.body.append(d);
   const values = () => Object.fromEntries(inputs.map(i => [i.name, i.type === 'checkbox' ? i.checked : i.value.trim()]));
   const update = () => { const r = options.live?.(values()); error.textContent = r?.error ?? ''; info.textContent = r?.info ?? ''; buttons.filter(b => b.value !== 'cancel').forEach(b => b.disabled = !!r?.error); };

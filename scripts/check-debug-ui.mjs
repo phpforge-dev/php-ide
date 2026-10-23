@@ -1,6 +1,6 @@
 // Interface do depurador (src/debug-panel.ts) no Monaco real com IPC simulado.
 // O protocolo DBGp e o Xdebug real são verificados por scripts/check-xdebug.mjs.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';

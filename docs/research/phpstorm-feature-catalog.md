@@ -1,5 +1,7 @@
 # Catálogo inicial de funcionalidades — referência PhpStorm
 
+Manutenção do fonte (23/10/2026): [remoção do runtime legado e verificações atuais](../development/source-cleanup.md). Os testes migrados usam os módulos ativos; esta limpeza não promove estados de compatibilidade.
+
 Distribuição própria (23/10/2026): [builds Windows/Linux e macOS](desktop-distribution.md). Compilação, testes e inicialização são evidências distintas; não promovem compatibilidade funcional com PhpStorm.
 
 Data: 21/10/2026. Prioridades: P0 inteligência PHP, P1 interface, P2 ferramentas. Complexidade é estimativa relativa, sem prazo. A baseline documental precedeu o código; agora há um primeiro recorte experimental descrito em [implementação](implementation-slice-01.md). Os critérios abaixo são REQ preliminares; devem ser refinados pelas observações antes do estado Especificada.

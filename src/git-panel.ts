@@ -117,11 +117,11 @@ export function mountGit(api: IdeApi, hasUnsaved: () => boolean, reloadWorkspace
   function render() {
     const list = el('git-changes'); list.replaceChildren();
     const groups = [
-      ['Conflitos · clique para resolver', false, state!.changes.filter(c => conflictStatus(c.index + c.worktree))],
-      [tr('Alterações'), false, state!.changes.filter(c => c.index !== '?' && !conflictStatus(c.index + c.worktree))],
-      [tr('Não rastreados'), false, state!.changes.filter(c => c.index === '?')],
+      ['Conflitos · clique para resolver', state!.changes.filter(c => conflictStatus(c.index + c.worktree))],
+      [tr('Alterações'), state!.changes.filter(c => c.index !== '?' && !conflictStatus(c.index + c.worktree))],
+      [tr('Não rastreados'), state!.changes.filter(c => c.index === '?')],
     ] as const;
-    for (const [label, prepared, changes] of groups) {
+    for (const [label, changes] of groups) {
       if(!changes.length)continue;const group=document.createElement('details');group.open=true;const heading=document.createElement('summary');const title=document.createElement('strong');title.textContent=tr(label);const count=document.createElement('small');count.textContent=changes.length===1?tr('1 arquivo'):msg`${changes.length} arquivos`;heading.append(title,count);group.append(heading);list.append(group);
       if(!label.startsWith('Conflitos')){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.setAttribute('aria-label',tr(label));const indexed=changes.filter(c=>c.index!==' '&&c.index!=='?');checkbox.checked=indexed.length===changes.length;checkbox.indeterminate=indexed.length>0&&indexed.length<changes.length;checkbox.onclick=e=>e.stopPropagation();checkbox.onchange=()=>void prepareFiles(changes.map(c=>c.path),checkbox.checked);heading.prepend(checkbox);}
       heading.addEventListener('click',()=>{panel.querySelectorAll('summary').forEach(row=>row.classList.remove('selected'));heading.classList.add('selected');});

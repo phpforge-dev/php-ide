@@ -1,7 +1,7 @@
 // Visual fidelity fixture for the Islands foundation (recorte 28). Simulated API only; native behavior is
 // verified by check-native. Writes .artifacts/fidelity/foundation-{workbench,welcome,tools}-{dark,light}.png at the
 // reference window size (1512×949 logical) so they can be compared with .artifacts/phpstorm-reference/.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, readFile } from 'node:fs/promises';
 const port=1422;

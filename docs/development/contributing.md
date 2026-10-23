@@ -19,14 +19,14 @@ npm run dev
 | `npm run typecheck` | Tipos do código incluído no tsconfig |
 | `npm test` | Testes Rust; testes marcados como ignorados não são executados |
 | `npm run test:locales` | Catálogos e placeholders de tradução |
-| `node --import tsx --test tests/plugins.test.ts` | Exemplo de plugin, host e sandbox; inclui testes históricos e testes do host compartilhado |
+| `node --import tsx --test tests/plugins.test.ts` | Exemplo de plugin, host e sandbox; host compartilhado e sandbox atuais |
 | `npm run test:web-languages` | Serviços web reais em WebKit; requer navegador Playwright instalado |
 | `npm run test:native` | Compila e exercita janela Tauri via IPC; requer porta 1420 livre, Phpactor e Docker para bancos descartáveis |
 | `npm run test:packaged` | Smoke no aplicativo já compilado; não recompila o pacote |
 
 Não execute dois smokes nativos simultaneamente: compartilham portas e podem produzir interferência. Antes de repetir um teste que falhou, diferencie problema de ambiente de falha de comportamento. Não encerre processos do usuário para liberar portas.
 
-Testes que importam `electron/` são históricos. Em especial, `scripts/check-plugins-ui.ts` lança Electron: não comprova comportamento da janela Tauri. Testes unitários do worker também não substituem uma verificação de segurança na WebView.
+Use `npm run check` para tipos (aplicação e testes), guarda de arquitetura, testes TypeScript/Rust, Clippy sem warnings e catálogos de tradução. Os testes exclusivos do runtime Electron foram removidos; o histórico permanece no Git. Testes unitários do worker não substituem uma verificação de segurança na WebView.
 
 ## Build e instalador macOS
 

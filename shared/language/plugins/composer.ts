@@ -283,7 +283,7 @@ export class ComposerPlugin implements IdePlugin {
   return null;
  }
 
- async diagnose(path: string, text: string, files: ProjectFiles): Promise<PluginDiagnostic[]> {
+ async diagnose(_path: string, text: string, files: ProjectFiles): Promise<PluginDiagnostic[]> {
   let root: JsonNode;
   try { root = parseJson(text); }
   catch (error) {
@@ -322,7 +322,7 @@ export class ComposerPlugin implements IdePlugin {
   return out;
  }
 
- async codeLenses(path: string, text: string): Promise<PluginCodeLens[]> {
+ async codeLenses(_path: string, text: string): Promise<PluginCodeLens[]> {
   let root: JsonNode; try { root = parseJson(text); } catch { return []; }
   if (root.type !== 'object') return [];
   const out: PluginCodeLens[] = [];

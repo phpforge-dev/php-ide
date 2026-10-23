@@ -1,4 +1,4 @@
-import { t as tr, msg, html } from './i18n';
+import { t as tr, html } from './i18n';
 import * as monaco from 'monaco-editor';
 import { diffLines } from 'diff';
 import type { IdeApi } from '../shared/contracts';

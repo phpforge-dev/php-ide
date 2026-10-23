@@ -1,6 +1,6 @@
 import { bladeCode, literalAt, phpTokens, position, type PhpToken } from '../php-source';
 import { CompletionKind, type CodeCompletion, type CodeSite, type IdePlugin, type PluginDiagnostic, type PluginLocation, type ProjectFiles, type StringSite } from './api';
-import { callAround, closest, completeColumnString, completeMember, defineColumnString, describe, diagnoseStrings, eloquentIndex, hoverAt, lookup, memberAt, placeOf, target as memberTarget, type EloquentIndex } from './eloquent';
+import { callAround, closest, completeColumnString, completeMember, defineColumnString, diagnoseStrings, eloquentIndex, hoverAt, lookup, memberAt, placeOf, target as memberTarget, type EloquentIndex } from './eloquent';
 import type { PluginFix, PluginHover } from './extensions';
 import { attribute, components, viewName, viewVariables, type Component, type ViewVariable } from './blade';
 import { translations, type Translation } from './translations';

@@ -25,7 +25,7 @@ export function generateDdl(name: string, columns: any[], keys: any[], primaryKe
     line += notNull ? `${types[i].text.padEnd(typeWidth)} not null` : types[i].text;
     if (c.def !== null && c.def !== undefined && !types[i].serial) line += ` default ${c.def}`;
     if (primary.length === 1 && primary[0] === names[i]) line += '\n        primary key';
-    for (const k of keys.filter(k => k.kind === 'UNIQUE' && k.col === names[i] && keys.filter(x => x.cname === k.cname).length === 1)) line += '\n        unique';
+    for (const _key of keys.filter(k => k.kind === 'UNIQUE' && k.col === names[i] && keys.filter(x => x.cname === k.cname).length === 1)) line += '\n        unique';
     for (const fk of keys.filter(k => k.kind === 'FOREIGN KEY' && k.col === names[i])) {
       const target = fk.fschema === current ? String(fk.ftable) : `${fk.fschema}.${fk.ftable}`;
       const pk = primaryKeys.filter(p => p.s === fk.fschema && p.t === fk.ftable);

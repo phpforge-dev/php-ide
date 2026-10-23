@@ -1,6 +1,6 @@
 import {dockWindow} from './tool-window';
 import { editorFont } from './editor-theme';
-import { t as tr, msg, html } from './i18n';
+import { t as tr, html } from './i18n';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';

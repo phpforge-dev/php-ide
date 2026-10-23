@@ -9,6 +9,8 @@
       "DOM.Iterable"
     ],
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,

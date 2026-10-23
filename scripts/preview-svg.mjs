@@ -1,5 +1,5 @@
 // Visual fixture only. Real IPC/WebKit behavior is exercised by --svg-only.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 const source=`<svg xmlns="http://www.w3.org/2000/svg"

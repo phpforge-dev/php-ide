@@ -1,1 +1,8 @@
-import {spawn} from 'node:child_process';import {homedir} from 'node:os';import {join} from 'node:path';const child=spawn(join(homedir(),'.cargo','bin',process.platform==='win32'?'cargo.exe':'cargo'),[...process.argv.slice(2),'--manifest-path','src-tauri/Cargo.toml'],{stdio:'inherit'});child.on('exit',code=>process.exit(code??1));
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { runCommand } from './run-command.mjs';
+
+const [command = 'check', ...args] = process.argv.slice(2);
+const cargo = join(homedir(), '.cargo', 'bin', process.platform === 'win32' ? 'cargo.exe' : 'cargo');
+// Cargo's manifest option belongs before `--` (test/compiler arguments).
+runCommand(cargo, [command, '--manifest-path', 'src-tauri/Cargo.toml', ...args]);

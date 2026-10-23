@@ -125,7 +125,7 @@ export function mergeTools(api: IdeApi, hooks: Hooks) {
   function render() {
    decorations.left.set(m.chunks.map((c, i) => lineDecoration(models[0], c.left, kindClass(i), c.kind !== 'right' ? glyph(i, 'left', 'merge-glyph-apply-left') : undefined, status[i].left === 'optional' ? 'Acrescentar ao resultado (+)' : 'Aplicar no resultado (»)')));
    decorations.right.set(m.chunks.map((c, i) => lineDecoration(models[2], c.right, kindClass(i), c.kind !== 'left' && c.kind !== 'both' ? glyph(i, 'right', 'merge-glyph-apply-right') : undefined, status[i].right === 'optional' ? 'Acrescentar ao resultado (+)' : 'Aplicar no resultado («)')));
-   decorations.result.set(m.chunks.map((c, i) => lineDecoration(model, span(tracking(i)), kindClass(i), status[i].left === 'pending' || status[i].right === 'pending' || status[i].left === 'optional' || status[i].right === 'optional' ? 'merge-glyph merge-glyph-ignore' : undefined, tr('Ignorar alteração (×)'))));
+   decorations.result.set(m.chunks.map((_chunk, i) => lineDecoration(model, span(tracking(i)), kindClass(i), status[i].left === 'pending' || status[i].right === 'pending' || status[i].left === 'optional' || status[i].right === 'optional' ? 'merge-glyph merge-glyph-ignore' : undefined, tr('Ignorar alteração (×)'))));
    const pendingChanges = m.chunks.filter((c, i) => c.kind !== 'conflict' && !resolved(i)).length;
    const pendingConflicts = m.chunks.filter((c, i) => c.kind === 'conflict' && !resolved(i)).length;
    q('.merge-summary').textContent = summary(pendingChanges, pendingConflicts);

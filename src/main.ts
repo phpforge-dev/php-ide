@@ -209,7 +209,7 @@ document.addEventListener('mouseup',event=>{
 window.addEventListener('blur',()=>{navigationPress=undefined;});
 $('editor').addEventListener('contextmenu', event => { if(event.ctrlKey || event.metaKey) event.preventDefault(); }, true);
 const consoleUi = sqlConsole(api, editor, { virtual, open: path => open(path), status });
-const markdown = mountMarkdown(api, editor, { path: () => active, status, open: async (path, line) => {
+mountMarkdown(api, editor, { path: () => active, status, open: async (path, line) => {
  const previous = place(); await open(path, false);
  if (line !== undefined) { editor.setPosition({ lineNumber: line + 1, column: 1 }); editor.revealLineNearTop(line + 1); }
  remember(previous);

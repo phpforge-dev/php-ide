@@ -88,7 +88,7 @@ function stemRange(name: string) { const dot = name.indexOf('.', 1); return `0,$
 export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
  const tree = document.getElementById('tree')!; const pane = tree.closest<HTMLElement>('.project-pane') ?? tree;
  let clipboard: { mode: 'copy' | 'cut'; target: Target } | undefined;
- let marked: HTMLElement | undefined; let closeMenu: (() => void) | undefined;
+ let closeMenu: (() => void) | undefined;
  const run = (fn: () => Promise<unknown>) => { void fn().catch(error => hooks.status(String(error?.message ?? error))); };
  const targetOf = (el: Element | null): Target | undefined => {
   const node = el?.closest<HTMLElement>('#tree button[data-path], #tree summary[data-path]');

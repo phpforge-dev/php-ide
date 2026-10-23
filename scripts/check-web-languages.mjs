@@ -1,4 +1,4 @@
-import {webkit} from 'playwright';
+import {webkit} from '@playwright/test';
 import {spawn} from 'node:child_process';
 import {mkdir,writeFile,readFile,readdir} from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1427','--strictPort'],{stdio:'pipe'});let browser;let bundledWorkerLoaded=false;

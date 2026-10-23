@@ -7,7 +7,7 @@
     "dev": "node scripts/tauri.mjs dev",
     "build": "node scripts/tauri.mjs build --bundles app",
     "start": "node scripts/start-native.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.tests.json",
     "test": "node scripts/cargo.mjs test",
     "setup:php": "node scripts/setup-php.mjs",
     "setup:acp": "node scripts/setup-acp.mjs",
@@ -21,7 +21,11 @@
     "test:locales": "node scripts/check-locales.mjs",
     "test:php-semantics": "node --import tsx --test tests/php-hierarchy.test.ts && tsx scripts/check-php-semantics.ts",
     "test:web-languages": "node scripts/check-web-languages.mjs",
-    "test:web-native": "node scripts/check-native.mjs --packaged --no-db --web-only"
+    "test:web-native": "node scripts/check-native.mjs --packaged --no-db --web-only",
+    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm run test:architecture && npm run test:unit && npm test && npm run lint:rust && npm run test:locales",
+    "lint:rust": "node scripts/cargo.mjs clippy --all-targets -- -D warnings",
+    "test:architecture": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

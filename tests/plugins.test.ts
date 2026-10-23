@@ -4,14 +4,15 @@ import { cp, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { PluginHost, callSite } from '../electron/plugins/host';
-import { parseRoutes } from '../electron/plugins/laravel';
-import { parseEnv } from '../electron/plugins/dotenv';
+import { projectFiles } from './fixtures/project-files';
+import { PluginHost, callSite } from '../shared/language/plugins/host';
+import { LaravelPlugin, parseRoutes } from '../shared/language/plugins/laravel';
+import { DotenvPlugin, parseEnv } from '../shared/language/plugins/dotenv';
 
 async function project() {
  const root = await realpath(await mkdtemp(join(tmpdir(), 'php-ide-plugins-')));
  await cp(resolve('fixtures/laravel-strings'), root, { recursive: true });
- return { root, host: new PluginHost(root), probe: await readFile(join(root, 'app/probe.php'), 'utf8') };
+ return { root, host: new PluginHost(projectFiles(root), [new LaravelPlugin(), new DotenvPlugin()]), probe: await readFile(join(root, 'app/probe.php'), 'utf8') };
 }
 const inside = (text: string, needle: string, delta = 1) => { const i = text.indexOf(needle); assert.ok(i >= 0, needle); return i + delta; };
 const where = (root: string, list: any[] | null) => list?.map(l => ({ file: fileURLToPath(l.uri).slice(root.length + 1), line: l.range.start.line, character: l.range.start.character, ...(l.preserveView ? { keep: true } : {}) })) ?? null;
@@ -142,14 +143,14 @@ test('traduções __(), trans() e @lang em PHP, JSON e locais (DOC Laravel)', as
 });
 
 test('SQL em strings PHP: completion e navegação para DDL (plugin database)', async () => {
- const { DatabasePlugin } = await import('../electron/plugins/database');
- const { LaravelPlugin } = await import('../electron/plugins/laravel');
- const { DotenvPlugin } = await import('../electron/plugins/dotenv');
+ const { DatabasePlugin } = await import('../shared/language/plugins/database');
+ const { LaravelPlugin } = await import('../shared/language/plugins/laravel');
+ const { DotenvPlugin } = await import('../shared/language/plugins/dotenv');
  const { model } = await import('./fixtures/sql-model');
  const { root } = await project();
  const ddl = "-- auto-generated definition\ncreate table orders\n(\n    id      serial\n        primary key,\n    user_id integer        not null\n        references users\n);\n";
  let sessions = [{ id: 's1', model }];
- const host = new PluginHost(root, [new LaravelPlugin(), new DotenvPlugin(), new DatabasePlugin({ sessions: async () => sessions, ddl: async () => ddl })]);
+ const host = new PluginHost(projectFiles(root), [new LaravelPlugin(), new DotenvPlugin(), new DatabasePlugin({ sessions: async () => sessions, ddl: async () => ddl })]);
  try {
   assert.deepEqual((await host.status()).map(p => p.id), ['laravel', 'dotenv'], 'plugin interno não aparece no status');
   const php = "<?php\n$pdo->query('SELECT  FROM users');\n$sql = \"SELECT * FROM orders o WHERE o.user_id = 1\";\n$x = 'Selecione FROM users';\n";

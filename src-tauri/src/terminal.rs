@@ -50,7 +50,7 @@ impl Terminals {
             .unwrap_or_default()
             .to_string_lossy()
             .to_string();
-        self.spawn(app, root, id, cols, rows, cmd, &label)
+        self.spawn(app, root, id, (cols, rows), cmd, &label)
     }
     pub fn create_docker(
         &mut self,
@@ -63,18 +63,18 @@ impl Terminals {
     ) -> Res<Value> {
         let mut cmd = CommandBuilder::new(program);
         cmd.args(["--context", context, "exec", "-it", container, "/bin/sh"]);
-        self.spawn(app, root, id, 100, 30, cmd, "Docker /bin/sh")
+        self.spawn(app, root, id, (100, 30), cmd, "Docker /bin/sh")
     }
     fn spawn(
         &mut self,
         app: AppHandle,
         root: &Path,
         id: &str,
-        cols: u16,
-        rows: u16,
+        dimensions: (u16, u16),
         mut cmd: CommandBuilder,
         label: &str,
     ) -> Res<Value> {
+        let (cols, rows) = dimensions;
         size(cols, rows)?;
         uuid::Uuid::parse_str(id).map_err(err)?;
         if self.sessions.contains_key(id) || self.sessions.len() >= 8 {

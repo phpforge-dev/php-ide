@@ -1,5 +1,5 @@
 // Visual fixture; native behavior is checked separately in check-startup.mjs.
-import {chromium} from 'playwright';import {spawn} from 'node:child_process';import {mkdir} from 'node:fs/promises';
+import {chromium} from '@playwright/test';import {spawn} from 'node:child_process';import {mkdir} from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1422','--strictPort'],{stdio:'pipe'});let browser;
 try{await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes('1422'))resolve();});server.once('exit',reject);});browser=await chromium.launch({headless:true,channel:'chrome'});const page=await browser.newPage({viewport:{width:1280,height:800}});
  await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:'export {}'}));await page.goto('http://127.0.0.1:1422');await mkdir('.artifacts',{recursive:true});await page.screenshot({path:'.artifacts/startup-splash-preview.png'});

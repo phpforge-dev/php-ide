@@ -12,9 +12,9 @@ npm run typecheck
 npm test
 ```
 
-A suíte tem casos do host compartilhado/sandbox e casos históricos Electron. O teste do exemplo usa os arquivos reais de `fixtures/plugins/todo-hints/`. Os testes Rust em `plugins::tests` cobrem manifesto, ZIP, consentimento e operações privilegiadas. Isso não é um teste de toda integração visual de plugins na janela Tauri.
+A suíte usa o host compartilhado e o sandbox atuais, sem runtime Electron. O teste do exemplo usa os arquivos reais de `fixtures/plugins/todo-hints/`. Os testes Rust em `plugins::tests` cobrem manifesto, ZIP, consentimento e operações privilegiadas. Isso não é um teste de toda integração visual de plugins na janela Tauri.
 
-Para validar a integração de sua extensão, execute `npm run dev` ou o aplicativo compilado, siga o [tutorial](getting-started.md), confira os recursos um a um, desative/recarregue e troque de projeto. Não use `scripts/check-plugins-ui.ts` como smoke Tauri: ele ainda é Electron histórico. O smoke nativo geral também não deve ser anunciado como cobertura de todos os hooks externos.
+Para validar a integração de sua extensão, execute `npm run dev` ou o aplicativo compilado, siga o [tutorial](getting-started.md), confira os recursos um a um, desative/recarregue e troque de projeto. O smoke nativo geral também não deve ser anunciado como cobertura de todos os hooks externos.
 
 ## Formato do pacote
 

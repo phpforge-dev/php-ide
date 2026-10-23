@@ -1,4 +1,4 @@
-import { t as tr, msg, html, activeLanguage } from './i18n';
+import { t as tr, activeLanguage } from './i18n';
 import { resolvedTheme, themePreference } from './theme';
 import { generateDdl, shortType } from '../shared/sql-ddl';
 import { NativeLanguage } from './native-language';

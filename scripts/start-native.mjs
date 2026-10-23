@@ -1,1 +1,7 @@
-import {spawn} from 'node:child_process';const path=process.platform==='darwin'?'src-tauri/target/release/bundle/macos/PHP IDE.app/Contents/MacOS/php-ide':'src-tauri/target/release/php-ide';const child=spawn(path,[],{stdio:'inherit'});child.on('error',error=>{console.error('Execute npm run build antes de iniciar.',error.message);process.exit(1);});child.on('exit',code=>process.exit(code??1));
+import { runCommand } from './run-command.mjs';
+
+const executable = process.platform === 'darwin'
+  ? 'src-tauri/target/release/bundle/macos/PHP IDE.app/Contents/MacOS/php-ide'
+  : `src-tauri/target/release/php-ide${process.platform === 'win32' ? '.exe' : ''}`;
+const child = runCommand(executable, []);
+child.once('error', () => console.error('Execute npm run build antes de iniciar.'));

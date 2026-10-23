@@ -1,4 +1,4 @@
-import {chromium} from 'playwright';import {spawn} from 'node:child_process';import {mkdir,writeFile} from 'node:fs/promises';
+import {chromium} from '@playwright/test';import {spawn} from 'node:child_process';import {mkdir,writeFile} from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1423','--strictPort'],{stdio:'pipe'});let browser;
 try{await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes('1423'))resolve();});server.once('exit',reject);});browser=await chromium.launch({headless:true,channel:'chrome'});const page=await browser.newPage({viewport:{width:1440,height:940}});
  await page.addInitScript(()=>{if(!sessionStorage.getItem('language-test-init')){localStorage.setItem('php-ide-language','en');sessionStorage.setItem('language-test-init','1');}});

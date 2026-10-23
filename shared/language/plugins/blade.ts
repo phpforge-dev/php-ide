@@ -114,7 +114,7 @@ function split(tokens: PhpToken[], open: number) {
 export function viewVariables(text: string, file: string, inCode = false): ViewVariable[] {
  const t = phpTokens(text, inCode); const out: ViewVariable[] = [];
  const add = (view: string, name: string, at: number, type?: string) => out.push({ name, view, file, ...position(text, t[at].offset), ...(type ? { type } : {}) });
- const fromArray = (view: string, [from, to]: [number, number], call: number) => {
+ const fromArray = (view: string, [from]: [number, number], call: number) => {
   if (t[from]?.value === '[') {
    const { args } = split(t, from);
    for (const [a, b] of args) if (t[a]?.type === 'string' && t[a + 1]?.value === '=>') add(view, t[a].value, a, inferAt(t, a + 2, b, call));

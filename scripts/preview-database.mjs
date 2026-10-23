@@ -1,5 +1,5 @@
 // Fixture visual do diálogo de fontes de dados (API simulada); o comportamento real é validado por check-native.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1422','--strictPort'],{stdio:'pipe'});

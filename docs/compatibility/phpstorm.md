@@ -2,6 +2,8 @@
 
 # Matriz de compatibilidade funcional — PhpStorm
 
+Manutenção (23/10/2026): [legado removido e cobertura atual](../development/source-cleanup.md). Registros Electron anteriores são históricos e não contam como verificação do runtime Rust/Tauri.
+
 Distribuição própria (23/10/2026): [evidências Windows/Linux e macOS](../research/desktop-distribution.md). Esses testes não medem equivalência funcional com a referência nem alteram os estados das famílias abaixo.
 
 Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); build exato da IDE e keymap ainda não registrados. IDE independente: prévia 0.1.0; ver [recorte](../research/implementation-slice-01.md).

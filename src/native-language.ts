@@ -26,13 +26,13 @@ type Loc={uri:string;range:{start:{line:number;character:number};end:{line:numbe
 type Semantic={hierarchy:PhpHierarchy;functions:FunctionDoc[];texts:Map<string,string>};
 type Transport=(method:string,args?:unknown[])=>Promise<any>;
 export class NativeLanguage {
- private host?:PluginHost;private files?:ProjectFiles;private classes?:Promise<any[]>;private semantic?:Promise<Semantic>;private root='';private uris=new Map<string,string>();
+ private host?:PluginHost;private files?:ProjectFiles;private classes?:Promise<any[]>;private semantic?:Promise<Semantic>;private uris=new Map<string,string>();
  readonly databases=new Set<string>();private models=new Map<string,Promise<SqlModel>>();
  constructor(private call:Transport){}
  reset(){this.host=undefined;this.files=undefined;this.classes=undefined;this.semantic=undefined;this.uris.clear();this.databases.clear();this.models.clear();}
  changed(path:string){this.classes=undefined;this.semantic=undefined;this.host?.changed(path);}
  databaseChanged(){this.models.clear();}
- private async init(){if(this.host)return;const info=await this.call('workspace');this.root=info.root;const base=info.rootUri??new URL('file://'+info.root.replaceAll('\\','/')+'/').href;
+ private async init(){if(this.host)return;const info=await this.call('workspace');const base=info.rootUri??new URL('file://'+info.root.replaceAll('\\','/')+'/').href;
  const files:ProjectFiles={root:info.root,read:async path=>{try{const f=await this.call('read',[path]);this.uris.set(path,f.uri);return f.text;}catch{return null;}},exists:async path=>{try{await this.call('fileExists',[path]);return true;}catch{return false;}},list:async(dir,accept)=>{const paths:string[]=await this.call('listFiles',[dir,false]);return paths.filter(p=>accept(p.split('/').pop()!));},uri:path=>this.uris.get(path)??new URL(path,base).href};this.files=files;
  this.host=new PluginHost(files,[new LaravelPlugin(),new DotenvPlugin(),new DockerPlugin(),new BashPlugin(),new DatabasePlugin({sessions:async()=>Promise.all([...this.databases].map(async id=>{let model=this.models.get(id);if(!model){model=this.call('databaseModel',[id]);this.models.set(id,model);}return{id,model:await model};})),ddl:(id,schema,table)=>this.call('databaseDdl',[id,schema,table])}),new MarkdownPlugin(),new GitignorePlugin(),new PhpTestsPlugin(),new ComposerPlugin(),new SymfonyPlugin()]);}
  async plugins(){await this.init();return this.host!.status();}

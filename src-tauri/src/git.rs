@@ -1011,7 +1011,7 @@ pub async fn dispatch(root: &Path, method: &str, args: &[Value]) -> Res<Value> {
                         run(
                             root,
                             "git",
-                            &vec![
+                            &[
                                 "push".into(),
                                 "--porcelain".into(),
                                 "--".into(),

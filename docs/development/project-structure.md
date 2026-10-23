@@ -12,11 +12,10 @@ A aplicação desktop usa Rust + Tauri 2. TypeScript, Monaco e xterm.js executam
 | `shared/` | Contratos e lógica TypeScript compartilhada; manter sem APIs Node nos módulos ativos |
 | `shared/language/plugins/` | Contratos, host, sandbox e extensões integradas |
 | `fixtures/` | Projetos reproduzíveis e exemplos testados, incluindo `plugins/todo-hints` |
-| `tests/` | Testes TypeScript; alguns ainda importam o runtime histórico |
+| `tests/` | Testes TypeScript dos módulos ativos e do host/sandbox compartilhado |
 | `scripts/` | Setup, build e verificações; scripts podem usar Node |
 | `docs/` | Guias atuais, pesquisa e evidências de compatibilidade |
 | `licenses/`, `THIRD_PARTY_NOTICES.md` | Licenças e atribuições distribuídas |
-| `electron/` | Implementação histórica, fora do runtime/build atual |
 | `.tools/`, `.artifacts/`, `dist/`, `src-tauri/target/`, `graphify-out/` | Ferramentas e saídas geradas; não são o código fonte de funcionalidades |
 
 ## Fluxos principais
@@ -36,3 +35,7 @@ Plugins de terceiros: descoberta/consentimento Rust → gerenciador da interface
 - Extensão integrada: `shared/language/plugins/`, registrada em `src/native-language.ts`; ela é código confiável do produto, diferente de um pacote de terceiros.
 
 A organização descrita é a existente. Não há migração de diretórios ou conversão para monorepo nesta entrega; mudanças físicas devem considerar os caminhos usados pelo build, fixtures e testes.
+
+## Limpeza do legado
+
+O backend Electron e seus scripts/testes exclusivos foram removidos. Consulte [limpeza e verificações](source-cleanup.md). As implementações anteriores continuam recuperáveis no histórico do Git, sem participar do fonte ou dos comandos atuais.

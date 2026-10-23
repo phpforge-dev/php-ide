@@ -1,5 +1,5 @@
 import { analyze, namespaceAt, phpTokens, position, type FileContext, type PhpToken } from '../php-source';
-import { CompletionKind, type CodeCompletion, type CodeSite, type PluginCompletion, type PluginDiagnostic, type PluginLocation, type ProjectFiles, type StringSite } from './api';
+import { CompletionKind, type CodeCompletion, type PluginCompletion, type PluginDiagnostic, type PluginLocation, type ProjectFiles, type StringSite } from './api';
 import type { PluginFix, PluginHover } from './extensions';
 
 // Eloquent por análise léxica (DOC laravel.com/docs/eloquent*, migrations): modelos em `app/`,

@@ -1,4 +1,4 @@
-import { t as tr, msg, html } from './i18n';
+import { t as tr, html } from './i18n';
 import type { IdeApi } from '../shared/contracts';
 export function mountRecentProjects(api: IdeApi, open: (path?: string) => Promise<boolean>) {
  const button=document.getElementById('open')!;let popup:HTMLElement|undefined;let epoch=0;

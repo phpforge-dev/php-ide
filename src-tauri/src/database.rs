@@ -1718,7 +1718,7 @@ mod tests {
             let db = Database::new(None, Path::new("/live"));
             let mut ready = Err(String::new());
             for _ in 0..if driver == "oracle" { 300 } else { 90 } {
-                ready = db.dispatch("database", &[input.clone()]).await;
+                ready = db.dispatch("database", std::slice::from_ref(&input)).await;
                 if ready.is_ok() {
                     break;
                 }
@@ -1729,7 +1729,7 @@ mod tests {
             let mut wrong = input.clone();
             wrong["password"] = json!("wrong-password");
             assert!(db.dispatch("database", &[wrong]).await.is_err(), "{driver}: senha errada aceita");
-            let session = db.dispatch("databaseConnect", &[input.clone()]).await.unwrap();
+            let session = db.dispatch("databaseConnect", std::slice::from_ref(&input)).await.unwrap();
             let id = session["id"].clone();
             if driver == "redis" {
                 let mut setup = vec![
@@ -1800,7 +1800,7 @@ mod tests {
                 assert_eq!(second["hasMore"], false);
                 let ddl = db.dispatch("databaseDdlData", &[id.clone(), json!(schema), json!(people)]).await.unwrap();
                 assert!(ddl.is_object() || ddl.as_str().unwrap().to_lowercase().contains("create table"), "{driver}: {ddl}");
-                let model = db.dispatch("databaseModel", &[id.clone()]).await.unwrap();
+                let model = db.dispatch("databaseModel", std::slice::from_ref(&id)).await.unwrap();
                 assert!(model["schemas"].as_array().unwrap().iter().any(|s| s["tables"].as_array().unwrap().iter().any(|t| t["name"] == people)), "{driver}: modelo");
                 if driver == "oracle" {
                     oracle_live(&db, &id, &input).await;
@@ -1816,7 +1816,7 @@ mod tests {
                     db.dispatch("databaseDisconnect", &[ro["id"].clone()]).await.unwrap();
                 }
             }
-            db.dispatch("databaseDisconnect", &[id.clone()]).await.unwrap();
+            db.dispatch("databaseDisconnect", std::slice::from_ref(&id)).await.unwrap();
             assert!(db.dispatch("databaseTables", &[id, json!("x")]).await.is_err());
             println!("{driver}: conexão, senha inválida, navegação, prévia, console e desconexão OK");
         }

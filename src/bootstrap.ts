@@ -1,4 +1,4 @@
-import { t as tr, msg, html } from './i18n';
+import { t as tr } from './i18n';
 import './theme';
 document.querySelectorAll<HTMLElement>('#startup-splash [data-i18n]').forEach(el=>el.textContent=tr(el.textContent??''));
 const splash=document.getElementById('startup-splash')!;

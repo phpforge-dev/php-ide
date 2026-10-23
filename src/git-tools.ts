@@ -1,4 +1,4 @@
-import { t as tr, msg, html } from './i18n';
+import { t as tr, html } from './i18n';
 import type { GitOperation, GitTools, IdeApi } from '../shared/contracts';
 import { gitBranches } from './git-branches';
 import { mergeTools } from './merge-editor';

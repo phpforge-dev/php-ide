@@ -74,7 +74,7 @@ Variáveis: `PHP_IDE_PHP_BIN` aponta PHP local; `PHP_IDE_TOOLS` pode apontar uma
 - [Compatibilidade](docs/compatibility/phpstorm.md)
 - [Avisos de terceiros](THIRD_PARTY_NOTICES.md)
 
-O diretório `electron/` e testes antigos foram preservados como registro da implementação anterior. Não são usados pelo build/runtime atual. O código próprio usa MIT. Nenhum componente proprietário da JetBrains é distribuído.
+O runtime Electron e seus testes exclusivos foram removidos do fonte ativo. O histórico permanece no Git; parsers e plugins reaproveitados são testados em `shared/`. O código próprio usa MIT. Nenhum componente proprietário da JetBrains é distribuído.
 
 ### Projetos recentes
 

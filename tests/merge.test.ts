@@ -45,24 +45,3 @@ test('conflitos simples só quando os lados alteram caracteres diferentes', () =
  assert.equal(simpleMerge("function c() { return 'c'; }\n", "function c() { return 'c-main'; }\n", "function c() { return 'c-feature'; }\n"), null);
  assert.equal(simpleMerge('a b c', 'A b c', 'A b c'), 'A b c', 'mesma edição dos dois lados');
 });
-
-test('serviço Git informa operação e nomes dos lados do conflito', async () => {
- const { execFileSync } = await import('node:child_process');
- const { mkdtemp, realpath, writeFile, rm } = await import('node:fs/promises');
- const { join } = await import('node:path'); const { tmpdir } = await import('node:os');
- const { GitService } = await import('../electron/git');
- const root = await realpath(await mkdtemp(join(tmpdir(), 'php-ide-merge-labels-')));
- const git = (...args: string[]) => { try { return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: 'pipe' }); } catch (error: any) { return String(error.stdout); } };
- try {
-  git('init', '-b', 'main'); git('config', 'user.name', 'T'); git('config', 'user.email', 't@example.invalid'); git('config', 'commit.gpgsign', 'false'); git('config', 'core.hooksPath', '/dev/null');
-  await writeFile(join(root, 'f.txt'), 'base\n'); git('add', '.'); git('commit', '-m', 'base');
-  git('checkout', '-b', 'feature/x'); await writeFile(join(root, 'f.txt'), 'feature\n'); git('commit', '-am', 'f');
-  git('checkout', 'main'); await writeFile(join(root, 'f.txt'), 'main\n'); git('commit', '-am', 'm');
-  git('merge', 'feature/x');
-  const conflict = await new GitService(root).conflict('f.txt');
-  assert.deepEqual([conflict.operation, conflict.oursLabel, conflict.theirsLabel, conflict.base, conflict.ours, conflict.theirs], ['merge', 'main', 'feature/x', 'base\n', 'main\n', 'feature\n']);
-  git('merge', '--abort'); git('cherry-pick', 'feature/x');
-  const picked = await new GitService(root).conflict('f.txt');
-  assert.equal(picked.operation, 'cherry-pick'); assert.equal(picked.oursLabel, 'main'); assert.match(picked.theirsLabel, /^[0-9a-f]{8}$/);
- } finally { await rm(root, { recursive: true, force: true }); }
-});

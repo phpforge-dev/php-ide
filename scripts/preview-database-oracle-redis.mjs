@@ -1,5 +1,5 @@
 // Recorte 26: fixture visual do driver Oracle e da edição Redis (API simulada); comportamento real em check-databases-oracle-redis.mjs.
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1423','--strictPort'],{stdio:'pipe'});

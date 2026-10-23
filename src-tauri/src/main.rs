@@ -275,8 +275,10 @@ async fn ide(
                 &state.cache,
                 &app,
                 arg(&args, 0),
-                s(1)?,
-                arg(&args, 2).as_u64().ok_or("Posição inválida")? as usize,
+                language::Probe {
+                    expression: s(1)?,
+                    offset: arg(&args, 2).as_u64().ok_or("Posição inválida")? as usize,
+                },
             )
             .await;
     }
@@ -366,7 +368,7 @@ async fn ide(
     }
     match method.as_str() {
         "workspace" => Ok(
-            json!({"root":root,"rootUri":url::Url::from_directory_path(&root).map_err(|_|"URI inválida")?.to_string(),"name":root.file_name().unwrap_or_default().to_string_lossy()}),
+            json!({"root":root,"rootUri":url::Url::from_directory_path(root).map_err(|_|"URI inválida")?.to_string(),"name":root.file_name().unwrap_or_default().to_string_lossy()}),
         ),
         "fileExists" => {
             workspace::confined(root, s(0)?)?;

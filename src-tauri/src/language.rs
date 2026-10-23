@@ -16,6 +16,7 @@ use std::{
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Notify;
 type Shared<T> = Arc<std::sync::Mutex<T>>;
+#[derive(Default)]
 pub struct Language {
     rpc: Option<Arc<Rpc>>,
     documents: HashMap<String, (i64, String)>,
@@ -26,17 +27,9 @@ pub struct Language {
     diagnostics: Shared<HashMap<String, (i64, Value)>>,
     messages: Shared<Vec<String>>,
 }
-impl Default for Language {
-    fn default() -> Self {
-        Self {
-            rpc: None,
-            documents: HashMap::new(),
-            container: None,
-            edits: Arc::default(),
-            diagnostics: Arc::default(),
-            messages: Arc::default(),
-        }
-    }
+pub struct Probe<'a> {
+    pub expression: &'a str,
+    pub offset: usize,
 }
 /// Comandos do servidor que só produzem edições (prévia antes de aplicar). Comandos que criam
 /// arquivos ficam de fora até a transação suportar criação.
@@ -488,9 +481,9 @@ impl Language {
         cache: &Path,
         app: &AppHandle,
         input: &Value,
-        expression: &str,
-        at: usize,
+        probe: Probe<'_>,
     ) -> Res<Value> {
+        let Probe { expression, offset: at } = probe;
         if expression.len() > 10000 || at > expression.len() {
             return Err("Expressão inválida".into());
         }
