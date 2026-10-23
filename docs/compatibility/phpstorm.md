@@ -2,6 +2,8 @@
 
 # Matriz de compatibilidade funcional — PhpStorm
 
+Distribuição própria (23/10/2026): [evidências Windows/Linux e macOS](../research/desktop-distribution.md). Esses testes não medem equivalência funcional com a referência nem alteram os estados das famílias abaixo.
+
 Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); build exato da IDE e keymap ainda não registrados. IDE independente: prévia 0.1.0; ver [recorte](../research/implementation-slice-01.md).
 
 **Catálogo inicial de 46 famílias, ampliado pelos recortes abaixo; 0 famílias validadas por comparação.** Não há percentual de equivalência medido. Há ensaios exploratórios de abertura/busca, sem aprovação de compatibilidade. Ausência de execução é diferente de falha funcional.

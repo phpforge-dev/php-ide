@@ -40,6 +40,6 @@ Abra `http://127.0.0.1:4178`. Sem repositório, a página mostra o estado anteri
 
 Verificação da página: `node scripts/check-pages.mjs` (requer Chromium do Playwright; alternativamente `PLAYWRIGHT_CHANNEL=chrome` usa Chrome instalado). Exercita respostas sintéticas de releases, arquiteturas, prévias, ausência de instaladores, erro/repetição da consulta e layout móvel. Não publica pacotes nem comprova execução da IDE em outros sistemas.
 
-Página própria, sem inferência de compatibilidade com PhpStorm. O editor da apresentação é uma ilustração em HTML, identificada como tal. O workflow publica a página; **não compila instaladores**. A release 0.2.7 disponibiliza o DMG macOS Apple Silicon e seu SHA-256; Linux, Windows e macOS Intel dependem de builds e validações próprios antes da distribuição.
+Página própria, sem inferência de compatibilidade com PhpStorm. O editor da apresentação é uma ilustração em HTML, identificada como tal. O workflow publica a página; **não compila instaladores**. A release 0.2.8 disponibiliza DMG macOS Apple Silicon, EXE Windows x64 e DEB/AppImage Linux x64, com SHA-256. Veja [builds Windows/Linux](windows-linux-builds.md) e [evidências e limites](../research/desktop-distribution.md). Outras arquiteturas dependem de builds e validações próprios.
 
 Referência: [workflow oficial do GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).

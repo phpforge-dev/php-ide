@@ -8,7 +8,7 @@ Projeto de **Jeidison Farias**, na organização [PHP Forge](https://github.com/
 - [Releases e instaladores](https://github.com/phpforge-dev/php-ide/releases).
 - [Plugins](https://github.com/phpforge-dev/plugins).
 
-O instalador disponível inicialmente é para macOS Apple Silicon. Windows, Linux e macOS Intel dependem de builds e validações próprios; a página mostra apenas os pacotes publicados.
+Instaladores experimentais da versão 0.2.8: Windows x64 (`.exe`), Linux x64 (`.deb` e `.AppImage`) e macOS Apple Silicon (`.dmg`). A página mostra os pacotes publicados. Consulte [verificações e limites por sistema](docs/research/desktop-distribution.md); não há pacote macOS Intel ou Windows/Linux ARM64 nesta entrega.
 
 ## Documentação
 
@@ -19,7 +19,7 @@ O instalador disponível inicialmente é para macOS Apple Silicon. Windows, Linu
 
 ## Executar
 
-Requisitos de desenvolvimento: Rust estável/Cargo, ferramentas nativas do sistema, Node/npm para compilar a interface e Git no PATH. PHP 8.2+ local ou Docker para Phpactor. Validado em macOS Apple Silicon; Windows/Linux ainda precisam de validação.
+Requisitos de desenvolvimento: Rust estável/Cargo, ferramentas nativas do sistema, Node/npm para compilar a interface e Git no PATH. PHP 8.2+ local ou Docker para Phpactor. Builds e inicialização verificados em macOS Apple Silicon, Windows x64 e Ubuntu 22.04 x64; os testes de interface têm cobertura distinta em cada sistema, conforme o registro de distribuição.
 
 ```sh
 npm ci
