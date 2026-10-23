@@ -10,6 +10,7 @@ IDE experimental em Rust + Tauri 2. Estes guias descrevem o projeto atual; os re
 | Entender as pastas e os componentes ativos | [Estrutura e arquitetura](development/project-structure.md) |
 | Contribuir, testar e preparar uma entrega | [Desenvolvimento](development/contributing.md) |
 | Gerar e verificar o instalador macOS | [Build e instalador](development/contributing.md#build-e-instalador-macos) |
+| Gerar instaladores Windows e Linux | [Builds no GitHub Actions](development/windows-linux-builds.md) |
 | Publicar a página e disponibilizar downloads | [GitHub Pages e releases](development/github-pages.md) |
 | Instalar e gerenciar plugins | [Plugins](plugins/README.md) |
 | Criar o primeiro plugin | [Tutorial](plugins/getting-started.md) |
