@@ -1,0 +1,6 @@
+{
+  "name": "acme/collections",
+  "description": "Synthetic local package installed in vendor for slice 20",
+  "type": "library",
+  "autoload": { "psr-4": { "Acme\\Collections\\": "src/" } }
+}

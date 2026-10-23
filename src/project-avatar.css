@@ -1,0 +1,11 @@
+/* Project avatar gradients: RecentProject.ColorN.Avatar.Start/End tokens (themes.css). */
+.project-avatar[data-color]{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:4px;font:600 10.5px/1 var(--ij-font-ui);letter-spacing:.2px;color:var(--ij-button-default-text)}
+.project-avatar[data-color="1"]{background:linear-gradient(135deg,var(--ij-avatar-1-start),var(--ij-avatar-1-end))}
+.project-avatar[data-color="2"]{background:linear-gradient(135deg,var(--ij-avatar-2-start),var(--ij-avatar-2-end))}
+.project-avatar[data-color="3"]{background:linear-gradient(135deg,var(--ij-avatar-3-start),var(--ij-avatar-3-end))}
+.project-avatar[data-color="4"]{background:linear-gradient(135deg,var(--ij-avatar-4-start),var(--ij-avatar-4-end))}
+.project-avatar[data-color="5"]{background:linear-gradient(135deg,var(--ij-avatar-5-start),var(--ij-avatar-5-end))}
+.project-avatar[data-color="6"]{background:linear-gradient(135deg,var(--ij-avatar-6-start),var(--ij-avatar-6-end))}
+.project-avatar[data-color="7"]{background:linear-gradient(135deg,var(--ij-avatar-7-start),var(--ij-avatar-7-end))}
+.project-avatar[data-color="8"]{background:linear-gradient(135deg,var(--ij-avatar-8-start),var(--ij-avatar-8-end))}
+.project-avatar[data-color="9"]{background:linear-gradient(135deg,var(--ij-avatar-9-start),var(--ij-avatar-9-end))}

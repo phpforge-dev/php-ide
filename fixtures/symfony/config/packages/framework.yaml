@@ -1,0 +1,4 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+parameters:
+    app.locale: pt_BR

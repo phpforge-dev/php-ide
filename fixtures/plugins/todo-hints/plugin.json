@@ -1,0 +1,10 @@
+{
+  "id": "example.todo-hints",
+  "name": "TODO Hints",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.0",
+  "main": "main.js",
+  "description": "Exemplo da API de plugins: avisos para TODO/FIXME, completion de responsáveis e CodeLens com a contagem.",
+  "activation": { "languages": ["php", "blade", "markdown"] },
+  "permissions": ["project.read"]
+}

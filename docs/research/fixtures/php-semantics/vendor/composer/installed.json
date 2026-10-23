@@ -1,0 +1,1 @@
+{"packages":[{"name":"acme/collections","version":"1.0.0","type":"library","install-path":"../acme/collections","autoload":{"psr-4":{"Acme\\Collections\\":"src/"}}}],"dev":true,"dev-package-names":[]}

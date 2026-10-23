@@ -1,0 +1,52 @@
+{
+  "name": "php-ide",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/tauri.mjs dev",
+    "build": "node scripts/tauri.mjs build --bundles app",
+    "start": "node scripts/start-native.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/cargo.mjs test",
+    "setup:php": "node scripts/setup-php.mjs",
+    "setup:acp": "node scripts/setup-acp.mjs",
+    "dev:web": "vite --host 127.0.0.1 --port 1420 --strictPort",
+    "build:web": "tsc --noEmit && vite build",
+    "test:native": "node scripts/cargo.mjs build && node scripts/check-native.mjs",
+    "test:rust": "node scripts/cargo.mjs test",
+    "test:ui": "node scripts/check-native.mjs",
+    "tauri": "node scripts/tauri.mjs",
+    "test:packaged": "node scripts/check-native.mjs --packaged",
+    "test:locales": "node scripts/check-locales.mjs",
+    "test:php-semantics": "node --import tsx --test tests/php-hierarchy.test.ts && tsx scripts/check-php-semantics.ts",
+    "test:web-languages": "node scripts/check-web-languages.mjs",
+    "test:web-native": "node scripts/check-native.mjs --packaged --no-db --web-only"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
+    "@types/react": "19.2.2",
+    "@volar/monaco": "2.4.28",
+    "@vue/language-service": "3.3.13",
+    "@vue/typescript-plugin": "3.3.13",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "diff": "^9.0.0",
+    "mermaid": "11.17.2",
+    "monaco-editor": "^0.57.0",
+    "vue": "3.5.44"
+  },
+  "devDependencies": {
+    "@agentclientprotocol/sdk": "0.14.1",
+    "@playwright/test": "^1.64.1",
+    "@tauri-apps/cli": "^2.12.4",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "5.9.3",
+    "vite": "^8.3.5"
+  },
+  "overrides": {
+    "dompurify": "3.4.17"
+  },
+  "license": "MIT"
+}

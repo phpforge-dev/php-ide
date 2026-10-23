@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-electron/
+.tools/
+.artifacts/
+.DS_Store
+graphify-out/
+src-tauri/target/

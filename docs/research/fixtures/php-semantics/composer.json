@@ -1,0 +1,7 @@
+{
+  "name": "research/php-semantics-fixture",
+  "description": "Synthetic fixture for type inference, PHPDoc, generics, traits, inheritance, vendor and native stubs (slice 20)",
+  "type": "project",
+  "require": { "php": ">=8.2", "acme/collections": "1.0.0" },
+  "autoload": { "psr-4": { "Sem\\": "src/" } }
+}

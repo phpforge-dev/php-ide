@@ -1,0 +1,30 @@
+[package]
+name = "php-ide"
+version = "0.2.0"
+edition = "2021"
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+sha2 = "0.10"
+uuid = { version = "1", features = ["v4"] }
+url = "2"
+regex = "1"
+portable-pty = "0.9"
+rfd = "0.15"
+walkdir = "2"
+notify = "8"
+futures-util = "0.3"
+chrono = "0.4"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "mysql", "sqlite", "json", "chrono", "uuid"] }
+tiberius = { version = "0.12", default-features = false, features = ["tds73", "rustls", "chrono"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+flate2 = "1"
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "tokio-rustls-comp", "tls-rustls-insecure"] }
+oracle-rs = "0.1.7"
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+[dev-dependencies]
+tempfile = "3"

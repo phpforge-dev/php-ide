@@ -1,0 +1,152 @@
+/* Islands shell (recorte 28): geometry measured on the authorized screenshots 03/05/40/43 (1512×949 pt window);
+   colors only through the tokens in themes.css. Loaded after workbench.css/tool-windows.css by workbench.ts. */
+
+/* ---------- Base typography and controls ---------- */
+body{font:var(--ij-font-size)/1.45 var(--ij-font-ui)}
+button,input,select,textarea{font-family:inherit}
+button{background:var(--ij-button);border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);color:var(--ij-text)}
+button:hover:not(:disabled){background:var(--ij-hover)}
+button:active:not(:disabled){background:var(--ij-pressed)}
+input,select,textarea{background:var(--ij-field);border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);color:var(--ij-text)}
+select{background:var(--ij-combo)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--ij-focus);outline-offset:-1px;border-color:var(--ij-focus)}
+.primary,button.primary{background:var(--ij-button-default)!important;border-color:var(--ij-button-default)!important;color:var(--ij-button-default-text)!important}
+.primary:hover:not(:disabled){filter:brightness(1.08)}
+kbd{font-family:var(--ij-font-ui)}
+pre,code{font-family:var(--ij-font-mono)}
+
+/* expui icons rendered as masks so they follow the text color of each state. */
+.ij-icon{display:inline-block;flex:none;width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+[data-ij-icon=chevronDown]{--icon:url("./assets/jetbrains-icons/general/chevronDown_dark.svg")}
+[data-ij-icon=chevronRight]{--icon:url("./assets/jetbrains-icons/general/chevronRight_dark.svg")}
+[data-ij-icon=vcs]{--icon:url("./assets/jetbrains-icons/toolwindows/vcs_dark.svg")}
+[data-ij-icon=locked]{--icon:url("./assets/jetbrains-icons/general/locked_dark.svg")}
+[data-ij-icon=unlocked]{--icon:url("./assets/jetbrains-icons/general/unlocked_dark.svg")}
+.tool-rail [data-ij-icon=project]{--icon:url("./assets/jetbrains-icons/toolwindows/project@20x20_dark.svg")}
+.tool-rail [data-ij-icon=commit]{--icon:url("./assets/jetbrains-icons/toolwindows/commit@20x20_dark.svg")}
+.tool-rail [data-ij-icon=vcs]{--icon:url("./assets/jetbrains-icons/toolwindows/vcs@20x20_dark.svg")}
+.tool-rail [data-ij-icon=terminal]{--icon:url("./assets/jetbrains-icons/toolwindow/terminal@20x20_dark.svg")}
+.tool-rail [data-ij-icon=services]{--icon:url("./assets/jetbrains-icons/toolwindows/services@20x20_dark.svg")}
+.tool-rail [data-ij-icon=run]{--icon:url("./assets/jetbrains-icons/toolwindows/run@20x20_dark.svg")}
+.tool-rail [data-ij-icon=debug]{--icon:url("./assets/jetbrains-icons/toolwindows/debug@20x20_dark.svg")}
+/* Run/Debug keep their own two-tone colors (RunWidget.runIconColor). */
+.ij-icon[data-ij-icon=run],.ij-icon[data-ij-icon=debug]{background:center/16px no-repeat;-webkit-mask:none;mask:none}
+.ij-icon[data-ij-icon=run]{background-image:url("./assets/jetbrains-icons/run/run_dark.svg")}
+.ij-icon[data-ij-icon=debug]{background-image:url("./assets/jetbrains-icons/run/debug_dark.svg")}
+:root[data-theme=light] .ij-icon[data-ij-icon=run]{background-image:url("./assets/jetbrains-icons/run/run.svg")}
+:root[data-theme=light] .ij-icon[data-ij-icon=debug]{background-image:url("./assets/jetbrains-icons/run/debug.svg")}
+
+/* ---------- Main toolbar (40px, project tint gradient) ---------- */
+header.main-toolbar{height:var(--ij-toolbar-height);padding:0 6px 0 8px;gap:2px;border:0;color:var(--ij-text);
+ background:radial-gradient(600px 300px at 0 0,var(--ij-project-tint,transparent),transparent),var(--ij-window)}
+.main-toolbar button{height:30px;min-width:30px;padding:0 7px;gap:6px;border:0;border-radius:var(--ij-control-radius-compact);background:transparent;color:var(--ij-text);font-size:var(--ij-font-size)}
+.main-toolbar button:hover:not(:disabled){background:var(--ij-hover)}
+.main-toolbar button:active:not(:disabled){background:var(--ij-pressed)}
+.main-toolbar button svg{width:16px;height:16px}
+.main-toolbar #open{font-weight:500;padding:0 6px 0 4px}
+.main-toolbar #open .ij-icon,#workspace-branch .ij-icon[data-ij-icon=chevronDown]{color:var(--ij-text-secondary)}
+.main-toolbar .project-avatar[data-color]{padding:0}
+#workspace-branch{color:var(--ij-text);max-width:240px;margin-left:10px}
+#workspace-branch .branch-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run-widget{display:flex;align-items:center;gap:2px;margin:0 8px 0 4px}
+.run-config{padding:0 8px;color:var(--ij-text);white-space:nowrap}
+.main-toolbar #run-current:disabled{opacity:.4}
+#search-everywhere-open,#appearance,#close-project{font-size:0!important;width:30px;padding:0!important}
+#search-everywhere-open::before,#appearance::before,#close-project::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+#search-everywhere-open{--icon:url("./assets/jetbrains-icons/general/search_dark.svg")}
+#appearance{--icon:url("./assets/jetbrains-icons/general/settings_dark.svg")}#appearance>svg{display:none}
+#close-project{--icon:url("./assets/jetbrains-icons/general/exit_dark.svg")}
+#theme-toggle{width:30px;height:30px;color:var(--ij-text)}
+
+/* ---------- Stripes and islands ---------- */
+main,main.git-open{height:calc(100vh - var(--ij-toolbar-height) - var(--ij-statusbar-height));background:var(--ij-window);padding-top:3px;
+ grid-template-columns:var(--ij-stripe-width) var(--left-size) minmax(300px,1fr) var(--right-size) var(--ij-stripe-width)}
+.tool-rail{width:var(--ij-stripe-width);padding:0 5px 4px;gap:4px;background:var(--ij-stripe);border:0!important}
+.tool-rail button{width:var(--ij-stripe-button);height:var(--ij-stripe-button);padding:0;border:0;border-radius:var(--ij-control-radius-compact);background:transparent;color:var(--ij-text)}
+.tool-rail button svg{width:20px;height:20px}
+.tool-rail button:hover:not(:disabled){background:var(--ij-hover);color:var(--ij-text)}
+.tool-rail button[aria-pressed=true]{background:var(--ij-stripe-selected);color:var(--ij-text)}
+.tool-rail button[data-ij-icon]>svg{display:none}
+.tool-rail button[data-ij-icon]::before{content:'';width:20px;height:20px;background:currentColor;-webkit-mask:var(--icon) center/20px no-repeat;mask:var(--icon) center/20px no-repeat}
+/* Reference order: Project, Commit on top; Services, Debug, Run, Terminal, Git at the bottom. */
+.left-rail::after{content:'';order:5;flex:1}
+#show-project{order:1}#show-commit{order:2}
+#show-docker{order:10}#show-debug{order:11}#show-tests{order:12}#show-composer{order:13}#show-terminal{order:14}#show-git{order:15;margin-top:0!important}
+aside.project-pane,aside.tools{background:var(--ij-island);border:0!important;border-radius:var(--ij-island-radius);overflow:auto}
+.project-pane{margin-right:var(--ij-gap)}
+.tools{margin-left:var(--ij-gap)}
+.panel-resizer{width:var(--ij-gap)}.panel-resizer.left{left:calc(var(--ij-stripe-width) + var(--left-size) - var(--ij-gap))}.panel-resizer.right{right:calc(var(--ij-stripe-width) + var(--right-size) - var(--ij-gap))}
+.panel-resizer:hover,.panel-resizer:focus{background:transparent;box-shadow:inset 0 0 0 1px var(--ij-focus)}
+.code{background:var(--ij-window);overflow:visible}
+.code>*{background:var(--ij-island)}
+.code>.workbench-empty{background:transparent}
+.code>.editor-strip{border-radius:var(--ij-island-radius) var(--ij-island-radius) 0 0}
+.code>.editor-split,.code>#git-review{border-radius:0 0 var(--ij-island-radius) var(--ij-island-radius);overflow:hidden}
+.code:not(:has(#tabs:not([hidden])))>.editor-split{border-radius:var(--ij-island-radius)}
+.code>section:not(#git-review){margin-top:var(--ij-gap);border:0!important;border-radius:var(--ij-island-radius);overflow:hidden}
+.tool-window-resize{background:transparent}
+.workbench-empty{inset:40px 0 0}
+
+/* ---------- Tool window headers (title + pill tabs + actions) ---------- */
+.project-pane>h3,.tools .tool-heading,.tools h3{height:var(--ij-header-height);display:flex;align-items:center;margin:0;padding:0 12px;font-size:var(--ij-font-size);font-weight:600;color:var(--ij-text);border:0}
+.tools .tool-heading{padding:0 40px 0 0}
+.hide-tool{top:8px;right:8px;width:24px;height:24px;border-radius:var(--ij-control-radius-compact);color:var(--ij-text-secondary)}
+.hide-tool>svg{display:none}
+.hide-tool::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat}
+.tool-window-head,.terminal-toolbar,.test-toolbar,.services-head,.git-log-toolbar,.docker-detail-head{min-height:var(--ij-header-height);height:auto;background:transparent;border-bottom:0;font-size:var(--ij-font-size);gap:6px;padding:0 8px 0 12px}
+.tool-window-head>strong:first-child,.terminal-toolbar>strong:first-child,.test-toolbar>strong:first-child,.services-head>strong:first-child{font-weight:600;margin-right:6px}
+/* Pill tab (EditorTabs.underlinedTab*): shared by editor tabs and tool window header tabs. */
+.tool-window-tab,.terminal-toolbar button[aria-pressed=true],.test-toolbar button[aria-pressed=true],.docker-tabs button[aria-selected=true],#git-panel>.switch button[aria-pressed=true],.ds-tabs button[aria-selected=true]{background:var(--ij-tab-selected)!important;border:1px solid var(--ij-tab-selected-border)!important;border-radius:var(--ij-tab-radius)!important}
+.tool-window-tab{align-self:center;padding:4px 8px}
+#git-changes-tab{border-bottom:0!important}
+
+/* ---------- Project tree (24px rows, 18px indent, expui chevrons) ---------- */
+#tree{padding:0 8px 12px}
+#tree button,#tree summary{height:var(--ij-row-height);font-size:var(--ij-font-size);color:var(--ij-text);border-radius:var(--ij-control-radius-compact);border:0;gap:6px;background:transparent}
+#tree summary{padding:0 4px}
+#tree button{padding:0 4px 0 26px}
+#tree button:hover,#tree summary:hover{background:var(--ij-list-hover)}
+#tree button.selected,#tree summary.selected{background:var(--ij-selection-inactive)}
+#tree:focus-within button.selected,#tree:focus-within summary.selected{background:var(--ij-selection)}
+#tree summary::before{width:16px;height:16px;flex:0 0 16px;margin:0;border:0;transform:none;background:var(--ij-text-secondary);-webkit-mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/contain no-repeat}
+#tree details[open]>summary::before{transform:none;margin:0;-webkit-mask-image:url("./assets/jetbrains-icons/general/chevronDown_dark.svg");mask-image:url("./assets/jetbrains-icons/general/chevronDown_dark.svg")}
+#tree details>div{padding-left:var(--ij-tree-indent)}
+
+/* ---------- Editor tabs (pills in a 40px row) ---------- */
+.code>.editor-strip{height:var(--ij-header-height);align-items:center;padding:0 6px;border-bottom:1px solid var(--ij-border-subtle)}
+.editor-strip #tabs{height:100%;display:flex;align-items:center;gap:2px;padding:0 2px;background:transparent}
+.editor-strip .file-tab{height:var(--ij-tab-height);display:flex;align-items:center;flex:none;padding:0 4px 0 6px;border:1px solid transparent;border-radius:var(--ij-tab-radius)}
+.editor-strip .file-tab:hover{background:var(--ij-hover)}
+.editor-strip .file-tab:has(>button.active){background:var(--ij-tab-selected);border-color:var(--ij-tab-selected-border)}
+.editor-strip .file-tab>button:first-child,.editor-strip .file-tab>button.active{height:26px;padding:0 4px;border:0!important;background:transparent!important;color:var(--ij-text-inactive-tab);font-size:var(--ij-font-size);gap:6px}
+.editor-strip .file-tab>button.active{color:var(--ij-text)}
+.editor-strip .file-tab .close-tab{width:16px;height:16px;padding:0;border:0;background:transparent!important;font-size:0;color:var(--ij-text-secondary);visibility:hidden;display:grid;place-items:center}
+.editor-strip .file-tab .close-tab::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:url("./assets/jetbrains-icons/general/closeSmall_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/closeSmall_dark.svg") center/contain no-repeat}
+.editor-strip .file-tab:hover .close-tab,.editor-strip .file-tab:has(>button.active) .close-tab{visibility:visible}
+.editor-strip .file-tab .close-tab:hover{color:var(--ij-text)}
+#navigation button{color:var(--ij-text-secondary);border-radius:var(--ij-control-radius-compact)}
+#navigation button:hover:not(:disabled){background:var(--ij-hover);color:var(--ij-text)}
+
+/* ---------- Status bar (breadcrumbs left, widgets right) ---------- */
+footer{height:var(--ij-statusbar-height);padding:0 8px 2px 10px;gap:2px;align-items:center;background:var(--ij-window);border:0;color:var(--ij-text-secondary);font-size:var(--ij-font-size)}
+footer #breadcrumbs{font-size:var(--ij-font-size);color:var(--ij-text-secondary);padding:3px 6px;border-radius:var(--ij-control-radius-compact)}
+footer #status{flex:1;text-align:left;font-size:var(--ij-font-size-small);color:var(--ij-text-info);padding:0 12px}
+footer #cursor-position,footer #plugins,footer .status-widget{font-size:var(--ij-font-size);padding:3px 6px;border-radius:var(--ij-control-radius-compact);white-space:nowrap}
+footer #cursor-position:hover,footer #plugins:hover,footer .status-widget:hover,footer #breadcrumbs:hover{background:var(--ij-hover);color:var(--ij-text)}
+.status-widgets{display:flex;align-items:center;gap:2px}
+.status-widgets[hidden]{display:none}
+.status-lock{display:grid;place-items:center}
+
+/* ---------- Popups, menus, dialogs ---------- */
+dialog{background:var(--ij-dialog);color:var(--ij-text);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow)}
+dialog::backdrop{background:var(--ij-backdrop)}
+.context-menu,.tool-context-menu,.usages-popup,.git-line-popup,.recent-projects,#git-branches-popup,#search-everywhere,#appearance-dialog,.connection-dialog{background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow)}
+.context-menu,.tool-context-menu{padding:5px}
+.context-menu button,.tool-context-menu button{height:24px;border-radius:var(--ij-control-radius);font-size:var(--ij-font-size)}
+.context-menu button:hover:not(:disabled),.context-menu button:focus,.tool-context-menu button:focus,.usage-result:hover,.usage-result:focus,.recent-row:hover,.recent-row:focus-within{background:var(--ij-selection)}
+.context-separator{background:var(--ij-border)}
+.usages-popup footer,.git-line-popup footer,.recent-projects footer,#search-everywhere footer{background:var(--ij-popup-footer);color:var(--ij-popup-footer-text);height:auto}
+#search-everywhere nav button[aria-pressed=true]{background:var(--ij-search-tab-selected);border-radius:var(--ij-control-radius);border-bottom:0}
+.everywhere-row[aria-selected=true]{background:var(--ij-selection);border-radius:var(--ij-control-radius)}
+#everywhere-query{background:transparent;border:0;outline:0;font-size:var(--ij-font-size)}
+.monaco-editor .suggest-widget,.monaco-editor .monaco-hover,.monaco-editor .parameter-hints-widget{border-radius:var(--ij-popup-radius)!important;box-shadow:var(--ij-shadow)!important}

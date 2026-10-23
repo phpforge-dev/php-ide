@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Unit\CalculatorTest" file="tests/Unit/CalculatorTest.php" tests="9" assertions="8" errors="0" failures="1" skipped="1" time="0.009914">
+    <testcase name="adds numbers" file="tests/Unit/CalculatorTest.php::adds numbers" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.004471"/>
+    <testcase name="it divides numbers" file="tests/Unit/CalculatorTest.php::it divides numbers" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000207"/>
+    <testcase name="it fails on purpose" file="tests/Unit/CalculatorTest.php::it fails on purpose" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.003621">
+      <failure type="PHPUnit\Framework\ExpectationFailedException">it fails on purposeFailed asserting that 4 is identical to 5.
+at tests/Unit/CalculatorTest.php:14</failure>
+    </testcase>
+    <testsuite name="`datasets` → it su" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.000393">
+      <testcase name="`datasets` → it sums with data set &quot;(0, 0, 0)&quot;" file="tests/Unit/CalculatorTest.php::`datasets` → it sums with data set &quot;(0, 0, 0)&quot;" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000221"/>
+      <testcase name="`datasets` → it sums with data set &quot;(1, 2, 3)&quot;" file="tests/Unit/CalculatorTest.php::`datasets` → it sums with data set &quot;(1, 2, 3)&quot;" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000172"/>
+    </testsuite>
+    <testsuite name="`datasets` → accepts emai" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.000454">
+      <testcase name="`datasets` → accepts emails with data set &quot;('ana@example.test')&quot;" file="tests/Unit/CalculatorTest.php::`datasets` → accepts emails with data set &quot;('ana@example.test')&quot;" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000291"/>
+      <testcase name="`datasets` → accepts emails with data set &quot;('bruno@example.test')&quot;" file="tests/Unit/CalculatorTest.php::`datasets` → accepts emails with data set &quot;('bruno@example.test')&quot;" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000163"/>
+    </testsuite>
+    <testcase name="it is skipped" file="tests/Unit/CalculatorTest.php::it is skipped" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="0" time="0.000615">
+      <skipped/>
+    </testcase>
+    <testcase name="name with 'quotes' and (parens)" file="tests/Unit/CalculatorTest.php::name with 'quotes' and (parens)" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.000152"/>
+  </testsuite>
+</testsuites>

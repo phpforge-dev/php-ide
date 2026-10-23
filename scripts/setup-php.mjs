@@ -1,0 +1,15 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+const version = '2026.10.07.0';
+const sha = 'b28bf6166e016d539fc2f2aec18ef918b12590e436a6f1ccbdf30b5bbdbdb16b';
+const response = await fetch(`https://github.com/phpactor/phpactor/releases/download/${version}/phpactor.phar`);
+if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+const bytes = Buffer.from(await response.arrayBuffer());
+if (createHash('sha256').update(bytes).digest('hex') !== sha) throw new Error('Checksum mismatch');
+await mkdir('.tools', { recursive: true });
+await writeFile('.tools/phpactor.phar', bytes);
+console.log(`Phpactor ${version}: SHA-256 verified.`);
+const patch = spawnSync(process.execPath, ['scripts/patch-phpactor.mjs'], { stdio: 'inherit' });
+if (patch.error) throw patch.error;
+if (patch.status !== 0) process.exit(patch.status ?? 1);

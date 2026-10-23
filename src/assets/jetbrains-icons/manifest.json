@@ -1,0 +1,894 @@
+{
+  "repository": "https://github.com/JetBrains/intellij-community",
+  "commit": "d8c6714c7a3c110c56994d6b0f10814f902100e7",
+  "icons": [
+    {
+      "file": "nodes/folder.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/folder.svg",
+      "sha256": "e78b061f701e39613936bc68751ed51e6cb2b1451dba322cd98ffdfd1a105065",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/folder_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/folder_dark.svg",
+      "sha256": "4f08a99236e4b08632cafb159f31df27f238106d584ecf725be42b9702a0a02e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/sourceRoot.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/sourceRoot.svg",
+      "sha256": "b5a21176c95a0010dfcb52c9a15e1c6055a4e1a9e7fad71609e81824c4e15685",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/sourceRoot_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/sourceRoot_dark.svg",
+      "sha256": "cc92b0c0ec4cd0c635acc6776df96c0c8a97474cbb8de3b3d8b562eeab2e637b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/testRoot.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/testRoot.svg",
+      "sha256": "ad090889a130caa62921a829b7fae982e5aeda67c7908409f34bfc2c1c108fee",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/testRoot_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/testRoot_dark.svg",
+      "sha256": "cd3803af06191f862b059f844c0a80808a4dd344aa20f6c78e930df06f9e0776",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/libraryFolder.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/libraryFolder.svg",
+      "sha256": "ab4babfb2460cae063eff4a18ae4924bab6c48055898878a3da827373f9a39de",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/libraryFolder_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/libraryFolder_dark.svg",
+      "sha256": "a12444e263fd38ffd828723f7b777364a03fc12acbea57136f8c7ed59d44a9bc",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/excludeRoot.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/excludeRoot.svg",
+      "sha256": "4bb4542d5fee54d87f8b792f871667b8698f04369d2f21e9c57e594eb55e9b58",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/excludeRoot_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/excludeRoot_dark.svg",
+      "sha256": "bc4266e56a3b209d517a4fcff989a5723280895aaf9974794b279b8b101b83fd",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/resourcesRoot.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/resourcesRoot.svg",
+      "sha256": "da6d9e0362c187fe52c4fcfbd0732a0779c10f21ace1387f81870469f7e7cad3",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/resourcesRoot_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/resourcesRoot_dark.svg",
+      "sha256": "6c21b4a1b620fcd9e8d5552dd0a8a88f005f31a00eb2655094796f71a026f584",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/folderGithub.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/folderGithub.svg",
+      "sha256": "0ebb1390a4ccf23df6e0bf35917ef0dc318ba774cfa787da5cfac1f317bff233",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/folderGithub_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/folderGithub_dark.svg",
+      "sha256": "201b65360873760d78e522f2e5ca1fd8e999c86a96366af91c8a391f411e8fe0",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/class.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/class.svg",
+      "sha256": "7ee202d58f92bfab68c5f45abbc30afa04eee572ebcd163ceb1eab973f2cc5c5",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/class_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/class_dark.svg",
+      "sha256": "b4d51084e4bce6f5c7385c4f80cdd46ca4c5c259bfec48776ef3a76224c235ed",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/interface.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/interface.svg",
+      "sha256": "feb74c0088d0b64b4485602257d1ed716a3835ca34c4472a26239d7d19fdd015",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/interface_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/interface_dark.svg",
+      "sha256": "652ed57fb62783699bd8ba830aae936f11858539807bf77a5a16ff79c089d35d",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/enum.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/enum.svg",
+      "sha256": "60684c4ec9bf5c41c746a0c7688bd6226eb27d64c11c301f06e5e821bc93672b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "nodes/enum_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/nodes/enum_dark.svg",
+      "sha256": "7fbda67cf1996ccf08e6a4c3035c93bc709d28f720b80de2ff8e36f084bf109b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/text.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/text.svg",
+      "sha256": "d71666166da544ad42b13bb5af976eb6f0afb60cbaa636676d238c98383ee296",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/text_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/text_dark.svg",
+      "sha256": "3391cc35837a4420fa9517f2297d8f6b07428db63f57f07dd5c2c29ef00cb489",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/anyType.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/anyType.svg",
+      "sha256": "84f25ca0b95385a01398724de4961dea418ded296cb9b6057c8bc56c8395380e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/anyType_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/anyType_dark.svg",
+      "sha256": "a19eb0ff01f168437059c603b5aa3a100e7ad484a6bd9eb83a8a1d038127d256",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/json.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/json.svg",
+      "sha256": "bbbc7e1e2b583e2b4cca3a0c4dd507ce41c914a66d7bad1e6599f3ea5395e61c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/json_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/json_dark.svg",
+      "sha256": "c4992ee9127e8685d5ec96570f48668d0be7aabfa4f0099ff6dbc5e51796a5f2",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/javaScript.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/javaScript.svg",
+      "sha256": "e601f341c4c0b0c52f2abfbb6bb4132862d63c3d862f4c7eca86efdf90565dcc",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/javaScript_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/javaScript_dark.svg",
+      "sha256": "f5ff367bcfeaab33abdac467ce9f7122543f4da21bda76806e96017a1da55b7b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/typeScript.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/typeScript.svg",
+      "sha256": "6fc794f096ad1b506d42821049d200879bd0a0795b2110f99b726b91f14e8d5a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/typeScript_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/typeScript_dark.svg",
+      "sha256": "18f56081e42916c7a3109062359ff41aeff6372d10bdb8942de6dce5e19f624e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/css.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/css.svg",
+      "sha256": "422c5512c70808e0f61191a4279749301a7296c6082a3f001d397f0e2ec93590",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/css_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/css_dark.svg",
+      "sha256": "9faac1b6520d894b7473da2087300c18447e0268f7726e7d131976c76afe1a06",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/html.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/html.svg",
+      "sha256": "8cc1a59695de46025d34d8cb61a73419f50160c45b96a587e426f84d65c530f4",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/html_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/html_dark.svg",
+      "sha256": "bfa377d13629063e50627053662bfe7d6d61b3e1044c3e2485536ef5e2b9a3cc",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/markdown.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/markdown.svg",
+      "sha256": "bfe84e2ff52f22bf668cc614468f4798ec75786dd4e5674a464d63054beca67d",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/markdown_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/markdown_dark.svg",
+      "sha256": "4a51e2e3aca13cf778539187ea22a60f0f9a83731e70d5b51ff79f34ba51a1e1",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/yaml.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/yaml.svg",
+      "sha256": "f715bd90d921963fa9852ceff03d313e15cf1ef25a9a4ed609a6698a423f60ea",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/yaml_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/yaml_dark.svg",
+      "sha256": "09e0df7109e8decf4a1eaba4887da88f5469a0a095fae9143f12bafe6418473f",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/xml.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/xml.svg",
+      "sha256": "ed18f7315e4dea5eb9298a66732968805c0ff9cda8f3ef0ca339f864e536d9ea",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/xml_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/xml_dark.svg",
+      "sha256": "fb39e44dd70fdda7a94c6074e5d3d58d30faef92bc6f91c1244b0320aee2486b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/sql.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/sql.svg",
+      "sha256": "56a74dc252d318ad5ab8e0859cffb0f2ff1ada2736dbff3abc18116ea900320f",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/sql_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/sql_dark.svg",
+      "sha256": "be2a690df00ada9e6bc43f841769f378c03e523a845617b21a6ff7f4323096c6",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/shell.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/shell.svg",
+      "sha256": "4a8c336a8d0737df6ebee0b1006d03909f0ad5770a98d5ad28e746d3f95ae733",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/shell_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/shell_dark.svg",
+      "sha256": "09c58f2d69bedc5f3c518f9e42998f3bbb3ec5b7fd33b06cd24d1734c74d6cc7",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/config.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/config.svg",
+      "sha256": "e7990632f5a4caa8258b1c97d8efe5e296fb162c209af712e725dfc876839395",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/config_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/config_dark.svg",
+      "sha256": "da243a31cedd55334263086e17c1ee4264a93771e64c0e27b91b6c6daaa1bd46",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/archive.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/archive.svg",
+      "sha256": "702005c0379a659c1f800d53531d81687064b80448615a05370a42190f13d768",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/archive_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/archive_dark.svg",
+      "sha256": "634dd0d18e9d12645c2d95c008bcec8252c9a2abdc3a7ccb8a53cd3a8060977b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/image.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/image.svg",
+      "sha256": "879b275fb4c2e263cac26ea6035cb5c99dd72858e8b5ec295d21c0b5636d9513",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/image_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/image_dark.svg",
+      "sha256": "b7c8a22b2b1022a23f1a2a6b923ca52f59d5f9abaa4dcf1718fa9d50f2f710ef",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/docker.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/docker.svg",
+      "sha256": "76f8d25a1754ee4c59581656477e650edc241c86c6c841385eea03f52755f7bc",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/docker_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/docker_dark.svg",
+      "sha256": "a35a9f245da1960faa682394832cc21bafbb6aca420b30c4c7b96ea70dd2aac7",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/editorConfig.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/editorConfig.svg",
+      "sha256": "2753f18580ef18634cf78650c88e5d957aecee1382041ff118c52e3f6dadbc81",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/editorConfig_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/editorConfig_dark.svg",
+      "sha256": "0b489a2fca2dfd51de0a85b300791c822fd08d077710b604cc65afce7fd8e2d6",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/toml.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/toml.svg",
+      "sha256": "d8dbdbada06151868dbcf791ea7a041c4ad438a499ba44bb672a76fc8abf6048",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/toml_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/toml_dark.svg",
+      "sha256": "4177347806efb6f5e31307e8427e8c9274bedfe8c8476b9ebb77c087b88027cc",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/csv.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/csv.svg",
+      "sha256": "09f4c9e22a01f04a5783dfae8dc2d0bff1b661b4b159bca06572a01d006a1e43",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "fileTypes/csv_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/fileTypes/csv_dark.svg",
+      "sha256": "1cf9070785750032da988524e18fbe5001d86f279ca6a548804e982c1fa14eaf",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/project.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/project.svg",
+      "sha256": "9198a3888742424df3cba1579bd8566041af0e5e79ff81919adbad22310bcc32",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/project_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/project_dark.svg",
+      "sha256": "9b071b3976642d6018bc76adc632f33890997034f141b86ad1d8bdc7874e274a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/project@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/project@20x20.svg",
+      "sha256": "9e48146d248c18851e88dde338c719b68722f3ec5fa212f40d2a6168be13d51c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/project@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/project@20x20_dark.svg",
+      "sha256": "5abc973538fcf037194f1f2af576ba4eb8d621f6418c5df05d21e830f1b933e9",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/commit.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/commit.svg",
+      "sha256": "dce9c4a965ba915a2607eeca1c9c1ac29504ba85729510d8f2b711382dfc3758",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/commit_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/commit_dark.svg",
+      "sha256": "1d6e9c5f1a788ae730ef4e0180ff24dfc7ef80f91b9e1c4a66027275632801f2",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/commit@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/commit@20x20.svg",
+      "sha256": "55f74e1feba0920d2c89bf4e4bfe1aea4ed624d2905a4babc21f04fd09552c98",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/commit@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/commit@20x20_dark.svg",
+      "sha256": "8195aef4d11d594bd0ea43db96c09dde72758283e1cbb506545cd65893f7883a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/structure.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/structure.svg",
+      "sha256": "ad3e94a39ca07eb262e081a85bf184b5b2a52c863a3e3f77bb6a28466dca339e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/structure_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/structure_dark.svg",
+      "sha256": "5a617c2837b33a3d1d92548272a0451243248936c979b8f93a5cd13916200eb8",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/structure@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/structure@20x20.svg",
+      "sha256": "8ee7560973275ac1f6dba609b8f902cf7708936a375dda368715283b354e51b7",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/structure@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/structure@20x20_dark.svg",
+      "sha256": "169e0274503f716020fb8c085099c56db18097a3d64c1fba82a9f05284e01f9a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/services.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/services.svg",
+      "sha256": "ff46ffd1e4773ba74a7a9df10ec621fb701ae8f2b1499e2b6ea1c28efc66a455",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/services_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/services_dark.svg",
+      "sha256": "64ec6d30f860b8237710c9f6b572bacd62806ca45144ad0d09b14360dad060ba",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/services@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/services@20x20.svg",
+      "sha256": "24b6f203288f621c2202dafec5a7d7d6cf3d44c429765c17cde7cec7cecfc1ef",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/services@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/services@20x20_dark.svg",
+      "sha256": "4152ae5f19fffc54db41d44f898d5616ebc85e84fd2742855b7c488ae57f82e1",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/debug.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/debug.svg",
+      "sha256": "b46b2d13a6a6fd662ae9d572dee908749005b33b096c405a52a4f95a839cef4c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/debug_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/debug_dark.svg",
+      "sha256": "c533c82b37f1bc647b7dbfa10379a58524b0e25e82c8d6104dece39d90294aa5",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/debug@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/debug@20x20.svg",
+      "sha256": "3212257270cbbac6135f9ea8d87fd46b0c40c0ea5fd6a0217d1503c0fd1c2aec",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/debug@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/debug@20x20_dark.svg",
+      "sha256": "016281c5686f255fb1802007e5fc7ed3a2c9560da62d5ece82ee9c01554e6901",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/run.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/run.svg",
+      "sha256": "afad32fd27e52d288a38ffe62b542f6d98cbab00400fe1930fe16ad37904558a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/run_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/run_dark.svg",
+      "sha256": "10c4cd14188fba5f6fc41a412353c6669acf4c26965c4c9d116e48baa8856f26",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/run@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/run@20x20.svg",
+      "sha256": "f5a770534e588df50409157591e39dcc10f50c1ee57f81ffc98e3472838b3d92",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/run@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/run@20x20_dark.svg",
+      "sha256": "167093a21b974f36922268c8ae187052d5c39237451259d7305e2ea33a8fdeb4",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/find.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/find.svg",
+      "sha256": "cfed34eee676863f029f62765bcb6fdcf82cef511c05c7fc88650b2feaf8fe4c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/find_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/find_dark.svg",
+      "sha256": "aff2ba37c9d9548223e593221beb6a01252ad350a17f87293162b66625489d91",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/find@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/find@20x20.svg",
+      "sha256": "981c0ec61f93fc56d1d1ca0a97e0d1227665c619b2819de73e53f91fe393cb46",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/find@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/find@20x20_dark.svg",
+      "sha256": "1cbfbb2fff277201426fa65e6b2d0ebf7f1837f97efb82d3d7024504bb11f5c1",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/problems.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/problems.svg",
+      "sha256": "c9c3df04988d45f6e829738667464a46c4df6d935b94dcf910dd8d5ce4269dfe",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/problems_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/problems_dark.svg",
+      "sha256": "6f11d7eabbf0c2f3f68967d7e4faae2c84617c3f5c2e17e1e1befb416f1cc8ca",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/problems@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/problems@20x20.svg",
+      "sha256": "585bb12c01b53e2df66211678f0111cb576fa0b05cd86305ce827f521bef2126",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/problems@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/problems@20x20_dark.svg",
+      "sha256": "e621118b089eee10b5ddc4b4e5fdd12caaace38ffaf89d1cb63a229ffe5ae294",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/vcs.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/vcs.svg",
+      "sha256": "7b04f37b0404b705f155b3e0bb7f34f96996ea308fa6c51bbbe63669cebbb691",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/vcs_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/vcs_dark.svg",
+      "sha256": "5ec774fa24434d4eb28e5a22bb324b48531456204d5052593e77ab6f581ad8f2",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/vcs@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/vcs@20x20.svg",
+      "sha256": "a17d9cf1e7e0817927705ccfc61c78866b4462bbea4210fcbda2ba774acf604f",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/vcs@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/vcs@20x20_dark.svg",
+      "sha256": "eba2794deb2a47586d3ce9899c18b1d29e18e718cdccbb29bfddc52a0119a113",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/notifications.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/notifications.svg",
+      "sha256": "8c46c80c8cf0cf63433ba3a7edf6e69b687890d0defab09892c13d792282118e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/notifications_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/notifications_dark.svg",
+      "sha256": "5a5df290c085f41c81b12e334d0de1275f6c131beecc5f8ea827114584ba946d",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/notifications@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/notifications@20x20.svg",
+      "sha256": "539c139f583893a67e5f6b09282bfceea792b6581073b13bed5d95568bb2710c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/notifications@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/notifications@20x20_dark.svg",
+      "sha256": "993a1bb973bd7a2a216754faf9eb89f4e6fb7a978c4043815e579359db5eb916",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/bookmarks.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/bookmarks.svg",
+      "sha256": "9c8db98c5c151d93280c3c779dd305e3d7f1e92db395bc7f470313eefce55c39",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/bookmarks_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/bookmarks_dark.svg",
+      "sha256": "50ffa19d6dc3bfa2379cf36f67aea9bc928993159a05e724107391f96829c5e3",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/bookmarks@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/bookmarks@20x20.svg",
+      "sha256": "09698ba51fd97f11761786e8fa161e52ce90632d006f8234cd5644cf82a55c9a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindows/bookmarks@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/toolwindows/bookmarks@20x20_dark.svg",
+      "sha256": "501d9505ca40c53cfdfd2ad660d519b0ada083688b901cb4c5919e584ede4d1d",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/chevronDown.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/chevronDown.svg",
+      "sha256": "8cc414b79234c71b263f65b11fc71e429411ce13512862add9ccef60264c1c34",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/chevronDown_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/chevronDown_dark.svg",
+      "sha256": "2002c988353dc8d3e4044ddc34ec062366c4c1b4307a5e135478ac44694ea30b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/chevronRight.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/chevronRight.svg",
+      "sha256": "6dc8f3b872ec8b3ce7037e9f2adc40a393449ab88820a7efa9c683fba78c1d98",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/chevronRight_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/chevronRight_dark.svg",
+      "sha256": "bae1f68b729b1eab1ab2e6ce35033b71cdb52b3677fb90ac8aef286c7be68595",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/moreVertical.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/moreVertical.svg",
+      "sha256": "58f3c28350fab059e373bcd04aaaa3a9f2c786e291ad3eafcfef18ee0c4bf2d4",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/moreVertical_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/moreVertical_dark.svg",
+      "sha256": "e51930d3351036790c22068a813ca5e5c02d54b0a4b2203349ed5f80dc2862e0",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/hide.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/hide.svg",
+      "sha256": "c753f8efb68916bcedc3a2f06e3cfa2c15ed64fc51b53cae4206f27fa1656ab4",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/hide_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/hide_dark.svg",
+      "sha256": "1ae938bdf2aec06c65a5981b5b9fbbb1160a21945032fa6ba61579d15bbff415",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/settings.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/settings.svg",
+      "sha256": "81d7bb2e91986a47e9e40287d4da9c4719905378ecac8b26234b7d2bf95127ed",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/settings_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/settings_dark.svg",
+      "sha256": "d2c6e46b3788e7fed67d0d36d87f879a5394be0ab68d03b4aa40790de20e5222",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/search.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/search.svg",
+      "sha256": "81e8241e7b38407420c573dfa264cd6df5deac0e8d59b935ce4c02b607bbe342",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/search_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/search_dark.svg",
+      "sha256": "aa3c118be2522e16522422aaa2fc2453dfa1016156d5e6a0e1b3484ffac15d14",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/close.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/close.svg",
+      "sha256": "612c8b1ad85fe0174c29556f618ba0bc250f32c9a32df4e9c2f7289ec941c622",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/close_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/close_dark.svg",
+      "sha256": "78eea1c673499f66efaf0a792eacaf1ab58add2cec5f40be53ec018a30ea2dc5",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/closeSmall.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/closeSmall.svg",
+      "sha256": "a4cf038384cb91265c76bbfe2d94bb711864924bf112ad9a62daa9dba72e4515",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/closeSmall_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/closeSmall_dark.svg",
+      "sha256": "9d66fb068dca705b3e6342c23c27614837eeafefe1c38097dd64131ec3aa3c27",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/locked.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/locked.svg",
+      "sha256": "59c3f76a91e5939f1ac3e84b253e6c8f99600880b561c03af7503d3f20eb3706",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/locked_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/locked_dark.svg",
+      "sha256": "12b960b1c5139e32d0b695cd0a90f4b783965b07397f26d8f0980ea0f35f3339",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/unlocked.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/unlocked.svg",
+      "sha256": "f0bbce01bad4a9287aa2a1a40a9b2f48a50b0dd5476ac130cf2eb84081d60713",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/unlocked_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/unlocked_dark.svg",
+      "sha256": "5e4fab2ff9e65028a6a86cca511d073e459fc9ab9b979270617504f19af3d1a0",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/add.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/add.svg",
+      "sha256": "337388830262aeb22502d3954f2bc543c332f025c1fab16a7231acc1fd5254b8",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/add_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/add_dark.svg",
+      "sha256": "1244cf1ce1320b2c95194230305c2e736bee457e96d6e431dda4240f18098756",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/refresh.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/refresh.svg",
+      "sha256": "3efff615c01c60b9e1a30eabf31e4fe0fda1eec76c24fa1496aae4712165c816",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/refresh_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/refresh_dark.svg",
+      "sha256": "3c089055a2edb69e0b19ee5884dfebb3a705ca82293d2b09ded08060f92da6d1",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/filter.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/filter.svg",
+      "sha256": "fee3a811567d5deabf6195792134c3c39a3a14096b3336c7cfb112f952dbaef1",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/filter_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/filter_dark.svg",
+      "sha256": "8f422f8531c0eb71e092f2b15c819cddf58b581650d926ee26d56f295b1e8467",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/collapseAll.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/collapseAll.svg",
+      "sha256": "19f4d4023e6621f998c0ccee8aec2b71b8fe2fb6f38a80b9bfe6c8ed4d451bcf",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/collapseAll_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/collapseAll_dark.svg",
+      "sha256": "df75036a7433a78f21347e0732ab9e8b477aecb64e5880bf631e6af778a2dbed",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/expandAll.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/expandAll.svg",
+      "sha256": "3ed66e8e641730be8e26ec22b108761e0249bf71d3110de9bb2379e294f12f91",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/expandAll_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/expandAll_dark.svg",
+      "sha256": "5d6f626ff67775c226daedcdbd93899c6efe4577910773d9682e3dab59305aa8",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/locate.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/locate.svg",
+      "sha256": "748745835262882a67f079583b4a970f23ac41ff6ed4f7254769f39fb4fb05f0",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/locate_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/locate_dark.svg",
+      "sha256": "16178656e230c9fc5bee294bf3ef3a2fa95a30b4511b10593a6f1684765685cb",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/exit.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/exit.svg",
+      "sha256": "8a111f890f86d42221d77a513d0ac6eec58001498b42be07173afa9e8f81f51a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/exit_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/exit_dark.svg",
+      "sha256": "573e7425a1ecc4cc8be141f7ce0a4e21b559e0ec2f4f9517641da60cfec9da1a",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/moreHorizontal.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/moreHorizontal.svg",
+      "sha256": "355ba9fddf1f50fd191d1ef3893ad78df8c22818cdff3be81153c99d6cf46a1b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "general/moreHorizontal_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/general/moreHorizontal_dark.svg",
+      "sha256": "cc54a1969dd4fa65fa370a6f9ff28e2fb4dc9090280b09ab10d3061786f5548c",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/run.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/run.svg",
+      "sha256": "152f9b200bddd25b2ee3f0b03c2be710aa131891fc0e39e0d74f2532a626e6e9",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/run_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/run_dark.svg",
+      "sha256": "dcd7e6658108d94976a295dad27d1ae11ae66f8d524dffdb5a2e87a336756c8e",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/debug.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/debug.svg",
+      "sha256": "d2cf3aeb22ac7132f9ec5db7e75108e040ca246949c498322c263bdb3f5a5b79",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/debug_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/debug_dark.svg",
+      "sha256": "03f959bcd591277fef659acd82582ac3a3e3a6eba0b57edd1972192af8b81e3b",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/stop.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/stop.svg",
+      "sha256": "fc3a56e4ddf219f4abab8830669eed422bf130f9ad8b086b3f52f75aa4aeac14",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "run/stop_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/platform/icons/src/expui/run/stop_dark.svg",
+      "sha256": "849dacfc40b7c7efdfbfcd2a59b800659c8e6149bc3d850a7f5cbbe25dbf4f82",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindow/terminal.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/plugins/terminal/resources/icons/expui/toolwindow/terminal.svg",
+      "sha256": "dda2310753148637953a482a4a27369e86edd0715794c063820f2143b458f185",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindow/terminal_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/plugins/terminal/resources/icons/expui/toolwindow/terminal_dark.svg",
+      "sha256": "8ce85722cba6fde11027e63f1a3bbf196a1bde477e00fe2c3ab26c0031f442e7",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindow/terminal@20x20.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/plugins/terminal/resources/icons/expui/toolwindow/terminal@20x20.svg",
+      "sha256": "a3d6e76b5d3fbe10864da049e78ed4f3f67a78cb8710ee83175968e775a6169f",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "toolwindow/terminal@20x20_dark.svg",
+      "source": "https://raw.githubusercontent.com/JetBrains/intellij-community/d8c6714c7a3c110c56994d6b0f10814f902100e7/plugins/terminal/resources/icons/expui/toolwindow/terminal@20x20_dark.svg",
+      "sha256": "e6b37e2946637f9c02797a5f84ea896066862355febcac6a85ec6adc0092db27",
+      "license": "Apache-2.0"
+    }
+  ]
+}

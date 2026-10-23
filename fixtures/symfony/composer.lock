@@ -1,0 +1,12 @@
+{
+    "_readme": ["Fixture de teste: não gerado pelo Composer."],
+    "content-hash": "00000000000000000000000000000000",
+    "packages": [
+        { "name": "symfony/framework-bundle", "version": "v7.1.4", "description": "Provides a tight integration between Symfony components and the Symfony full-stack framework" },
+        { "name": "symfony/console", "version": "v7.1.3", "description": "Eases the creation of beautiful and testable command line interfaces" },
+        { "name": "symfony/polyfill-mbstring", "version": "v1.30.0", "provide": { "ext-mbstring": "*" } }
+    ],
+    "packages-dev": [
+        { "name": "phpunit/phpunit", "version": "11.3.1" }
+    ]
+}

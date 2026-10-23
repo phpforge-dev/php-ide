@@ -1,0 +1,18 @@
+parameters:
+    app.upload_dir: '%kernel.project_dir%/public/uploads'
+    app.admin_email: 'admin@example.com'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+
+    app.mailer:
+        class: App\Mail\Mailer
+        arguments: ['%app.admin_email%', '%env(MAILER_DSN)%', '@app.']
+
+    App\Service\Clock: ~
+    app.clock: '@App\Service\Clock'

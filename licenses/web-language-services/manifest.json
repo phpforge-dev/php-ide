@@ -1,0 +1,1257 @@
+[
+  {
+    "package": "@agentclientprotocol/sdk",
+    "version": "0.14.1",
+    "file": "@agentclientprotocol__sdk__LICENSE"
+  },
+  {
+    "package": "@antfu/install-pkg",
+    "version": "2.1.0",
+    "file": "@antfu__install-pkg__LICENSE"
+  },
+  {
+    "package": "@babel/helper-string-parser",
+    "version": "7.29.7",
+    "file": "@babel__helper-string-parser__LICENSE"
+  },
+  {
+    "package": "@babel/helper-validator-identifier",
+    "version": "7.29.7",
+    "file": "@babel__helper-validator-identifier__LICENSE"
+  },
+  {
+    "package": "@babel/parser",
+    "version": "7.29.9",
+    "file": "@babel__parser__LICENSE"
+  },
+  {
+    "package": "@babel/types",
+    "version": "7.29.8",
+    "file": "@babel__types__LICENSE"
+  },
+  {
+    "package": "@braintree/sanitize-url",
+    "version": "7.1.2",
+    "file": "@braintree__sanitize-url__LICENSE"
+  },
+  {
+    "package": "@chevrotain/types",
+    "version": "11.1.2",
+    "file": "@chevrotain__types__LICENSE.txt"
+  },
+  {
+    "package": "@emmetio/abbreviation",
+    "version": "2.3.3",
+    "file": "@emmetio__abbreviation__LICENSE"
+  },
+  {
+    "package": "@emmetio/css-abbreviation",
+    "version": "2.1.8",
+    "file": "@emmetio__css-abbreviation__LICENSE"
+  },
+  {
+    "package": "@emmetio/css-parser",
+    "version": "0.4.1",
+    "file": "@emmetio__css-parser__LICENSE"
+  },
+  {
+    "package": "@emmetio/html-matcher",
+    "version": "1.3.0",
+    "file": "@emmetio__html-matcher__LICENSE"
+  },
+  {
+    "package": "@emmetio/scanner",
+    "version": "1.0.4",
+    "file": "@emmetio__scanner__LICENSE"
+  },
+  {
+    "package": "@emmetio/stream-reader",
+    "version": "2.2.0",
+    "file": "@emmetio__stream-reader__LICENSE"
+  },
+  {
+    "package": "@emmetio/stream-reader-utils",
+    "version": "0.1.0",
+    "file": "@emmetio__stream-reader-utils__LICENSE"
+  },
+  {
+    "package": "@iconify/types",
+    "version": "2.0.0",
+    "file": "@iconify__types__license.txt"
+  },
+  {
+    "package": "@iconify/utils",
+    "version": "3.1.7",
+    "file": "@iconify__utils__license.txt"
+  },
+  {
+    "package": "@jridgewell/sourcemap-codec",
+    "version": "1.6.0",
+    "file": "@jridgewell__sourcemap-codec__LICENSE"
+  },
+  {
+    "package": "@mermaid-js/parser",
+    "version": "1.2.1",
+    "file": "@mermaid-js__parser__LICENSE"
+  },
+  {
+    "package": "@oxc-project/types",
+    "version": "0.155.0",
+    "file": "@oxc-project__types__LICENSE"
+  },
+  {
+    "package": "@playwright/test",
+    "version": "1.64.1",
+    "file": "@playwright__test__LICENSE"
+  },
+  {
+    "package": "@playwright/test",
+    "version": "1.64.1",
+    "file": "@playwright__test__NOTICE"
+  },
+  {
+    "package": "@rolldown/pluginutils",
+    "version": "1.0.1",
+    "file": "@rolldown__pluginutils__LICENSE"
+  },
+  {
+    "package": "@tauri-apps/api",
+    "version": "2.12.4",
+    "file": "@tauri-apps__api__LICENSE-APACHE-2.0"
+  },
+  {
+    "package": "@tauri-apps/api",
+    "version": "2.12.4",
+    "file": "@tauri-apps__api__LICENSE.spdx"
+  },
+  {
+    "package": "@tauri-apps/api",
+    "version": "2.12.4",
+    "file": "@tauri-apps__api__LICENSE-MIT"
+  },
+  {
+    "package": "@tauri-apps/cli",
+    "version": "2.12.4",
+    "file": "@tauri-apps__cli__LICENSE-APACHE-2.0"
+  },
+  {
+    "package": "@tauri-apps/cli",
+    "version": "2.12.4",
+    "file": "@tauri-apps__cli__LICENSE-MIT"
+  },
+  {
+    "package": "@types/d3",
+    "version": "7.4.3",
+    "file": "@types__d3__LICENSE"
+  },
+  {
+    "package": "@types/d3-array",
+    "version": "3.2.2",
+    "file": "@types__d3-array__LICENSE"
+  },
+  {
+    "package": "@types/d3-axis",
+    "version": "3.0.6",
+    "file": "@types__d3-axis__LICENSE"
+  },
+  {
+    "package": "@types/d3-brush",
+    "version": "3.0.6",
+    "file": "@types__d3-brush__LICENSE"
+  },
+  {
+    "package": "@types/d3-chord",
+    "version": "3.0.6",
+    "file": "@types__d3-chord__LICENSE"
+  },
+  {
+    "package": "@types/d3-color",
+    "version": "3.1.3",
+    "file": "@types__d3-color__LICENSE"
+  },
+  {
+    "package": "@types/d3-contour",
+    "version": "3.0.6",
+    "file": "@types__d3-contour__LICENSE"
+  },
+  {
+    "package": "@types/d3-delaunay",
+    "version": "6.0.4",
+    "file": "@types__d3-delaunay__LICENSE"
+  },
+  {
+    "package": "@types/d3-dispatch",
+    "version": "3.0.7",
+    "file": "@types__d3-dispatch__LICENSE"
+  },
+  {
+    "package": "@types/d3-drag",
+    "version": "3.0.7",
+    "file": "@types__d3-drag__LICENSE"
+  },
+  {
+    "package": "@types/d3-dsv",
+    "version": "3.0.7",
+    "file": "@types__d3-dsv__LICENSE"
+  },
+  {
+    "package": "@types/d3-ease",
+    "version": "3.0.2",
+    "file": "@types__d3-ease__LICENSE"
+  },
+  {
+    "package": "@types/d3-fetch",
+    "version": "3.0.7",
+    "file": "@types__d3-fetch__LICENSE"
+  },
+  {
+    "package": "@types/d3-force",
+    "version": "3.0.10",
+    "file": "@types__d3-force__LICENSE"
+  },
+  {
+    "package": "@types/d3-format",
+    "version": "3.0.4",
+    "file": "@types__d3-format__LICENSE"
+  },
+  {
+    "package": "@types/d3-geo",
+    "version": "3.1.1",
+    "file": "@types__d3-geo__LICENSE"
+  },
+  {
+    "package": "@types/d3-hierarchy",
+    "version": "3.1.7",
+    "file": "@types__d3-hierarchy__LICENSE"
+  },
+  {
+    "package": "@types/d3-interpolate",
+    "version": "3.0.4",
+    "file": "@types__d3-interpolate__LICENSE"
+  },
+  {
+    "package": "@types/d3-path",
+    "version": "3.1.1",
+    "file": "@types__d3-path__LICENSE"
+  },
+  {
+    "package": "@types/d3-polygon",
+    "version": "3.0.2",
+    "file": "@types__d3-polygon__LICENSE"
+  },
+  {
+    "package": "@types/d3-quadtree",
+    "version": "3.0.6",
+    "file": "@types__d3-quadtree__LICENSE"
+  },
+  {
+    "package": "@types/d3-random",
+    "version": "3.0.4",
+    "file": "@types__d3-random__LICENSE"
+  },
+  {
+    "package": "@types/d3-scale",
+    "version": "4.0.9",
+    "file": "@types__d3-scale__LICENSE"
+  },
+  {
+    "package": "@types/d3-scale-chromatic",
+    "version": "3.1.0",
+    "file": "@types__d3-scale-chromatic__LICENSE"
+  },
+  {
+    "package": "@types/d3-selection",
+    "version": "3.0.12",
+    "file": "@types__d3-selection__LICENSE"
+  },
+  {
+    "package": "@types/d3-shape",
+    "version": "3.2.0",
+    "file": "@types__d3-shape__LICENSE"
+  },
+  {
+    "package": "@types/d3-time",
+    "version": "3.0.4",
+    "file": "@types__d3-time__LICENSE"
+  },
+  {
+    "package": "@types/d3-time-format",
+    "version": "4.0.3",
+    "file": "@types__d3-time-format__LICENSE"
+  },
+  {
+    "package": "@types/d3-timer",
+    "version": "3.0.2",
+    "file": "@types__d3-timer__LICENSE"
+  },
+  {
+    "package": "@types/d3-transition",
+    "version": "3.0.9",
+    "file": "@types__d3-transition__LICENSE"
+  },
+  {
+    "package": "@types/d3-zoom",
+    "version": "3.0.9",
+    "file": "@types__d3-zoom__LICENSE"
+  },
+  {
+    "package": "@types/geojson",
+    "version": "7946.0.16",
+    "file": "@types__geojson__LICENSE"
+  },
+  {
+    "package": "@types/node",
+    "version": "26.6.5",
+    "file": "@types__node__LICENSE"
+  },
+  {
+    "package": "@types/react",
+    "version": "19.2.2",
+    "file": "@types__react__LICENSE"
+  },
+  {
+    "package": "@types/trusted-types",
+    "version": "2.0.7",
+    "file": "@types__trusted-types__LICENSE"
+  },
+  {
+    "package": "@upsetjs/venn.js",
+    "version": "2.0.0",
+    "file": "@upsetjs__venn.js__LICENSE"
+  },
+  {
+    "package": "@volar/language-core",
+    "version": "2.4.28",
+    "file": "@volar__language-core__LICENSE"
+  },
+  {
+    "package": "@volar/language-service",
+    "version": "2.4.28",
+    "file": "@volar__language-service__LICENSE"
+  },
+  {
+    "package": "@volar/monaco",
+    "version": "2.4.28",
+    "file": "@volar__monaco__LICENSE"
+  },
+  {
+    "package": "@volar/source-map",
+    "version": "2.4.28",
+    "file": "@volar__source-map__LICENSE"
+  },
+  {
+    "package": "@volar/typescript",
+    "version": "2.4.28",
+    "file": "@volar__typescript__LICENSE"
+  },
+  {
+    "package": "@vscode/emmet-helper",
+    "version": "2.11.0",
+    "file": "@vscode__emmet-helper__thirdpartynotices.txt"
+  },
+  {
+    "package": "@vscode/emmet-helper",
+    "version": "2.11.0",
+    "file": "@vscode__emmet-helper__LICENSE"
+  },
+  {
+    "package": "@vue/compiler-core",
+    "version": "3.5.44",
+    "file": "@vue__compiler-core__LICENSE"
+  },
+  {
+    "package": "@vue/compiler-dom",
+    "version": "3.5.44",
+    "file": "@vue__compiler-dom__LICENSE"
+  },
+  {
+    "package": "@vue/compiler-sfc",
+    "version": "3.5.44",
+    "file": "@vue__compiler-sfc__LICENSE"
+  },
+  {
+    "package": "@vue/compiler-ssr",
+    "version": "3.5.44",
+    "file": "@vue__compiler-ssr__LICENSE"
+  },
+  {
+    "package": "@vue/language-core",
+    "version": "3.3.13",
+    "file": "@vue__language-core__LICENSE"
+  },
+  {
+    "package": "@vue/language-plugin-pug",
+    "version": "3.2.9",
+    "file": "@vue__language-plugin-pug__LICENSE"
+  },
+  {
+    "package": "@vue/language-service",
+    "version": "3.3.13",
+    "file": "@vue__language-service__LICENSE"
+  },
+  {
+    "package": "@vue/reactivity",
+    "version": "3.5.44",
+    "file": "@vue__reactivity__LICENSE"
+  },
+  {
+    "package": "@vue/runtime-core",
+    "version": "3.5.44",
+    "file": "@vue__runtime-core__LICENSE"
+  },
+  {
+    "package": "@vue/runtime-dom",
+    "version": "3.5.44",
+    "file": "@vue__runtime-dom__LICENSE"
+  },
+  {
+    "package": "@vue/server-renderer",
+    "version": "3.5.44",
+    "file": "@vue__server-renderer__LICENSE"
+  },
+  {
+    "package": "@vue/shared",
+    "version": "3.5.44",
+    "file": "@vue__shared__LICENSE"
+  },
+  {
+    "package": "@vue/typescript-plugin",
+    "version": "3.3.13",
+    "file": "@vue__typescript-plugin__LICENSE"
+  },
+  {
+    "package": "@xterm/addon-fit",
+    "version": "0.11.0",
+    "file": "@xterm__addon-fit__LICENSE"
+  },
+  {
+    "package": "@xterm/xterm",
+    "version": "6.0.0",
+    "file": "@xterm__xterm__LICENSE"
+  },
+  {
+    "package": "acorn",
+    "version": "7.4.1",
+    "file": "acorn__LICENSE"
+  },
+  {
+    "package": "alien-signals",
+    "version": "3.2.1",
+    "file": "alien-signals__LICENSE"
+  },
+  {
+    "package": "call-bind-apply-helpers",
+    "version": "1.0.2",
+    "file": "call-bind-apply-helpers__LICENSE"
+  },
+  {
+    "package": "call-bound",
+    "version": "1.0.4",
+    "file": "call-bound__LICENSE"
+  },
+  {
+    "package": "character-parser",
+    "version": "2.2.0",
+    "file": "character-parser__LICENSE"
+  },
+  {
+    "package": "commander",
+    "version": "7.2.0",
+    "file": "commander__LICENSE"
+  },
+  {
+    "package": "cose-base",
+    "version": "1.0.3",
+    "file": "cose-base__LICENSE"
+  },
+  {
+    "package": "csstype",
+    "version": "3.2.3",
+    "file": "csstype__LICENSE"
+  },
+  {
+    "package": "cytoscape",
+    "version": "3.34.4",
+    "file": "cytoscape__LICENSE"
+  },
+  {
+    "package": "cytoscape",
+    "version": "3.34.4",
+    "file": "cytoscape__license-update.mjs"
+  },
+  {
+    "package": "cytoscape-cose-bilkent",
+    "version": "4.1.0",
+    "file": "cytoscape-cose-bilkent__LICENSE"
+  },
+  {
+    "package": "cytoscape-fcose",
+    "version": "2.2.0",
+    "file": "cytoscape-fcose__LICENSE"
+  },
+  {
+    "package": "cytoscape-fcose/node_modules/cose-base",
+    "version": "2.2.0",
+    "file": "cytoscape-fcose__node_modules__cose-base__LICENSE"
+  },
+  {
+    "package": "cytoscape-fcose/node_modules/layout-base",
+    "version": "2.0.1",
+    "file": "cytoscape-fcose__node_modules__layout-base__LICENSE"
+  },
+  {
+    "package": "d3",
+    "version": "7.9.0",
+    "file": "d3__LICENSE"
+  },
+  {
+    "package": "d3-array",
+    "version": "3.2.4",
+    "file": "d3-array__LICENSE"
+  },
+  {
+    "package": "d3-axis",
+    "version": "3.0.0",
+    "file": "d3-axis__LICENSE"
+  },
+  {
+    "package": "d3-brush",
+    "version": "3.0.0",
+    "file": "d3-brush__LICENSE"
+  },
+  {
+    "package": "d3-chord",
+    "version": "3.0.1",
+    "file": "d3-chord__LICENSE"
+  },
+  {
+    "package": "d3-color",
+    "version": "3.1.0",
+    "file": "d3-color__LICENSE"
+  },
+  {
+    "package": "d3-contour",
+    "version": "4.0.2",
+    "file": "d3-contour__LICENSE"
+  },
+  {
+    "package": "d3-delaunay",
+    "version": "6.0.4",
+    "file": "d3-delaunay__LICENSE"
+  },
+  {
+    "package": "d3-dispatch",
+    "version": "3.0.1",
+    "file": "d3-dispatch__LICENSE"
+  },
+  {
+    "package": "d3-drag",
+    "version": "3.0.0",
+    "file": "d3-drag__LICENSE"
+  },
+  {
+    "package": "d3-dsv",
+    "version": "3.0.1",
+    "file": "d3-dsv__LICENSE"
+  },
+  {
+    "package": "d3-ease",
+    "version": "3.0.1",
+    "file": "d3-ease__LICENSE"
+  },
+  {
+    "package": "d3-fetch",
+    "version": "3.0.1",
+    "file": "d3-fetch__LICENSE"
+  },
+  {
+    "package": "d3-force",
+    "version": "3.0.0",
+    "file": "d3-force__LICENSE"
+  },
+  {
+    "package": "d3-format",
+    "version": "3.1.2",
+    "file": "d3-format__LICENSE"
+  },
+  {
+    "package": "d3-geo",
+    "version": "3.1.1",
+    "file": "d3-geo__LICENSE"
+  },
+  {
+    "package": "d3-hierarchy",
+    "version": "3.1.2",
+    "file": "d3-hierarchy__LICENSE"
+  },
+  {
+    "package": "d3-interpolate",
+    "version": "3.0.1",
+    "file": "d3-interpolate__LICENSE"
+  },
+  {
+    "package": "d3-path",
+    "version": "3.1.0",
+    "file": "d3-path__LICENSE"
+  },
+  {
+    "package": "d3-polygon",
+    "version": "3.0.1",
+    "file": "d3-polygon__LICENSE"
+  },
+  {
+    "package": "d3-quadtree",
+    "version": "3.0.1",
+    "file": "d3-quadtree__LICENSE"
+  },
+  {
+    "package": "d3-random",
+    "version": "3.0.1",
+    "file": "d3-random__LICENSE"
+  },
+  {
+    "package": "d3-sankey",
+    "version": "0.12.3",
+    "file": "d3-sankey__LICENSE"
+  },
+  {
+    "package": "d3-sankey/node_modules/d3-array",
+    "version": "2.12.1",
+    "file": "d3-sankey__node_modules__d3-array__LICENSE"
+  },
+  {
+    "package": "d3-sankey/node_modules/d3-path",
+    "version": "1.0.9",
+    "file": "d3-sankey__node_modules__d3-path__LICENSE"
+  },
+  {
+    "package": "d3-sankey/node_modules/d3-shape",
+    "version": "1.3.7",
+    "file": "d3-sankey__node_modules__d3-shape__LICENSE"
+  },
+  {
+    "package": "d3-sankey/node_modules/internmap",
+    "version": "1.0.1",
+    "file": "d3-sankey__node_modules__internmap__LICENSE"
+  },
+  {
+    "package": "d3-scale",
+    "version": "4.0.2",
+    "file": "d3-scale__LICENSE"
+  },
+  {
+    "package": "d3-scale-chromatic",
+    "version": "3.1.0",
+    "file": "d3-scale-chromatic__LICENSE"
+  },
+  {
+    "package": "d3-selection",
+    "version": "3.0.0",
+    "file": "d3-selection__LICENSE"
+  },
+  {
+    "package": "d3-shape",
+    "version": "3.2.0",
+    "file": "d3-shape__LICENSE"
+  },
+  {
+    "package": "d3-time",
+    "version": "3.1.0",
+    "file": "d3-time__LICENSE"
+  },
+  {
+    "package": "d3-time-format",
+    "version": "4.1.0",
+    "file": "d3-time-format__LICENSE"
+  },
+  {
+    "package": "d3-timer",
+    "version": "3.0.1",
+    "file": "d3-timer__LICENSE"
+  },
+  {
+    "package": "d3-transition",
+    "version": "3.0.1",
+    "file": "d3-transition__LICENSE"
+  },
+  {
+    "package": "d3-zoom",
+    "version": "3.0.0",
+    "file": "d3-zoom__LICENSE"
+  },
+  {
+    "package": "dagre-d3-es",
+    "version": "7.0.14",
+    "file": "dagre-d3-es__LICENSE.md"
+  },
+  {
+    "package": "dayjs",
+    "version": "1.11.23",
+    "file": "dayjs__LICENSE"
+  },
+  {
+    "package": "delaunator",
+    "version": "5.1.0",
+    "file": "delaunator__LICENSE"
+  },
+  {
+    "package": "detect-libc",
+    "version": "2.1.2",
+    "file": "detect-libc__LICENSE"
+  },
+  {
+    "package": "diff",
+    "version": "9.0.0",
+    "file": "diff__LICENSE"
+  },
+  {
+    "package": "dompurify",
+    "version": "3.4.17",
+    "file": "dompurify__LICENSE"
+  },
+  {
+    "package": "dompurify",
+    "version": "3.4.17",
+    "file": "dompurify__LICENSE-MPL"
+  },
+  {
+    "package": "dunder-proto",
+    "version": "1.0.1",
+    "file": "dunder-proto__LICENSE"
+  },
+  {
+    "package": "emmet",
+    "version": "2.4.11",
+    "file": "emmet__LICENSE"
+  },
+  {
+    "package": "entities",
+    "version": "7.0.1",
+    "file": "entities__LICENSE"
+  },
+  {
+    "package": "es-define-property",
+    "version": "1.0.1",
+    "file": "es-define-property__LICENSE"
+  },
+  {
+    "package": "es-errors",
+    "version": "1.3.0",
+    "file": "es-errors__LICENSE"
+  },
+  {
+    "package": "es-object-atoms",
+    "version": "1.1.2",
+    "file": "es-object-atoms__LICENSE"
+  },
+  {
+    "package": "es-toolkit",
+    "version": "1.52.0",
+    "file": "es-toolkit__LICENSE"
+  },
+  {
+    "package": "es-toolkit",
+    "version": "1.52.0",
+    "file": "es-toolkit__NOTICE"
+  },
+  {
+    "package": "esbuild",
+    "version": "0.28.2",
+    "file": "esbuild__LICENSE.md"
+  },
+  {
+    "package": "estree-walker",
+    "version": "2.0.2",
+    "file": "estree-walker__LICENSE"
+  },
+  {
+    "package": "fdir",
+    "version": "6.5.0",
+    "file": "fdir__LICENSE"
+  },
+  {
+    "package": "fsevents",
+    "version": "2.3.3",
+    "file": "fsevents__LICENSE"
+  },
+  {
+    "package": "function-bind",
+    "version": "1.1.2",
+    "file": "function-bind__LICENSE"
+  },
+  {
+    "package": "get-intrinsic",
+    "version": "1.3.0",
+    "file": "get-intrinsic__LICENSE"
+  },
+  {
+    "package": "get-proto",
+    "version": "1.0.1",
+    "file": "get-proto__LICENSE"
+  },
+  {
+    "package": "gopd",
+    "version": "1.2.0",
+    "file": "gopd__LICENSE"
+  },
+  {
+    "package": "hachure-fill",
+    "version": "0.5.2",
+    "file": "hachure-fill__LICENSE"
+  },
+  {
+    "package": "has-symbols",
+    "version": "1.1.0",
+    "file": "has-symbols__LICENSE"
+  },
+  {
+    "package": "has-tostringtag",
+    "version": "1.0.2",
+    "file": "has-tostringtag__LICENSE"
+  },
+  {
+    "package": "hasown",
+    "version": "2.0.4",
+    "file": "hasown__LICENSE"
+  },
+  {
+    "package": "iconv-lite",
+    "version": "0.6.3",
+    "file": "iconv-lite__LICENSE"
+  },
+  {
+    "package": "import-meta-resolve",
+    "version": "4.2.0",
+    "file": "import-meta-resolve__license"
+  },
+  {
+    "package": "internmap",
+    "version": "2.0.3",
+    "file": "internmap__LICENSE"
+  },
+  {
+    "package": "is-expression",
+    "version": "4.0.0",
+    "file": "is-expression__LICENSE.md"
+  },
+  {
+    "package": "is-regex",
+    "version": "1.2.1",
+    "file": "is-regex__LICENSE"
+  },
+  {
+    "package": "jsonc-parser",
+    "version": "2.3.1",
+    "file": "jsonc-parser__LICENSE.md"
+  },
+  {
+    "package": "katex",
+    "version": "0.16.47",
+    "file": "katex__LICENSE"
+  },
+  {
+    "package": "katex/node_modules/commander",
+    "version": "8.3.0",
+    "file": "katex__node_modules__commander__LICENSE"
+  },
+  {
+    "package": "khroma",
+    "version": "2.1.0",
+    "file": "khroma__license"
+  },
+  {
+    "package": "layout-base",
+    "version": "1.0.2",
+    "file": "layout-base__LICENSE"
+  },
+  {
+    "package": "lightningcss",
+    "version": "1.33.0",
+    "file": "lightningcss__LICENSE"
+  },
+  {
+    "package": "lightningcss-darwin-arm64",
+    "version": "1.33.0",
+    "file": "lightningcss-darwin-arm64__LICENSE"
+  },
+  {
+    "package": "lodash-es",
+    "version": "4.18.1",
+    "file": "lodash-es__LICENSE"
+  },
+  {
+    "package": "magic-string",
+    "version": "0.30.21",
+    "file": "magic-string__LICENSE"
+  },
+  {
+    "package": "marked",
+    "version": "14.0.0",
+    "file": "marked__LICENSE.md"
+  },
+  {
+    "package": "math-intrinsics",
+    "version": "1.1.0",
+    "file": "math-intrinsics__LICENSE"
+  },
+  {
+    "package": "mermaid",
+    "version": "11.17.2",
+    "file": "mermaid__LICENSE"
+  },
+  {
+    "package": "mermaid/node_modules/marked",
+    "version": "16.4.2",
+    "file": "mermaid__node_modules__marked__LICENSE.md"
+  },
+  {
+    "package": "monaco-editor",
+    "version": "0.57.0",
+    "file": "monaco-editor__ThirdPartyNotices.txt"
+  },
+  {
+    "package": "monaco-editor",
+    "version": "0.57.0",
+    "file": "monaco-editor__LICENSE"
+  },
+  {
+    "package": "monaco-languageserver-types",
+    "version": "0.4.1",
+    "file": "monaco-languageserver-types__LICENSE.md"
+  },
+  {
+    "package": "monaco-types",
+    "version": "0.1.2",
+    "file": "monaco-types__LICENSE.md"
+  },
+  {
+    "package": "muggle-string",
+    "version": "0.4.1",
+    "file": "muggle-string__LICENSE"
+  },
+  {
+    "package": "nanoid",
+    "version": "3.3.20",
+    "file": "nanoid__LICENSE"
+  },
+  {
+    "package": "object-assign",
+    "version": "4.1.1",
+    "file": "object-assign__license"
+  },
+  {
+    "package": "package-manager-detector",
+    "version": "1.9.0",
+    "file": "package-manager-detector__LICENSE"
+  },
+  {
+    "package": "path-browserify",
+    "version": "1.0.1",
+    "file": "path-browserify__LICENSE"
+  },
+  {
+    "package": "path-data-parser",
+    "version": "0.1.0",
+    "file": "path-data-parser__LICENSE"
+  },
+  {
+    "package": "picocolors",
+    "version": "1.1.1",
+    "file": "picocolors__LICENSE"
+  },
+  {
+    "package": "picomatch",
+    "version": "4.0.7",
+    "file": "picomatch__LICENSE"
+  },
+  {
+    "package": "playwright",
+    "version": "1.64.1",
+    "file": "playwright__ThirdPartyNotices.txt"
+  },
+  {
+    "package": "playwright",
+    "version": "1.64.1",
+    "file": "playwright__LICENSE"
+  },
+  {
+    "package": "playwright",
+    "version": "1.64.1",
+    "file": "playwright__NOTICE"
+  },
+  {
+    "package": "playwright-core",
+    "version": "1.64.1",
+    "file": "playwright-core__ThirdPartyNotices.txt"
+  },
+  {
+    "package": "playwright-core",
+    "version": "1.64.1",
+    "file": "playwright-core__LICENSE"
+  },
+  {
+    "package": "playwright-core",
+    "version": "1.64.1",
+    "file": "playwright-core__NOTICE"
+  },
+  {
+    "package": "points-on-curve",
+    "version": "0.2.0",
+    "file": "points-on-curve__LICENSE"
+  },
+  {
+    "package": "points-on-path",
+    "version": "0.2.1",
+    "file": "points-on-path__LICENSE"
+  },
+  {
+    "package": "postcss",
+    "version": "8.5.31",
+    "file": "postcss__LICENSE"
+  },
+  {
+    "package": "pug-error",
+    "version": "2.1.0",
+    "file": "pug-error__LICENSE"
+  },
+  {
+    "package": "pug-lexer",
+    "version": "5.0.1",
+    "file": "pug-lexer__LICENSE"
+  },
+  {
+    "package": "pug-parser",
+    "version": "6.0.0",
+    "file": "pug-parser__LICENSE"
+  },
+  {
+    "package": "robust-predicates",
+    "version": "3.0.3",
+    "file": "robust-predicates__LICENSE"
+  },
+  {
+    "package": "rolldown",
+    "version": "1.2.15",
+    "file": "rolldown__LICENSE"
+  },
+  {
+    "package": "roughjs",
+    "version": "4.6.6",
+    "file": "roughjs__LICENSE"
+  },
+  {
+    "package": "rw",
+    "version": "1.3.3",
+    "file": "rw__LICENSE"
+  },
+  {
+    "package": "safer-buffer",
+    "version": "2.1.2",
+    "file": "safer-buffer__LICENSE"
+  },
+  {
+    "package": "semver",
+    "version": "7.8.5",
+    "file": "semver__LICENSE"
+  },
+  {
+    "package": "source-map-js",
+    "version": "1.2.2",
+    "file": "source-map-js__LICENSE"
+  },
+  {
+    "package": "stylis",
+    "version": "4.4.0",
+    "file": "stylis__LICENSE"
+  },
+  {
+    "package": "tinyexec",
+    "version": "1.3.1",
+    "file": "tinyexec__LICENSE"
+  },
+  {
+    "package": "tinyglobby",
+    "version": "0.2.17",
+    "file": "tinyglobby__LICENSE"
+  },
+  {
+    "package": "token-stream",
+    "version": "1.0.0",
+    "file": "token-stream__LICENSE"
+  },
+  {
+    "package": "ts-dedent",
+    "version": "2.3.0",
+    "file": "ts-dedent__LICENSE"
+  },
+  {
+    "package": "tsx",
+    "version": "4.23.15",
+    "file": "tsx__LICENSE"
+  },
+  {
+    "package": "typescript",
+    "version": "5.9.3",
+    "file": "typescript__LICENSE.txt"
+  },
+  {
+    "package": "typescript",
+    "version": "5.9.3",
+    "file": "typescript__ThirdPartyNoticeText.txt"
+  },
+  {
+    "package": "typescript-auto-import-cache",
+    "version": "0.3.6",
+    "file": "typescript-auto-import-cache__LICENSE"
+  },
+  {
+    "package": "undici-types",
+    "version": "8.9.0",
+    "file": "undici-types__LICENSE"
+  },
+  {
+    "package": "uuid",
+    "version": "14.0.3",
+    "file": "uuid__LICENSE.md"
+  },
+  {
+    "package": "vite",
+    "version": "8.3.5",
+    "file": "vite__LICENSE.md"
+  },
+  {
+    "package": "volar-service-css",
+    "version": "0.0.71",
+    "file": "volar-service-css__LICENSE"
+  },
+  {
+    "package": "volar-service-emmet",
+    "version": "0.0.71",
+    "file": "volar-service-emmet__LICENSE"
+  },
+  {
+    "package": "volar-service-html",
+    "version": "0.0.71",
+    "file": "volar-service-html__LICENSE"
+  },
+  {
+    "package": "volar-service-json",
+    "version": "0.0.71",
+    "file": "volar-service-json__LICENSE"
+  },
+  {
+    "package": "volar-service-pug",
+    "version": "0.0.71",
+    "file": "volar-service-pug__LICENSE"
+  },
+  {
+    "package": "volar-service-pug-beautify",
+    "version": "0.0.71",
+    "file": "volar-service-pug-beautify__LICENSE"
+  },
+  {
+    "package": "volar-service-typescript",
+    "version": "0.0.71",
+    "file": "volar-service-typescript__LICENSE"
+  },
+  {
+    "package": "vscode-css-languageservice",
+    "version": "6.3.10",
+    "file": "vscode-css-languageservice__LICENSE.md"
+  },
+  {
+    "package": "vscode-css-languageservice/node_modules/vscode-languageserver-types",
+    "version": "3.17.5",
+    "file": "vscode-css-languageservice__node_modules__vscode-languageserver-types__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-css-languageservice/node_modules/vscode-languageserver-types",
+    "version": "3.17.5",
+    "file": "vscode-css-languageservice__node_modules__vscode-languageserver-types__License.txt"
+  },
+  {
+    "package": "vscode-html-languageservice",
+    "version": "5.6.2",
+    "file": "vscode-html-languageservice__LICENSE.md"
+  },
+  {
+    "package": "vscode-html-languageservice",
+    "version": "5.6.2",
+    "file": "vscode-html-languageservice__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-json-languageservice",
+    "version": "5.7.2",
+    "file": "vscode-json-languageservice__LICENSE.md"
+  },
+  {
+    "package": "vscode-json-languageservice/node_modules/jsonc-parser",
+    "version": "3.3.1",
+    "file": "vscode-json-languageservice__node_modules__jsonc-parser__LICENSE.md"
+  },
+  {
+    "package": "vscode-jsonrpc",
+    "version": "10.0.0",
+    "file": "vscode-jsonrpc__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-jsonrpc",
+    "version": "10.0.0",
+    "file": "vscode-jsonrpc__License.txt"
+  },
+  {
+    "package": "vscode-languageserver-protocol",
+    "version": "3.18.5",
+    "file": "vscode-languageserver-protocol__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-languageserver-protocol",
+    "version": "3.18.5",
+    "file": "vscode-languageserver-protocol__License.txt"
+  },
+  {
+    "package": "vscode-languageserver-textdocument",
+    "version": "1.0.16",
+    "file": "vscode-languageserver-textdocument__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-languageserver-textdocument",
+    "version": "1.0.16",
+    "file": "vscode-languageserver-textdocument__License.txt"
+  },
+  {
+    "package": "vscode-languageserver-types",
+    "version": "3.18.5",
+    "file": "vscode-languageserver-types__thirdpartynotices.txt"
+  },
+  {
+    "package": "vscode-languageserver-types",
+    "version": "3.18.5",
+    "file": "vscode-languageserver-types__License.txt"
+  },
+  {
+    "package": "vscode-nls",
+    "version": "5.2.0",
+    "file": "vscode-nls__License.txt"
+  },
+  {
+    "package": "vscode-uri",
+    "version": "3.2.0",
+    "file": "vscode-uri__LICENSE.md"
+  },
+  {
+    "package": "vue",
+    "version": "3.5.44",
+    "file": "vue__LICENSE"
+  },
+  {
+    "package": "vue-component-meta",
+    "version": "3.3.13",
+    "file": "vue-component-meta__LICENSE"
+  },
+  {
+    "package": "zod",
+    "version": "4.6.7",
+    "file": "zod__LICENSE"
+  }
+]

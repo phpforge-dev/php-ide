@@ -1,0 +1,8 @@
+/* Marcadores próprios de hierarquia no gutter (recorte 20); sem assets da referência. */
+.php-gutter{cursor:pointer;display:flex!important;align-items:center;justify-content:center;font:700 10px/1 system-ui,sans-serif;border-radius:50%;width:13px!important;height:13px!important;margin:3px 0 0 3px;color:var(--ij-button-default-text)}
+.php-gutter-overrides{background:var(--ij-gutter-blue)}.php-gutter-overrides::before{content:'↑'}
+.php-gutter-implements{background:var(--ij-gutter-green)}.php-gutter-implements::before{content:'↑'}
+.php-gutter-overridden{background:var(--ij-gutter-blue)}.php-gutter-overridden::before{content:'↓'}
+.php-gutter-implemented,.php-gutter-subclassed{background:var(--ij-gutter-green)}.php-gutter-implemented::before,.php-gutter-subclassed::before{content:'↓'}
+.php-gutter-both{background:linear-gradient(135deg,var(--ij-gutter-blue) 50%,var(--ij-gutter-green) 50%)}.php-gutter-both::before{content:'↕'}
+.php-hierarchy-menu .usages-results{min-height:0}
