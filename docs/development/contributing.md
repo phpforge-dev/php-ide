@@ -110,3 +110,18 @@ Na entrega 0.2.1: build concluído, DMG verificado, 66 testes Rust passaram (5 i
 ## Critério de entrega
 
 Documente o comportamento e os limites, rode tipos/Rust e verificações pertinentes à mudança. Para plugins, siga também o [roteiro de testes e distribuição](../plugins/distribution.md). Atualize o [catálogo](../research/phpstorm-feature-catalog.md) e a [matriz](../compatibility/phpstorm.md) quando a cobertura funcional mudar. Não promova compatibilidade por existir um botão nem por passar apenas um teste próprio.
+
+## Configurações de ambiente
+
+Normalmente, a IDE reabre o último projeto disponível. Para iniciar em outra pasta, defina `PHP_IDE_PROJECT`. Se não houver um projeto recente, ela usa o projeto de demonstração incluído.
+
+Estas variáveis ajudam quando as ferramentas estão instaladas fora dos caminhos habituais:
+
+| Variável | Uso |
+|---|---|
+| `PHP_IDE_PHP_BIN` | Caminho do executável PHP local. |
+| `PHP_IDE_TOOLS` | Pasta das ferramentas usadas pela IDE. |
+| `PHP_IDE_CODEX_BIN` | Caminho do executável Codex. |
+| `PHP_IDE_ACP_AGENT` | Configuração do agente ACP externo. |
+
+Instale e autentique as CLIs dos agentes antes de usá-las. O cliente ACP permite revisar alterações; o cliente Codex app-server está limitado a consultas de leitura. O adaptador Claude é externo e pode precisar de Node (`npm run setup:acp`). Não coloque senhas ou tokens na configuração dos agentes.

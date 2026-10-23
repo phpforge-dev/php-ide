@@ -1,17 +1,19 @@
 # Plugins
 
-O PHP IDE aceita plugins locais de terceiros com manifesto `plugin.json` e um arquivo JavaScript. Eles podem contribuir com sugestões, destinos de navegação, diagnósticos e CodeLens nos fluxos conectados ao host. O sistema ainda é experimental, sem SDK publicado ou compatibilidade com plugins JetBrains/VS Code.
+Você pode instalar plugins a partir de uma pasta ou de um arquivo ZIP. Cada plugin tem um manifesto `plugin.json` e código JavaScript, e pode adicionar sugestões, navegação, avisos de código e ações no editor (CodeLens).
+
+O sistema de plugins ainda está em desenvolvimento. Ele tem uma API própria e não carrega extensões do VS Code ou do PhpStorm.
 
 ## Instalar e usar
 
 1. Abra um projeto e vá a **Aparência → Plugins…**, ou clique na lista de plugins do rodapé.
 2. Escolha **Instalar de pasta…** ou **Instalar .zip…**.
-3. Confira origem, descrição e permissões. A instalação não dispensa consentimento: a primeira ativação exige decisão mesmo sem permissões declaradas.
+3. Confira a origem, a descrição e as permissões. Na primeira ativação, a IDE pede sua autorização, mesmo que o plugin não solicite permissões.
 4. Verifique o estado e eventuais erros na tela Plugins. Use **Recarregar** após editar o pacote instalado.
 
 A instalação pela interface vai para a pasta de plugins do usuário. Para um plugin exclusivo de um projeto, coloque a pasta em `.php-ide/plugins/<nome>/`, dentro daquele projeto. O consentimento de um projeto não é transferido para outro.
 
-Na tela Plugins é possível ativar/desativar, revisar permissões e ver erros e acessos negados. Remover pela interface atende plugins do usuário; para remover um plugin do projeto, apague sua pasta e recarregue. Dependências não são instaladas automaticamente.
+Na tela Plugins é possível ativar/desativar, revisar permissões e ver erros e acessos negados. Você pode remover pela interface os plugins instalados na sua conta. Para remover um plugin que fica no projeto, apague a pasta dele e recarregue. Dependências não são instaladas automaticamente.
 
 ## Para autores
 
@@ -21,9 +23,9 @@ Na tela Plugins é possível ativar/desativar, revisar permissões e ver erros e
 - [Permissões e limites do isolamento](permissions.md).
 - [Exemplo completo TODO Hints](../../fixtures/plugins/todo-hints/README.md).
 
-Código que gera a API: [contratos](../../shared/language/plugins/api.ts), [adaptador/worker](../../shared/language/plugins/sandbox.ts), [host](../../shared/language/plugins/host.ts) e [backend Rust](../../src-tauri/src/plugins.rs). A API ainda acompanha a versão da IDE, sem uma versão de protocolo independente.
+Para consultar a implementação: [contratos](../../shared/language/plugins/api.ts), [adaptador/worker](../../shared/language/plugins/sandbox.ts), [host](../../shared/language/plugins/host.ts) e [backend Rust](../../src-tauri/src/plugins.rs). A API ainda acompanha a versão da IDE, sem uma versão de protocolo independente.
 
-## Escopo atual
+## O que os plugins podem fazer hoje
 
 Plugins internos são módulos confiáveis compilados com a IDE; plugins de terceiros são pacotes carregados em workers. Não use as permissões ou importações dos internos como exemplo de um plugin instalável.
 
