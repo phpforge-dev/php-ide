@@ -1,0 +1,142 @@
+name: Windows and Linux installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to build (must match the app version)
+        required: true
+        default: v0.2.7
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x64
+            bundles: nsis
+          - os: ubuntu-22.04
+            platform: linux-x64
+            bundles: deb,appimage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+      - name: Verify source and version
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          node -e 'const p = require("./package.json"); if (!/^v\d+\.\d+\.\d+$/.test(process.env.RELEASE_TAG) || process.env.RELEASE_TAG !== "v" + p.version) throw Error("Release tag must match package version");'
+          git rev-parse HEAD
+          git config --global core.autocrlf false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.platform }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring
+          coverage: none
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2 xvfb
+      - run: npm ci
+      - run: npm run setup:php
+      - run: npm run typecheck
+      - run: npm run test:locales
+      - name: Rust tests on target OS
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Build native installers
+        env:
+          NO_STRIP: 'true'
+        run: npm run tauri -- build --bundles '${{ matrix.bundles }}'
+      - name: Check Linux package and startup
+        if: runner.os == 'Linux'
+        run: |
+          sudo dpkg -i src-tauri/target/release/bundle/deb/*.deb
+          set +e
+          xvfb-run -a timeout 15s /usr/bin/php-ide > startup.log 2>&1
+          result=$?
+          set -e
+          cat startup.log
+          test "$result" = 124
+      - name: Check Windows startup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath 'src-tauri/target/release/php-ide.exe' -PassThru
+          Start-Sleep -Seconds 15
+          if ($app.HasExited) { throw "Application exited during startup: $($app.ExitCode)" }
+          Stop-Process -Id $app.Id
+      - name: Collect installers and checksums
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          node --input-type=module <<'JS'
+          import { readdir, mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
+          import { join, basename } from 'node:path';
+          import { createHash } from 'node:crypto';
+          const out = 'installers';
+          await mkdir(out, { recursive: true });
+          let count = 0;
+          for (const kind of ['nsis', 'deb', 'appimage']) {
+            const dir = join('src-tauri/target/release/bundle', kind);
+            for (const file of await readdir(dir).catch(() => [])) {
+              if (!/\.(exe|deb|AppImage)$/.test(file)) continue;
+              const name = basename(file).replaceAll(' ', '.');
+              await copyFile(join(dir, file), join(out, name));
+              const digest = createHash('sha256').update(await readFile(join(out, name))).digest('hex');
+              await writeFile(join(out, name + '.sha256'), digest + '  ' + name + '\n');
+              count++;
+            }
+          }
+          if (!count) throw Error('No installers produced');
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}
+          path: installers/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: installers
+          merge-multiple: true
+      - name: Attach packages to existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release view "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" installers/*
