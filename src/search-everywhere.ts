@@ -9,9 +9,9 @@ type Category='all'|'classes'|'files'|'symbols'|'actions'|'text';
 type Row={label:string;detail:string;path?:string;run:()=>void|Promise<void>};
 export function mountSearchEverywhere(api:IdeApi,editor:monaco.editor.IStandaloneCodeEditor,open:(path:string,line?:number,column?:number)=>Promise<void>){
  const dialog=document.createElement('dialog');dialog.id='search-everywhere';dialog.setAttribute('aria-label',t('Buscar em tudo'));
- dialog.innerHTML=html`<header><strong>Buscar em tudo</strong><button type="button" aria-label="Fechar busca">×</button></header><nav aria-label="Categorias de busca"></nav><input id="everywhere-query" role="combobox" aria-label="Buscar em tudo" aria-controls="everywhere-results" aria-expanded="true" autocomplete="off" placeholder="Arquivos, classes, símbolos, ações ou texto…" maxlength="256"><label class="everywhere-scope"><input type="checkbox"> Incluir vendor</label><p id="everywhere-status" role="status"></p><div id="everywhere-results" role="listbox" aria-label="Resultados da busca"></div><footer>↑ ↓ navegar · Enter abrir · Esc fechar</footer>`;
+ dialog.innerHTML=html`<div class="everywhere-chrome"><nav aria-label="Categorias de busca"></nav><label class="everywhere-scope"><input type="checkbox"> Incluir vendor</label><button type="button" class="everywhere-close" aria-label="Fechar busca">×</button></div><input id="everywhere-query" role="combobox" aria-label="Buscar em tudo" aria-controls="everywhere-results" aria-expanded="true" autocomplete="off" placeholder="Arquivos, classes, símbolos, ações ou texto…" maxlength="256"><p id="everywhere-status" role="status"></p><div id="everywhere-results" role="listbox" aria-label="Resultados da busca"></div><footer><span class="everywhere-path"></span><span class="everywhere-hint">↑ ↓ · Enter · Esc</span></footer>`;
  document.body.append(dialog);
- const input=dialog.querySelector<HTMLInputElement>('#everywhere-query')!,vendor=dialog.querySelector<HTMLInputElement>('[type=checkbox]')!,list=dialog.querySelector<HTMLElement>('#everywhere-results')!,status=dialog.querySelector<HTMLElement>('#everywhere-status')!;
+ const input=dialog.querySelector<HTMLInputElement>('#everywhere-query')!,vendor=dialog.querySelector<HTMLInputElement>('[type=checkbox]')!,list=dialog.querySelector<HTMLElement>('#everywhere-results')!,status=dialog.querySelector<HTMLElement>('#everywhere-status')!,footerPath=dialog.querySelector<HTMLElement>('.everywhere-path')!;
  let category:Category='all',generation=0,selected=0,rows:Row[]=[],timer:ReturnType<typeof setTimeout>|undefined,files:Promise<string[]>|undefined,previous:HTMLElement|null=null;
  let symbolQueue:Promise<unknown>=Promise.resolve();
  function symbols(query:string,token:number){const next=symbolQueue.then(()=>token===generation?api.searchSymbols(query):[]);symbolQueue=next.catch(()=>{});return next;}
@@ -19,7 +19,7 @@ export function mountSearchEverywhere(api:IdeApi,editor:monaco.editor.IStandalon
  const buttons=tabs.map(([id,label])=>{const b=document.createElement('button');b.type='button';b.textContent=t(label);b.onclick=()=>{category=id;updateTabs();search();input.focus();};dialog.querySelector('nav')!.append(b);return b;});
  function updateTabs(){buttons.forEach((b,i)=>b.setAttribute('aria-pressed',String(tabs[i][0]===category)));vendor.disabled=category==='actions'||category==='text';}
  function close(){generation++;clearTimeout(timer);dialog.close();if(previous?.isConnected)previous.focus();else editor.focus();}
- dialog.querySelector('header button')!.addEventListener('click',close);dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
+ dialog.querySelector('.everywhere-close')!.addEventListener('click',close);dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
  dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}});
  function render(){
   list.replaceChildren();selected=Math.min(selected,Math.max(0,rows.length-1));
@@ -28,6 +28,7 @@ export function mountSearchEverywhere(api:IdeApi,editor:monaco.editor.IStandalon
    if(row.path)item.append(fileIcon(row.path));else{const badge=document.createElement('span');badge.className='everywhere-action-icon';badge.textContent='⌘';item.append(badge);}
    const text=document.createElement('span'),label=document.createElement('strong'),detail=document.createElement('small');label.textContent=row.label;detail.textContent=row.detail;text.append(label,detail);item.append(text);item.onmousedown=e=>e.preventDefault();item.onclick=()=>execute(i);list.append(item);
   }
+  const active=rows[selected];footerPath.textContent=active?.path??active?.detail??'';
   if(rows.length){input.setAttribute('aria-activedescendant','everywhere-row-'+selected);list.children[selected]?.scrollIntoView({block:'nearest'});}else input.removeAttribute('aria-activedescendant');
  }
  function execute(index=selected){const row=rows[index];if(!row)return;close();Promise.resolve().then(row.run).catch(error=>{show(category);status.textContent=String(error);});}

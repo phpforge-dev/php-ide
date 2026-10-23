@@ -13,10 +13,13 @@ try {
  window.ide = new Proxy({}, {get:(_,method)=> {
   if(String(method).startsWith('on'))return ()=>()=>{};
   return async (...args)=>{
+   if(method==='pluginList')return {plugins:[],directories:[]};
    if(method==='workspace')return {root:'/fixture',rootUri:'file:///fixture/',name:'customer-api'};
    if(method==='tree')return [];
    if(method==='databaseSources')return saved;
    if(method==='databaseSaveSources'){saved=args[0];return saved;}
+   if(method==='databaseLaravelFiles')return ['.env','.env.testing','.env.invalid'];
+   if(method==='databaseImportLaravel'){if(args[0]==='.env.invalid')throw Error('DB_CONNECTION não suportado na importação. Configure o driver manualmente.');return {driver:'mysql',host:'127.0.0.1',port:3307,database:args[0]==='.env.testing'?'laravel_test':'laravel',user:'sail',password:'synthetic-fixture-password',file:'',warnings:['Revise o host e a porta publicados pelo Docker.']};}
    if(method==='databasePasswordStored')return args[0]==='pg';
    if(method==='database')return {version:'PostgreSQL 16.4 on aarch64-unknown-linux-musl',schemas:['public','billing','audit']};
    if(method==='databaseConnect')return {id:'s-'+args[0].sourceId,label:args[0].name,driver:args[0].driver,schemas:args[0].driver==='redis'?['db0','db1']:['public','billing'],sourceId:args[0].sourceId,version:'16.4'};
@@ -35,6 +38,14 @@ try {
  await page.locator('.db-source-title').first().dblclick();await page.locator('.db-source.expanded summary').first().waitFor();await page.locator('.db-source.expanded summary').first().click();await page.waitForTimeout(200);
  await page.screenshot({path:'.artifacts/database-tree-preview.png'});
  await page.locator('#db-properties').click();await page.waitForTimeout(200);await page.screenshot({path:'.artifacts/database-dialog-general.png'});
+ const assert=(value,message)=>{if(!value)throw Error(message);};
+ await page.locator('#ds-import-env').click();await page.locator('#ds-import-picker').waitFor();await page.locator('#ds-env-file').selectOption('.env.testing');await page.locator('#ds-import-read').click();await page.waitForFunction(()=>document.querySelector('[name=database]').value==='laravel_test');
+ assert(await page.locator('[name=port]').inputValue()==='3307','import port');assert(await page.locator('#connection-form [name=password]').getAttribute('type')==='password','password not masked');assert(await page.locator('#connection-form [name=password]').inputValue()==='synthetic-fixture-password','password missing');
+ assert(!(await page.locator('[name=url]').inputValue()).includes('synthetic'),'password in URL');assert(!(await page.locator('.datasources-dialog').innerText()).includes('synthetic'),'password exposed');
+ await page.screenshot({path:'.artifacts/database-dialog-laravel.png'});
+ await page.locator('#ds-import-env').click();await page.locator('#ds-env-file').selectOption('.env.invalid');await page.locator('#ds-import-read').click();await page.waitForFunction(()=>document.getElementById('ds-import-status').textContent.includes('não suportado'));assert(await page.locator('[name=database]').inputValue()==='laravel_test','failed import changed draft');
+ await page.locator('#db-cancel').click();await page.locator('#db-properties').click();assert(await page.locator('#ds-list li').count()===2,'cancel saved imported source');assert(await page.locator('#connection-form [name=password]').inputValue()==='','password retained after cancel');
+
  await page.locator('#db-test').click();await page.waitForTimeout(200);await page.locator('[data-tab="schemas"]').click();await page.screenshot({path:'.artifacts/database-dialog-schemas.png'});
  await page.locator('[data-tab="ssh"]').click();await page.screenshot({path:'.artifacts/database-dialog-ssh.png'});
  await page.locator('#ds-new').click();await page.screenshot({path:'.artifacts/database-dialog-drivers.png'});

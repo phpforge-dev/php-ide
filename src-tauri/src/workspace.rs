@@ -99,17 +99,7 @@ pub fn tree(root: &Path, input: &str) -> Res<Value> {
         let kind = item.file_type().map_err(err)?;
         let name = item.file_name().to_string_lossy().into_owned();
         if kind.is_symlink()
-            || [
-                ".git",
-                ".idea",
-                "node_modules",
-                ".tools",
-                ".cache",
-                ".php-ide",
-                "dist",
-                "dist-electron",
-                "target",
-            ]
+            || [".git", ".tools", ".php-ide"]
             .contains(&name.as_str())
         {
             continue;

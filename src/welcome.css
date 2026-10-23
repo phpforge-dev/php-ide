@@ -58,4 +58,21 @@
 .welcome-wizard-status{color:var(--ij-warning);white-space:pre-wrap}
 .welcome-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
 .welcome-dialog .primary{background:var(--ij-button-default);border-color:var(--ij-button-default);color:var(--ij-button-default-text)}
+/* Trust Project (O: 02-trust-dialog) — layout próprio; tokens Islands. */
+.trust-dialog{width:min(520px,92vw);padding:20px 22px 16px;background:var(--ij-dialog);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);color:var(--ij-text);font:var(--ij-font-size)/1.45 var(--ij-font-ui)}
+.trust-dialog::backdrop{background:var(--ij-backdrop)}
+.trust-dialog-head{display:flex;gap:14px;align-items:flex-start;margin:0 0 12px}
+.trust-dialog-icon{flex:none;width:28px;height:28px;border-radius:50%;background:var(--ij-warning-bg);border:1px solid var(--ij-warning-border);color:var(--ij-warning);display:grid;place-items:center;font-size:16px;font-weight:700;line-height:1}
+.trust-dialog h2{margin:2px 0 0;font-size:15px;font-weight:600;line-height:1.35;color:var(--ij-text)}
+.trust-dialog>p{margin:0 0 14px;font-size:var(--ij-font-size-small);line-height:1.55;color:var(--ij-text);overflow-wrap:anywhere}
+.trust-dialog-check{display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;font-size:var(--ij-font-size-small);color:var(--ij-text)}
+.trust-dialog-check input{width:auto;height:auto;margin:2px 0 0;accent-color:var(--ij-focus)}
+.trust-dialog-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trust-dialog-actions .trust-help{margin-right:auto;width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--ij-control-border);background:transparent;color:var(--ij-text-secondary);font-size:14px;line-height:1}
+.trust-dialog-actions .trust-help:hover{background:var(--ij-hover);color:var(--ij-text)}
+.trust-dialog-actions button:not(.trust-help){height:var(--ij-control-height);padding:0 14px;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);background:var(--ij-button);color:var(--ij-text);font:inherit}
+.trust-dialog-actions button:not(.trust-help):hover{background:var(--ij-hover)}
+.trust-dialog-actions .secondary{border-color:var(--ij-focus)}
+.trust-dialog-actions .primary{background:var(--ij-button-default);border-color:var(--ij-button-default);color:var(--ij-button-default-text)}
+.trust-dialog-actions .primary:hover{filter:brightness(1.05)}
 @media(max-width:900px){.welcome-content header{flex-wrap:wrap}}

@@ -1,0 +1,16 @@
+.editor-split[data-mode=split]>#svg-preview{flex:1 1 50%}.editor-split[data-mode=preview]>#svg-preview{flex:1}
+#svg-toolbar{display:flex;align-items:center;gap:2px;margin-right:6px;padding-right:6px;border-right:1px solid var(--ij-border)}
+#svg-toolbar button{height:24px;padding:0 8px;border:0;background:transparent;color:var(--ij-text-secondary);font-size:11px;border-radius:var(--ij-control-radius-compact);white-space:nowrap}
+#svg-toolbar button:hover{background:var(--ij-hover);color:var(--ij-text)}#svg-toolbar button[aria-pressed=true]{background:var(--ij-selection);color:var(--ij-text)}
+#svg-preview{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--ij-border);background:var(--ij-island)}
+.editor-split[data-mode=preview]>#svg-preview{border-left:0}
+.svg-preview-tools{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--ij-border);flex-wrap:wrap}
+.svg-preview-tools button{height:24px;min-width:26px;padding:0 7px;font-size:11px;background:transparent;border:1px solid transparent;border-radius:var(--ij-control-radius-compact)}
+.svg-preview-tools button:hover{background:var(--ij-hover)}.svg-preview-tools button[aria-pressed=true]{background:var(--ij-selection)}
+.svg-preview-tools select{width:auto;min-width:0;margin:0 0 0 auto;height:24px;padding:0 5px;font-size:11px}
+.svg-viewport{flex:1;min-height:0;min-width:0;overflow:auto;background-color:#fff;background-image:conic-gradient(#e5e7eb 25%,transparent 0 50%,#e5e7eb 0 75%,transparent 0);background-size:20px 20px;outline:none}
+.svg-viewport[data-background=light]{background:#fff}.svg-viewport[data-background=dark]{background:#25262a}
+.svg-viewport:focus-visible{outline:1px solid var(--ij-focus);outline-offset:-1px}
+.svg-stage{min-width:100%;min-height:100%;width:max-content;display:grid;place-items:center;padding:20px;box-sizing:border-box}.svg-stage>img{display:block;max-width:none;flex:none}
+#svg-preview-info{padding:4px 10px;min-height:25px;border-top:1px solid var(--ij-border);font-size:11px;color:var(--ij-text-secondary)}
+.svg-preview-error{max-width:350px;padding:18px;background:var(--ij-island);border:1px solid var(--ij-border);border-radius:var(--ij-control-radius);text-align:center}.svg-preview-error p{color:var(--ij-error);margin:0 0 12px}.svg-preview-error button{font-size:12px}

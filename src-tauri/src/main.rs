@@ -1,6 +1,7 @@
 mod agents;
 mod composer;
 mod database;
+mod laravel_database;
 mod debug;
 mod docker;
 mod files;
@@ -12,6 +13,7 @@ mod process;
 mod recent;
 mod rpc;
 mod startup;
+mod shell;
 mod terminal;
 mod tests;
 mod workspace;
@@ -260,6 +262,8 @@ async fn ide(
     if method.starts_with("docker") {
         return state.docker.dispatch(root, &app, &method, &args).await;
     }
+    if method == "gitIgnored" { return git::ignored(root, arg(&args, 0)).await; }
+    if method == "shellValidate" { return shell::validate(root, s(0)?, s(1)?).await; }
     if method == "languageSynthetic" {
         return project
             .language
@@ -325,6 +329,8 @@ async fn ide(
     if method.starts_with("file") && method != "fileExists" {
         return files::dispatch(root, &project.history, &method, &args);
     }
+    if method == "databaseLaravelFiles" { return laravel_database::files(root); }
+    if method == "databaseImportLaravel" { return laravel_database::import(root, s(0)?); }
     if method.starts_with("database") {
         return project.database.dispatch(&method, &args).await;
     }

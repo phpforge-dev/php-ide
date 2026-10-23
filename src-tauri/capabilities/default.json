@@ -5,6 +5,13 @@
   ],
   "permissions": [
     "core:default",
-    "core:window:allow-set-theme"
+    "core:window:allow-set-theme",
+    "core:window:allow-set-size",
+    "core:window:allow-set-min-size",
+    "core:window:allow-set-position",
+    "core:window:allow-center",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-unmaximize",
+    "core:window:allow-maximize"
   ]
 }

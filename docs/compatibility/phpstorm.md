@@ -29,7 +29,7 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 | UI-TABS-001 | Abas | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-TREE-001 | Explorador de projetos | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-NAV-001 | Navegação | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| UI-SEARCH-001 | Search Everywhere | P1 | Implementada | Não validada | Testes próprios: ver docs/research/search-everywhere.md | Arquivos, símbolos PHP, ações e texto; comparação com referência pendente |
+| UI-SEARCH-001 | Search Everywhere | P1 | Implementada | Não validada | Testes próprios: search-everywhere.md; CSS Islands [31](../research/implementation-slice-31.md); `display` fechado [35](../research/implementation-slice-35.md) | Arquivos, símbolos PHP, ações e texto; casca visual aproximada; equivalência com referência pendente |
 | UI-TERM-001 | Terminal | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-THEME-001 | Temas | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-SETTINGS-001 | Configurações | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
@@ -188,6 +188,8 @@ SVGs oficiais open source da IntelliJ Platform, individualmente Apache 2.0, para
 
 Claro, escuro e sistema; painel não modal com prévia ao vivo, amostras e botão rápido; paleta compartilhada com Welcome, editor e ferramentas. Recorte implementado; equivalência **Em desenvolvimento**. Aceitação, dependências, contraste, evidências e limites em [appearance-themes.md](../research/appearance-themes.md).
 
+Fundação Islands Dark/Light (tokens, tipografia Inter/JetBrains Mono, shell em ilhas): [recorte 28](../research/implementation-slice-28.md); conferência parcial vs screenshots 03/05/40: [recorte 31a](../research/implementation-slice-31-foundation-check.md). Fatias de fidelidade (sem promoção): [31](../research/implementation-slice-31.md)–[34](../research/implementation-slice-34.md); regressão popup fechado × Cmd+clique: [35](../research/implementation-slice-35.md). **Não** promovido a “compatível neste perfil” — só geometria/tokens observados; captura WKWebView desta sessão bloqueada por TCC. Resize de Services no smoke: [recorte 30](../research/implementation-slice-30.md).
+
 ### UI-LANGUAGE-001 — Idiomas da interface (2026-10-22)
 
 Português e inglês selecionáveis em Aparência e Welcome; catálogo extensível, preferência persistida, aplicação por recarga protegida contra buffers não salvos. Recorte implementado; equivalência **Em desenvolvimento**. Critérios, evidências e limites: [interface-languages.md](../research/interface-languages.md).
@@ -241,3 +243,45 @@ As três famílias abaixo acrescentam recortes ao catálogo original. [Escopo, v
 | WEB-JSTS-001 | Autocomplete, tipos, navegação JS/TS | Em desenvolvimento | Worker real TypeScript; fixture multiarquivo | Pendente |
 | WEB-REACT-001 | JSX/TSX, props e useState | Em desenvolvimento | Declarações React e serviço TS reais | Pendente |
 | WEB-VUE-001 | Template, script setup e props importadas | Em desenvolvimento | Volar real em WebKit | Pendente |
+
+## Organização e guias de plugins — 23/10/2026
+
+[Índice atual](../README.md), [tutorial de autoria](../plugins/getting-started.md), [API](../plugins/api.md) e [limites](../plugins/permissions.md) foram separados do registro histórico. A documentação explicita que linguagens aceitas pelo manifesto não garantem integração de todos os hooks ao editor. Esta entrega não acrescenta capacidades ao runtime nem altera PLUGIN-API-001 de Em desenvolvimento/Não validada.
+
+### Welcome compacta — 23/10/2026
+
+PROJECT-WELCOME/SESSION-001: janela menor centralizada sem projeto, restauração do tamanho anterior ao abrir projeto. Estado comparativo continua Em desenvolvimento/Não validada; requisito relatado pelo usuário, sem nova medição do PhpStorm. Detalhes em startup-welcome.md.
+
+### Git — reprodução visual (23/10/2026)
+
+TOOL-GIT-001 permanece **Em desenvolvimento / não validada**. Log e Commit reorganizados a partir da imagem oficial; grafo usa parentesco real, filtros/seleção/diff preservados. [Referência, validação própria e limites](../research/git-ui-2026-10-23.md).
+
+Commit refinado a partir das duas capturas do usuário: toolbar, árvore com checkboxes, nomes/pastas e área Amend/mensagem/ações. Staging explícito, amend com revisão e Commit and Push ligado à revisão de envio. [Detalhes e limites](../research/git-ui-2026-10-23.md). Sem validação integral de equivalência.
+
+### Banco — diálogo e importação Laravel (23/10/2026)
+
+Diálogo reorganizado e importação de `.env` para rascunho revisável, sem conexão automática nem persistência de senha. Fixtures WebKit, Rust e janela Tauri passaram. Configuração PHP/cache, interpolação e opções adicionais de URL ficam fora do recorte. Estado comparativo permanece **Em desenvolvimento / não validada**. [Evidências e limites](../research/database-connection-laravel.md).
+
+### DotEnv — editor (23/10/2026)
+
+TOOL-DOTENV-001: corrigida a ausência de linguagem/providers para `.env`; realce, sugestões em `${...}` e navegação para declarações locais. Ativação Laravel/DotEnv e fluxo do editor confirmados em Tauri com fixture sintética. Estado comparativo **Em desenvolvimento / não validada**. [Evidências e limites](../research/dotenv-editor.md).
+
+### TOOL-DOCKER-LANGUAGE-001 — Dockerfile e Compose (23/10/2026)
+
+P1, complexidade média. Plugin interno com detecção de variantes/nomes alternativos, realce Monaco, completion de instruções/propriedades, hover, navegação entre estágios/serviços e diagnósticos locais YAML/Dockerfile. Dependências: host TypeScript, Monaco e yaml (ISC), sem engine Docker. Critério exercitado: abrir fixture, completar, navegar e corrigir erro visível na janela Tauri. Estado **Em desenvolvimento / não validada comparativamente**; schema completo, merges entre arquivos e validação de build/daemon permanecem fora. [Escopo e evidências](../research/docker-editor.md).
+
+### TOOL-BASH-LANGUAGE-001 — Bash e scripts sh (23/10/2026)
+
+P1, complexidade média. Plugin interno para extensões/dotfiles/shebang, realce, completion de builtins e símbolos locais, hover e F12. Verificação de sintaxe no buffer via shell do sistema em modo -n, sem executar script. Critério exercitado em Tauri: abrir, completar, navegar e corrigir diagnóstico visível; fixture também comprova ausência de execução. Estado **Em desenvolvimento / não validada comparativamente**. Dependências e limites (versão do shell, índice léxico, sem ShellCheck/semântica global): [evidências](../research/bash-editor.md).
+
+### Árvore — arquivos e pastas ignorados (23/10/2026)
+
+TOOL-GIT-001: cor de ignorado aplicada a nomes na árvore usando estado Git real, incluindo herança, negação e exceção de rastreados. Dependências antes ocultas por nome ficam visíveis e expandem sob demanda. Atualização preserva expansão e foi exercitada nos dois temas em Tauri com fixture. Estado comparativo **Em desenvolvimento / não validada**. [Implementação, evidências e limites](../research/git-ignored-tree.md).
+
+### TOOL-SVG-PREVIEW-001 — Fonte e imagem SVG (23/10/2026)
+
+P1, complexidade média. Fonte XML, visualização dividida/imagem, atualização do buffer, zoom/fundos e recuperação de erro. Dependências: Monaco e contexto de imagem do navegador; sem execução de scripts SVG na IDE. Critérios exercitados em Tauri: pixels mudam sem salvar, XML inválido recupera, modo/layout alternam e zoom 100% permanece correto no WebKit. Regressão Markdown passou. Estado **Em desenvolvimento / não validada comparativamente**. [Evidências e limites](../research/svg-preview.md).
+
+### Vue.js e React — disponibilidade (23/10/2026)
+
+WEB-VUE-001 e WEB-REACT-001: serviços já incluídos/habilitados agora aparecem em Aparência → Plugins. Tela e fluxo dos serviços reais verificados na janela Tauri. Não é instalação de extensão de terceiros nem nova cobertura de framework; estado comparativo continua Em desenvolvimento / não validada. [Disponibilidade, testes e limites](../research/web-language-services.md).

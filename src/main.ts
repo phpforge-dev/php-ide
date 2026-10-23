@@ -1,3 +1,9 @@
+import { mountSvgPreview, isSvgPath } from './svg-preview';
+import { mountTreeGitStatus } from './tree-git-status';
+import { isBashDocument } from '../shared/bash-document';
+import { isDockerfilePath, isComposeDocument } from '../shared/docker-document';
+import { registerDotenvLanguage } from './dotenv-language';
+import { isEnvPath } from '../shared/language/plugins/dotenv';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
 import { showTabMenu } from './tab-menu';
@@ -27,6 +33,7 @@ import './style.css';
 import './workbench.css';
 import './theme-surfaces.css';
 import './tool-windows.css';
+import './markdown-preview.css';
 import { mountGit } from './git-panel';
 import { mountDatabase } from './database-panel';
 import { sqlConsole } from './sql-console';
@@ -71,10 +78,11 @@ monaco.languages.setMonarchTokensProvider('blade', { tokenizer: {
 monaco.languages.register({ id: 'ignore', aliases: ['Ignore'] });
 monaco.languages.setLanguageConfiguration('ignore', { comments: { lineComment: '#' } });
 monaco.languages.setMonarchTokensProvider('ignore', { tokenizer: { root: [[/^\s*#.*$/, 'comment'], [/^!/, 'keyword'], [/\*\*|[*?]|\[[^\]]*\]/, 'regexp'], [/\\./, 'string.escape'], [/[^*?[\\]+/, ''], [/./, '']] } });
+registerDotenvLanguage();
 const phpLike = ['php', 'blade'];
-const languageFor = (path: string) => path.endsWith('.blade.php') ? 'blade' : path.endsWith('.php') ? 'php' : isMarkdownPath(path) ? 'markdown' : isIgnorePath(path) ? 'ignore' : undefined;
+const languageFor = (path: string, text = '') => isSvgPath(path) ? 'xml' : isDockerfilePath(path) ? 'dockerfile' : isComposeDocument(path,text) ? 'yaml' : path.endsWith('.blade.php') ? 'blade' : path.endsWith('.php') ? 'php' : isMarkdownPath(path) ? 'markdown' : isIgnorePath(path) ? 'ignore' : isEnvPath(path) ? 'dotenv' : isBashDocument(path,text) ? 'shell' : undefined;
 // Linguagens com navegação pelo backend: PHP/Blade (Phpactor + plugins) e Markdown (plugin).
-const navigable = [...phpLike, 'markdown','javascript','typescript','vue'];
+const navigable = ['shell','dockerfile','yaml','dotenv', ...phpLike, 'markdown','javascript','typescript','vue'];
 // virtual: console SQL (editável, não salvo em disco) ou DDL gerado (somente leitura).
 type Buffer = { file: FileBuffer; model: monaco.editor.ITextModel; saved: string; virtual?: 'console' | 'ddl' | 'library' };
 const buffers = new Map<string, Buffer>();
@@ -132,14 +140,14 @@ async function open(path: string, track = true) {
  if(frameworkTypes[path]){const key='library:'+path;virtual(key,frameworkTypes[path],'typescript','library',monaco.Uri.file(path));activate(key,track);return;}
  if (buffers.get(path)?.virtual) { activate(path, track); return; }
  const file = await api.read(path);
- if (!buffers.has(file.path)) { const uri=monaco.Uri.parse(file.uri);const model = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text, languageFor(file.path),uri);webProject.claim(model);if(model.getValue()!==file.text)model.setValue(file.text); buffers.set(file.path,{file,model,saved:file.text}); model.onDidChangeContent(tabs); }
+ if (!buffers.has(file.path)) { const uri=monaco.Uri.parse(file.uri);const model = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text, languageFor(file.path,file.text),uri);webProject.claim(model);if(model.getValue()!==file.text)model.setValue(file.text); buffers.set(file.path,{file,model,saved:file.text}); model.onDidChangeContent(tabs); }
  activate(file.path, track);
  if(webLanguage(editor.getModel()!.getLanguageId()))run(()=>webProject.prepare());
- if (phpLike.includes(languageFor(file.path) ?? '')) {
+ if (phpLike.includes(languageFor(file.path,file.text) ?? '')) {
   status(tr('Preparando análise PHP…'));
   const model = buffers.get(file.path)!.model;
   void request('textDocument/hover', model, new monaco.Position(1,1)).then(() => { if(editor.getModel()===model) status(tr('Análise PHP pronta · ⌘/Ctrl+clique: declaração · Ctrl+Espaço: autocomplete')); }).catch(error => status(String(error)));
- } else if (languageFor(file.path) === 'markdown') status(tr('Markdown · ⌘/Ctrl+Shift+V: editor/dividido/prévia · ⌘/Ctrl+clique: abrir link · ⌘/Ctrl+Shift+O: títulos'));
+ } else if (languageFor(file.path,file.text) === 'markdown') status(tr('Markdown · ⌘/Ctrl+Shift+V: editor/dividido/prévia · ⌘/Ctrl+clique: abrir link · ⌘/Ctrl+Shift+O: títulos'));
 }
 monaco.editor.registerEditorOpener({openCodeEditor: async (_source,resource,selection) => {
  if(resource.scheme === 'php-ide-ddl' || resource.scheme === 'php-ide-console' || resource.scheme === 'phar') {
@@ -208,6 +216,7 @@ const markdown = mountMarkdown(api, editor, { path: () => active, status, open: 
 } });
 const databasePanel = mountDatabase(api, { openConsole: session => run(() => consoleUi.open(session)), disconnected: id => consoleUi.forget(id) });
 mountAppearance(editor);
+mountSvgPreview(editor,{path:()=>active});
 // `expanded`: diretórios reabertos ao recarregar a árvore depois de ações de arquivo.
 async function tree(path = '', parent: HTMLElement = $('tree'), expanded?: Set<string>) {
  const entries = await api.tree(path);
@@ -255,7 +264,7 @@ async function toLocations(values: any[]) {
   if (uri.scheme === 'phar') { try { const stub = await api.languageStub(uri.toString()); virtual('library:'+uri.toString(), stub.text, 'php', 'library', uri); output.push({uri,range:range(item.range ?? item.targetSelectionRange)}); } catch(error) { status(msg`Stub nativo indisponível: ${String(error)}`); } continue; }
   if (uri.scheme !== 'file') continue;
   if(frameworkTypes[uri.fsPath]){virtual('library:'+uri.fsPath,frameworkTypes[uri.fsPath],'typescript','library',uri);output.push({uri,range:range(item.range ?? item.targetSelectionRange)});continue;}
-  const file = await api.read(uri.fsPath); if (!buffers.has(file.path)) { const m = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text,languageFor(file.path),uri);webProject.claim(m); buffers.set(file.path,{file,model:m,saved:file.text}); m.onDidChangeContent(tabs); }
+  const file = await api.read(uri.fsPath); if (!buffers.has(file.path)) { const m = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text,languageFor(file.path,file.text),uri);webProject.claim(m); buffers.set(file.path,{file,model:m,saved:file.text}); m.onDidChangeContent(tabs); }
   // Referência a arquivo (string com caminho) abre o arquivo na última posição conhecida.
   const kept = item.preserveView ? views.get(file.path)?.cursorState[0]?.position : undefined;
   output.push({uri,range:kept?{startLineNumber:kept.lineNumber,startColumn:kept.column,endLineNumber:kept.lineNumber,endColumn:kept.column}:range(item.range ?? item.targetSelectionRange)});
@@ -332,6 +341,7 @@ const agentPanel = mountAgent(api, $('agent'), {
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
 mountWorkbench(api);
 mountPluginManager(api);
+mountTreeGitStatus(api, $('tree'));
 mountWorkspaceSync(api, buffers, { tabs, status, editor, active: () => active });
 mountSearchEverywhere(api,editor,async(path,line,column)=>{await open(path);if(line){editor.setPosition({lineNumber:line,column:column??1});editor.revealLineInCenter(line);}});
 mountRecentProjects(api, chooseProject);

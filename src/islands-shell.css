@@ -77,7 +77,7 @@ aside.project-pane,aside.tools{background:var(--ij-island);border:0!important;bo
 .tools{margin-left:var(--ij-gap)}
 .panel-resizer{width:var(--ij-gap)}.panel-resizer.left{left:calc(var(--ij-stripe-width) + var(--left-size) - var(--ij-gap))}.panel-resizer.right{right:calc(var(--ij-stripe-width) + var(--right-size) - var(--ij-gap))}
 .panel-resizer:hover,.panel-resizer:focus{background:transparent;box-shadow:inset 0 0 0 1px var(--ij-focus)}
-.code{background:var(--ij-window);overflow:visible}
+.code{background:var(--ij-window);overflow:visible;min-height:0}
 .code>*{background:var(--ij-island)}
 .code>.workbench-empty{background:transparent}
 .code>.editor-strip{border-radius:var(--ij-island-radius) var(--ij-island-radius) 0 0}
@@ -87,20 +87,35 @@ aside.project-pane,aside.tools{background:var(--ij-island);border:0!important;bo
 .tool-window-resize{background:transparent}
 .workbench-empty{inset:40px 0 0}
 
-/* ---------- Tool window headers (title + pill tabs + actions) ---------- */
-.project-pane>h3,.tools .tool-heading,.tools h3{height:var(--ij-header-height);display:flex;align-items:center;margin:0;padding:0 12px;font-size:var(--ij-font-size);font-weight:600;color:var(--ij-text);border:0}
-.tools .tool-heading{padding:0 40px 0 0}
-.hide-tool{top:8px;right:8px;width:24px;height:24px;border-radius:var(--ij-control-radius-compact);color:var(--ij-text-secondary)}
+/* ---------- Tool window headers (title 600 + 40px + pill tabs + expui hide) ----------
+   Metrics from O 09/16/17/18/19/21/22/23/28 and T TabbedPane.tabHeight / EditorTabs / Tree.rowHeight.
+   Secondary bars (git-log search, docker tree tools) stay compact — only the title row is 40px. */
+.project-pane>h3,.tools .tool-heading,.tools h3,#db .tool-heading,#git-panel>.git-heading{height:var(--ij-header-height);min-height:var(--ij-header-height);box-sizing:border-box;display:flex;align-items:center;margin:0;padding:0 12px;font-size:var(--ij-font-size);font-weight:600;color:var(--ij-text);border:0;border-bottom:0;background:transparent}
+.tools .tool-heading{padding:0 40px 0 12px;margin-bottom:0;justify-content:flex-start;gap:6px}
+.tools .tool-heading h3,#db .tool-heading h3{height:auto;margin:0;font-size:var(--ij-font-size);font-weight:600;color:var(--ij-text)}
+#git-panel>.git-heading{padding:0 12px;padding-right:22px}#git-panel>.git-heading strong{font-size:var(--ij-font-size);font-weight:600}
+.hide-tool,#terminal-hide,#docker-hide,#debug-hide,#test-hide,#git-log-hide,#composer-hide{width:24px;height:24px;padding:0;border:0;border-radius:var(--ij-control-radius-compact);background:transparent;color:var(--ij-text-secondary);font-size:0;line-height:0;display:grid;place-items:center;flex:none;margin-left:2px}
+.hide-tool{position:absolute;top:8px;right:8px;z-index:2}
 .hide-tool>svg{display:none}
-.hide-tool::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat}
-.tool-window-head,.terminal-toolbar,.test-toolbar,.services-head,.git-log-toolbar,.docker-detail-head{min-height:var(--ij-header-height);height:auto;background:transparent;border-bottom:0;font-size:var(--ij-font-size);gap:6px;padding:0 8px 0 12px}
-.tool-window-head>strong:first-child,.terminal-toolbar>strong:first-child,.test-toolbar>strong:first-child,.services-head>strong:first-child{font-weight:600;margin-right:6px}
-/* Pill tab (EditorTabs.underlinedTab*): shared by editor tabs and tool window header tabs. */
-.tool-window-tab,.terminal-toolbar button[aria-pressed=true],.test-toolbar button[aria-pressed=true],.docker-tabs button[aria-selected=true],#git-panel>.switch button[aria-pressed=true],.ds-tabs button[aria-selected=true]{background:var(--ij-tab-selected)!important;border:1px solid var(--ij-tab-selected-border)!important;border-radius:var(--ij-tab-radius)!important}
-.tool-window-tab{align-self:center;padding:4px 8px}
+.hide-tool::before,#terminal-hide::before,#docker-hide::before,#debug-hide::before,#test-hide::before,#git-log-hide::before,#composer-hide::before{content:'';width:16px;height:16px;background:currentColor;-webkit-mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/hide_dark.svg") center/contain no-repeat}
+.hide-tool:hover,#terminal-hide:hover,#docker-hide:hover,#debug-hide:hover,#test-hide:hover,#git-log-hide:hover,#composer-hide:hover{background:var(--ij-hover);color:var(--ij-text)}
+.tool-window-head,.terminal-toolbar,.test-toolbar,.services-head,.debug-toolbar,.composer-toolbar,.docker-detail-head{display:flex;align-items:center;min-height:var(--ij-header-height);height:var(--ij-header-height);box-sizing:border-box;background:transparent;border-bottom:0;font-size:var(--ij-font-size);gap:6px;padding:0 8px 0 12px;flex-shrink:0;overflow:hidden}
+.tool-window-head>strong:first-child,.terminal-toolbar>strong:first-child,.test-toolbar>strong:first-child,.services-head>strong:first-child,.debug-toolbar>strong:first-child,.composer-toolbar>strong:first-child{font-weight:600;margin-right:6px;color:var(--ij-text);white-space:nowrap;flex:none}
+.services-head>span{color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
+.git-log-toolbar{display:flex;align-items:center;min-height:32px;height:auto;gap:8px;padding:4px 8px 4px 12px;border-bottom:1px solid var(--ij-border-subtle);background:transparent;font-size:var(--ij-font-size-small)}
+/* Pill tabs — same tokens as editor tabs (EditorTabs.underlined*). */
+#terminal-tabs{display:flex;align-items:center;gap:2px;height:100%;overflow:auto;flex:1;white-space:nowrap;min-width:0}
+.docker-tabs,.debug-tabs,#git-panel>.switch{display:flex;align-items:center;gap:2px;min-height:var(--ij-tab-height);padding:4px 8px;border-bottom:0;background:transparent}
+.ds-tabs{display:flex;align-items:center;gap:2px;margin:6px 0 12px;padding:0;border-bottom:0;background:transparent}
+.tool-window-tab,#terminal-tabs button,.docker-tabs button,#git-panel>.switch button,.ds-tabs button,.debug-tabs button,.test-toolbar button[aria-pressed]{height:var(--ij-tab-height);align-self:center;padding:0 8px;border:1px solid transparent!important;border-radius:var(--ij-tab-radius)!important;background:transparent!important;color:var(--ij-text-inactive-tab);font-size:var(--ij-font-size);box-sizing:border-box;white-space:nowrap}
+.tool-window-tab,#terminal-tabs button[aria-pressed=true],.docker-tabs button[aria-selected=true],#git-panel>.switch button[aria-pressed=true],.ds-tabs button[aria-selected=true],.debug-tabs button[aria-selected=true],.test-toolbar button[aria-pressed=true]{background:var(--ij-tab-selected)!important;border-color:var(--ij-tab-selected-border)!important;color:var(--ij-text)!important}
 #git-changes-tab{border-bottom:0!important}
+.terminal-toolbar>#terminal-new,.terminal-toolbar>#terminal-kill,.tool-window-head>button:not(#git-log-hide),.debug-toolbar>button:not(#debug-hide),.test-toolbar>button:not(#test-hide):not([aria-pressed]),.composer-toolbar>button:not(#composer-hide),.services-head>button:not(#docker-hide){border:0;background:transparent;color:var(--ij-text-secondary);border-radius:var(--ij-control-radius-compact);font-size:var(--ij-font-size-small);padding:4px 6px;height:28px}
+.terminal-toolbar>#terminal-new:hover,.terminal-toolbar>#terminal-kill:hover,.tool-window-head>button:not(#git-log-hide):hover,.debug-toolbar>button:not(#debug-hide):hover,.test-toolbar>button:not(#test-hide):not([aria-pressed]):hover,.composer-toolbar>button:not(#composer-hide):hover,.services-head>button:not(#docker-hide):hover{background:var(--ij-hover);color:var(--ij-text)}
+.db-toolbar button{width:24px;height:24px;border-radius:var(--ij-control-radius-compact);color:var(--ij-text-secondary)}
+.db-toolbar button:hover:not(:disabled){background:var(--ij-hover);color:var(--ij-text)}
 
-/* ---------- Project tree (24px rows, 18px indent, expui chevrons) ---------- */
+/* ---------- Trees / lists (24px rows — Project + tool windows) ---------- */
 #tree{padding:0 8px 12px}
 #tree button,#tree summary{height:var(--ij-row-height);font-size:var(--ij-font-size);color:var(--ij-text);border-radius:var(--ij-control-radius-compact);border:0;gap:6px;background:transparent}
 #tree summary{padding:0 4px}
@@ -111,6 +126,19 @@ aside.project-pane,aside.tools{background:var(--ij-island);border:0!important;bo
 #tree summary::before{width:16px;height:16px;flex:0 0 16px;margin:0;border:0;transform:none;background:var(--ij-text-secondary);-webkit-mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/contain no-repeat;mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/contain no-repeat}
 #tree details[open]>summary::before{transform:none;margin:0;-webkit-mask-image:url("./assets/jetbrains-icons/general/chevronDown_dark.svg");mask-image:url("./assets/jetbrains-icons/general/chevronDown_dark.svg")}
 #tree details>div{padding-left:var(--ij-tree-indent)}
+#docker-tree summary,#git-log-refs button,.git-commit-row,.git-file-row,#git-changes summary,#db-sources .db-source-title,.db-table,#debug-frames button,#test-list button,.composer-row,.debug-row{box-sizing:border-box;min-height:var(--ij-row-height);font-size:var(--ij-font-size)}
+#docker-tree summary{height:var(--ij-row-height);padding:0 10px;display:flex;align-items:center}
+.docker-resource{min-height:var(--ij-row-height);padding-top:2px;padding-bottom:2px;border-radius:var(--ij-control-radius-compact)}
+#git-log-refs button{height:var(--ij-row-height);padding:0 8px;display:flex;align-items:center;border-radius:var(--ij-control-radius-compact)}
+.git-commit-row{padding:0 10px;align-items:center;border-radius:0}
+.git-file-row,#git-changes summary{display:flex;align-items:center;padding:0 8px;min-height:var(--ij-row-height)}
+#db-sources .db-source-title,.db-table{min-height:var(--ij-row-height);padding:0 6px;align-items:center}
+#debug-frames button{min-height:var(--ij-row-height);padding:2px 6px;border-radius:var(--ij-control-radius-compact)}
+.debug-row{display:flex;align-items:center;padding:0 2px;line-height:var(--ij-row-height);font-family:var(--ij-font-mono);font-size:var(--ij-font-size-small)}
+#test-list button{min-height:var(--ij-row-height);padding:0 6px;border-radius:var(--ij-control-radius-compact)}
+.composer-row{min-height:var(--ij-row-height);padding:2px 6px;align-items:center;border-radius:var(--ij-control-radius-compact)}
+#git-log-refs button:hover,.git-commit-row:hover,.git-file-row:hover,#debug-frames button:hover,.debug-row:hover,#test-list button:hover,.composer-row:hover,.docker-resource:hover{background:var(--ij-list-hover)}
+#git-log-refs button[aria-pressed=true],.git-commit-row[aria-pressed=true],#debug-frames button[aria-selected=true],#test-list button[aria-selected=true],.docker-resource[aria-pressed=true],#db-sources .db-source-title[aria-selected=true]{background:var(--ij-selection)}
 
 /* ---------- Editor tabs (pills in a 40px row) ---------- */
 .code>.editor-strip{height:var(--ij-header-height);align-items:center;padding:0 6px;border-bottom:1px solid var(--ij-border-subtle)}
@@ -137,16 +165,22 @@ footer #cursor-position:hover,footer #plugins:hover,footer .status-widget:hover,
 .status-widgets[hidden]{display:none}
 .status-lock{display:grid;place-items:center}
 
-/* ---------- Popups, menus, dialogs ---------- */
+/* ---------- Popups, menus, dialogs (Islands; screenshots 04/06/07/08/10/13/14/15/31) ---------- */
 dialog{background:var(--ij-dialog);color:var(--ij-text);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow)}
 dialog::backdrop{background:var(--ij-backdrop)}
-.context-menu,.tool-context-menu,.usages-popup,.git-line-popup,.recent-projects,#git-branches-popup,#search-everywhere,#appearance-dialog,.connection-dialog{background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow)}
+.context-menu,.tool-context-menu,.usages-popup,.git-line-popup,.recent-projects,#git-branches-popup,#search-everywhere,#appearance-dialog,.connection-dialog,.refactor-toast,.project-context-menu,#keymap-dialog,.plugins-dialog,.plugin-consent,.local-history,.trust-dialog,.project-dialog,.welcome-dialog{background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);color:var(--ij-text)}
+#keymap-dialog,.plugins-dialog,.plugin-consent,.local-history,.trust-dialog,.project-dialog,.welcome-dialog,#appearance-dialog{background:var(--ij-dialog)}
 .context-menu,.tool-context-menu{padding:5px}
-.context-menu button,.tool-context-menu button{height:24px;border-radius:var(--ij-control-radius);font-size:var(--ij-font-size)}
-.context-menu button:hover:not(:disabled),.context-menu button:focus,.tool-context-menu button:focus,.usage-result:hover,.usage-result:focus,.recent-row:hover,.recent-row:focus-within{background:var(--ij-selection)}
+.context-menu button,.tool-context-menu button{height:24px;border-radius:var(--ij-tab-radius);font-size:var(--ij-font-size)}
+.context-menu button:hover:not(:disabled),.context-menu button:focus,.context-menu button[aria-expanded=true],.tool-context-menu button:hover:not(:disabled),.tool-context-menu button:focus,.usage-result:hover,.usage-result:focus,.recent-row:hover,.recent-row:focus-within,.branch-row:hover,.branch-row:focus-within{background:var(--ij-selection);color:var(--ij-selection-text)}
 .context-separator{background:var(--ij-border)}
-.usages-popup footer,.git-line-popup footer,.recent-projects footer,#search-everywhere footer{background:var(--ij-popup-footer);color:var(--ij-popup-footer-text);height:auto}
-#search-everywhere nav button[aria-pressed=true]{background:var(--ij-search-tab-selected);border-radius:var(--ij-control-radius);border-bottom:0}
-.everywhere-row[aria-selected=true]{background:var(--ij-selection);border-radius:var(--ij-control-radius)}
-#everywhere-query{background:transparent;border:0;outline:0;font-size:var(--ij-font-size)}
-.monaco-editor .suggest-widget,.monaco-editor .monaco-hover,.monaco-editor .parameter-hints-widget{border-radius:var(--ij-popup-radius)!important;box-shadow:var(--ij-shadow)!important}
+.usages-popup footer,.git-line-popup footer,.recent-projects footer,#search-everywhere footer,.refactor-dialog .refactor-footer{background:var(--ij-popup-footer);color:var(--ij-popup-footer-text);height:auto;border-color:var(--ij-popup-border)}
+#search-everywhere nav button[aria-pressed=true]{background:var(--ij-search-tab-selected);border-radius:var(--ij-tab-radius);border-bottom:0;color:var(--ij-text)}
+.everywhere-row[aria-selected=true]{background:var(--ij-selection);border-radius:var(--ij-tab-radius);color:var(--ij-selection-text)}
+/* Suggest/hover chrome only — avoid width/overflow overrides that break Monaco hit-testing. */
+.monaco-editor .suggest-widget,.monaco-editor .monaco-hover,.monaco-editor .parameter-hints-widget{border:1px solid var(--ij-popup-border)!important;border-radius:var(--ij-popup-radius)!important;box-shadow:var(--ij-shadow)!important;background-color:var(--ij-popup)!important}
+.monaco-editor .suggest-widget .monaco-list-row{border-radius:var(--ij-tab-radius);margin:1px 4px}
+.monaco-editor .suggest-widget .monaco-list-row.focused{background-color:var(--ij-selection)!important}
+.monaco-editor .suggest-widget .suggest-status{background:var(--ij-popup-footer)!important;color:var(--ij-popup-footer-text)!important;border-top:1px solid var(--ij-popup-border)!important}
+.refactor-dialog{background:var(--ij-dialog);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow)}
+.refactor-file>label[aria-selected=true],.refactor-occurrence:hover{background:var(--ij-selection);border-radius:var(--ij-tab-radius)}

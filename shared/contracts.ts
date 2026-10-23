@@ -9,7 +9,7 @@ export type WorkspaceInfo = { root: string; name: string };
 export type GitChange = { path: string; originalPath?: string; index: string; worktree: string };
 export type GitState = { branch: string; head: string | null; mergeHead: string | null; operation?: 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'conflict' | null; changes: GitChange[]; indexToken: string };
 export type GitDiff = { path: string; before: string; after: string; beforeLabel: string; afterLabel: string; token: string };
-export type GitCommit = { hash: string; author: string; date: string; subject: string };
+export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string };
 export type GitBranch = { name: string; current: boolean; remote: boolean; upstream: string; tracking: string };
 export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[] };
 export type GitHistory = { hash: string; parents: string[]; files: { path: string; oldPath?: string; status: string }[] };
@@ -121,12 +121,15 @@ export interface IdeApi {
   gitAccount(): Promise<GitAccount>;
   gitSaveAccount(input: GitAccountUpdate): Promise<GitAccount>;
   gitTestAccount(remote: string, token: string): Promise<string>;
+  /** Ignorados pelo Git entre os caminhos existentes consultados; não enumera dependências. */
+  gitIgnored(paths: string[]): Promise<string[]>;
   gitStatus(): Promise<GitState>;
   gitEditorBase(path: string): Promise<{text: string; label: string}>;
   gitLineInfo(path: string, line: number, text: string): Promise<{hash: string; author: string; date: string; summary: string; uncommitted: boolean}>;
   gitDiff(path: string, staged: boolean): Promise<GitDiff>;
   gitStage(path: string, staged: boolean, token: string): Promise<void>;
-  gitCommit(message: string, indexToken: string): Promise<string>;
+  gitCommitMessage(): Promise<string>;
+  gitCommit(message: string, indexToken: string, amend?: boolean): Promise<string>;
   gitLog(ref?: string): Promise<GitCommit[]>;
   gitBranches(): Promise<GitBranch[]>;
   gitTools(): Promise<GitTools>;
@@ -161,6 +164,8 @@ export interface IdeApi {
   databaseExecute(id: string, sql: string): Promise<SqlResult[]>;
   databaseCancel(id: string): Promise<void>;
   databaseDdl(id: string, schema: string, table: string): Promise<string>;
+  databaseLaravelFiles(): Promise<string[]>;
+  databaseImportLaravel(file: string): Promise<{driver: DatabaseDriver; host: string; port: number; database: string; user: string; password: string; file: string; warnings: string[]}>;
   databaseSources(): Promise<DataSource[]>;
   databaseSaveSources(sources: DataSource[]): Promise<DataSource[]>;
   databasePasswordStored(sourceId: string): Promise<boolean>;

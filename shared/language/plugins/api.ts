@@ -1,7 +1,7 @@
 import type { Literal } from '../php-source';
 
-// Contrato de extensões de linguagem. Plugins rodam no processo principal, recebem
-// apenas leitura confinada ao projeto e respondem a strings usadas como argumento
+// Contrato de extensões de linguagem: internos no host TypeScript; terceiros em
+// Web Worker com ponte de permissões (sandbox.ts). Strings usadas como argumento
 // de chamada: `route('x')` chega como callee `route`, argumento 0.
 export type Position = { line: number; character: number };
 /** `content`/`title`: documento virtual somente leitura (ex.: DDL gerado), aberto pelo renderer. */
@@ -41,6 +41,8 @@ export interface IdePlugin {
  readonly hidden?: boolean;
  /** Arquivos (relativos) cuja alteração reavalia `detect`. */
  readonly markers?: readonly string[];
+ /** Reavalia a detecção quando um arquivo relevante é criado/alterado/removido. */
+ activationChanged?(path: string): boolean;
  /** null quando o plugin não se aplica ao projeto. */
  detect(files: ProjectFiles): Promise<{ version?: string } | null>;
  /** Documentos atendidos (caminho relativo); padrão: arquivos `.php`, incluindo Blade. */
@@ -56,7 +58,7 @@ export interface IdePlugin {
  diagnose?(path: string, text: string, files: ProjectFiles): Promise<PluginDiagnostic[]>;
  codeLenses?(path: string, text: string, files: ProjectFiles): Promise<PluginCodeLens[]>;
 }
-export const CompletionKind = { Text: 1, Method: 2, Field: 5, Variable: 6, Module: 9, Property: 10, Value: 12, Keyword: 14, File: 17, Reference: 18, Folder: 19, Constant: 21 } as const;
+export const CompletionKind = { Text: 1, Method: 2, Function: 3, Field: 5, Variable: 6, Module: 9, Property: 10, Value: 12, Keyword: 14, File: 17, Reference: 18, Folder: 19, Constant: 21 } as const;
 
 // Plugins de terceiros: manifesto `plugin.json`, código num Web Worker e acesso ao
 // projeto, processos e rede só pela ponte que confere as permissões concedidas.

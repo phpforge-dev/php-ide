@@ -1,3 +1,5 @@
+import { isBashPath } from '../shared/bash-document';
+import { isDockerfilePath, isComposePath } from '../shared/docker-document';
 // The imported JetBrains SVGs each carry their own Apache-2.0 notice.
 import { phpFileKind } from '../shared/php-file-kind';
 const assets=import.meta.glob<string>('./assets/jetbrains-icons/**/*.svg',{query:'?url',import:'default',eager:true});
@@ -6,7 +8,8 @@ export function iconName(path:string,directory=false):string{
  const name=path.replaceAll('\\','/').split('/').pop()!.toLowerCase();
  if(directory){if(name==='vendor')return 'nodes/libraryFolder';if(['src','app'].includes(name))return 'nodes/sourceRoot';if(['tests','test'].includes(name))return 'nodes/testRoot';if(['resources','assets','public'].includes(name))return 'nodes/resourcesRoot';if(name==='.github')return 'nodes/folderGithub';return 'nodes/folder';}
  if(name.endsWith('.php')||name.endsWith('.phtml'))return 'original/php';
- if(name==='dockerfile'||/^dockerfile\./.test(name))return 'fileTypes/docker';
+ if(isDockerfilePath(path)||isComposePath(path))return 'fileTypes/docker';
+ if(isBashPath(path))return 'fileTypes/shell';
  if(name==='.editorconfig')return 'fileTypes/editorConfig';
  if(name.startsWith('.env')||['.gitignore','.gitattributes','.htaccess'].includes(name))return 'fileTypes/config';
  const extension=name.split('.').pop()!;

@@ -2,6 +2,13 @@
 
 IDE desktop independente, experimental, com referência de usabilidade no PhpStorm. A aplicação usa **Tauri 2 e backend Rust**. A interface usa TypeScript, Monaco e xterm.js no WebView do sistema. Não depende de Electron nem de servidor Node em execução.
 
+## Documentação
+
+- [Índice geral](docs/README.md): guias atuais, pesquisa e compatibilidade.
+- [Estrutura do projeto](docs/development/project-structure.md) e [guia de contribuição](docs/development/contributing.md).
+- [Gerar e verificar o instalador macOS](docs/development/contributing.md#build-e-instalador-macos).
+- [Instalar plugins](docs/plugins/README.md), [criar um plugin](docs/plugins/getting-started.md), [API](docs/plugins/api.md) e [distribuir](docs/plugins/distribution.md).
+
 ## Executar
 
 Requisitos de desenvolvimento: Rust estável/Cargo, ferramentas nativas do sistema, Node/npm para compilar a interface e Git no PATH. PHP 8.2+ local ou Docker para Phpactor. Validado em macOS Apple Silicon; Windows/Linux ainda precisam de validação.
@@ -26,7 +33,11 @@ Pacote: `src-tauri/target/release/bundle/macos/PHP IDE.app`. O aplicativo usa re
 ## Componentes ativos
 
 - Arquivos, confinamento à raiz, gravação atômica e detecção de conflito: Rust.
+- SVG: fonte XML, imagem e modo dividido, atualização sem salvar, zoom e fundos para transparência. [Uso e limites](docs/research/svg-preview.md).
+- Árvore do projeto diferencia arquivos e pastas ignorados pelo Git nos dois temas, com atualização após mudanças de regras. [Escopo e limites](docs/research/git-ignored-tree.md).
 - Git nativo via subprocessos controlados em Rust: status, diff, staging, commit, histórico, branches, trechos, conflitos, operações e contas locais por repositório.
+- Plugin Bash incluído: scripts `.sh`/`.bash`, dotfiles e shebang, sugestões, F12 e verificação de sintaxe do buffer. [Uso e limites](docs/research/bash-editor.md).
+- Plugin Docker incluído: Dockerfile e Compose (inclusive `composer.yml`), sugestões, diagnósticos e navegação entre estágios/serviços. [Uso e limites](docs/research/docker-editor.md).
 - Terminal integrado: Rust/portable-pty + xterm.js, múltiplas sessões, Ctrl+C, resize e ciclo de vida por projeto. Alt+F12 ou ícone lateral.
 - PostgreSQL/MySQL/MariaDB: drivers Rust/SQLx, exploração, metadados, prévia, console SQL e cancelamento. Credenciais somente em memória.
 - PHP: cliente LSP Rust para Phpactor. Parsers próprios, autoimport e plugins Laravel/Blade/.env/SQL compartilham módulos TypeScript puros na interface, sem Node.

@@ -1,3 +1,4 @@
+import { editorPreviewLayout } from './editor-preview-layout';
 import { t as tr, msg, html } from './i18n';
 import * as monaco from 'monaco-editor';
 import type { IdeApi } from '../shared/contracts';
@@ -39,11 +40,9 @@ const storageKey = 'php-ide-markdown-mode';
 export function mountMarkdown(api: IdeApi, editor: monaco.editor.IStandaloneCodeEditor, hooks: Hooks) {
  let mode: Mode = 'split';
  try { const saved = localStorage.getItem(storageKey); if (saved === 'editor' || saved === 'split' || saved === 'preview') mode = saved; } catch { /* preferência opcional */ }
- const host = document.getElementById('editor')!;
- const split = document.createElement('div'); split.className = 'editor-split';
- host.replaceWith(split);
+ const sharedLayout=editorPreviewLayout(editor);const host=sharedLayout.host;
  const preview = document.createElement('article'); preview.id = 'markdown-preview'; preview.className = 'markdown-body'; preview.tabIndex = 0; preview.setAttribute('aria-label', tr('Prévia Markdown')); preview.hidden = true;
- split.append(host, preview);
+
  // Grupo de três ícones na faixa das abas, junto da navegação de código (como na referência).
  const bar = document.createElement('div'); bar.id = 'markdown-toolbar'; bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', tr('Layout Markdown')); bar.hidden = true;
  const buttons = modes.map(([id, label, icon]) => {
@@ -59,12 +58,8 @@ export function mountMarkdown(api: IdeApi, editor: monaco.editor.IStandaloneCode
  const active = () => { const path = hooks.path(); return path && isMarkdownPath(path) && editor.getModel()?.getLanguageId() === 'markdown' ? path : undefined; };
  function layout() {
   const on = !!active();
-  bar.hidden = !on; isMarkdown.set(on);
-  split.dataset.mode = on ? mode : 'editor';
-  preview.hidden = !on || mode === 'editor';
-  host.hidden = on && mode === 'preview';
+  isMarkdown.set(on);sharedLayout.update();
   buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
-  editor.layout();
  }
  /** Blocos de código com linguagem conhecida recebem as cores do tema do editor. */
  async function colorizeCode(current: number) {
@@ -222,6 +217,7 @@ export function mountMarkdown(api: IdeApi, editor: monaco.editor.IStandaloneCode
   });
   return roots;
  } });
+ sharedLayout.register({active:()=>!!active(),mode:()=>mode,preview,toolbar:bar});
  layout();
  return { refresh: () => { rendered = ''; layout(); render(); }, mode: () => mode, setMode };
 }

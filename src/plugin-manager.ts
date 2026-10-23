@@ -204,6 +204,13 @@ export function mountPluginManager(api: IdeApi) {
    denied.length ? node('p', { className: 'plugin-warning', textContent: tr('Acesso negado: {0}', denied.join(', ')) }) : null,
    actions);
  }
+ function webSupportCard(id:string,name:string,description:string,extensions:string){
+  const card=node('article',{className:'plugin-card plugin-builtin'},
+   node('header',{},node('strong',{textContent:name}),node('span',{className:'plugin-scope',textContent:extensions}),node('span',{className:'plugin-badge plugin-on',textContent:tr('Incluído e habilitado')})),
+   node('p',{className:'plugin-meta',textContent:tr(description)}),
+   node('p',{className:'plugin-meta',textContent:tr('Ativação automática ao abrir um arquivo compatível. Não requer instalação separada.')}));
+  card.dataset.builtinPlugin=id;return card;
+ }
  async function render() {
   status.textContent = feedback;
   if (!dialog.open) return;
@@ -212,7 +219,10 @@ export function mountPluginManager(api: IdeApi) {
   try { internal = (await api.plugins()).filter(p => !external.has(p.id)).map(p => p.version ? `${p.name} ${p.version}` : p.name); } catch { /* lista informativa */ }
   body.replaceChildren(...parts([
    listError ? node('pre', { className: 'plugin-error', textContent: listError }) : null,
-   node('h3', { textContent: tr('Instalados') }),
+   node('h3',{textContent:tr('Suporte de linguagem incluído')}),
+   webSupportCard('vue','Vue.js','Vue 3: templates, componentes, props, autocomplete e diagnósticos.','.vue'),
+   webSupportCard('react','React','JSX/TSX, props e hooks. Verificação de tipos em TypeScript/TSX.','.jsx · .tsx'),
+   node('h3', { textContent: tr('Plugins de terceiros') }),
    ...(listing?.plugins.length ? listing.plugins.map(card) : [node('p', { className: 'plugin-meta', textContent: tr('Nenhum plugin de terceiros. Instale a partir de uma pasta ou .zip com plugin.json, ou coloque-o em .php-ide/plugins no projeto.') })]),
    node('h3', { textContent: tr('Integrados ativos neste projeto') }),
    node('p', { className: 'plugin-meta', textContent: internal.join(' · ') || '—' }),

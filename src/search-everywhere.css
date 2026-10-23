@@ -1,1 +1,73 @@
-#search-everywhere{top:12vh;margin:0 auto;width:min(800px,90vw);max-height:76vh;padding:0;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:9px;box-shadow:0 20px 80px var(--ij-shadow-color);font:13px -apple-system,BlinkMacSystemFont,sans-serif}#search-everywhere::backdrop{background:var(--ij-backdrop)}#search-everywhere header{position:static;display:flex;justify-content:space-between;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border)}#search-everywhere button{background:transparent;color:var(--text);border:0;padding:7px 10px;cursor:pointer}#search-everywhere nav{display:flex;padding:3px 9px;border-bottom:1px solid var(--border)}#search-everywhere nav button[aria-pressed=true]{border-bottom:2px solid var(--accent);background:var(--selection)}#everywhere-query{box-sizing:border-box;width:calc(100% - 24px);margin:12px;padding:12px;color:var(--text);background:var(--input);border:1px solid var(--border);border-radius:5px;font:15px inherit}#search-everywhere .everywhere-scope{display:flex;align-items:center;gap:6px;padding:0 12px;font-size:11px}#search-everywhere .everywhere-scope input{width:auto}#everywhere-status{margin:8px 12px;color:var(--muted);font-size:11px}#everywhere-results{max-height:43vh;min-height:80px;overflow:auto}.everywhere-row{display:flex;align-items:center;gap:12px;padding:9px 15px;cursor:pointer}.everywhere-row[aria-selected=true]{background:var(--selection)}.everywhere-row>span:last-child{min-width:0}.everywhere-row strong{display:block;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.everywhere-row small{display:block;color:var(--muted);font-size:11px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.everywhere-action-icon{width:16px;color:var(--muted)}#search-everywhere footer{position:static;padding:9px 12px;background:var(--panel);border-top:1px solid var(--border);font-size:11px;color:var(--muted)}#search-everywhere :focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Search Everywhere — Islands popup (screenshots 04, 06, 06b). Tokens only.
+   display:flex must be gated on [open]; otherwise it overrides the UA
+   dialog:not([open]){display:none} and the closed popup still hit-tests over the editor
+   (Cmd+clique / Monaco getTargetAtClientPoint → UNKNOWN). Same pattern as #keymap-dialog. */
+#search-everywhere{
+  top:10vh;margin:0 auto;width:min(780px,92vw);max-height:78vh;padding:0;
+  background:var(--ij-popup);color:var(--ij-text);
+  border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);
+  box-shadow:var(--ij-shadow);font:var(--ij-font-size)/1.4 var(--ij-font-ui);
+  overflow:hidden;display:none;flex-direction:column;
+}
+#search-everywhere[open]{display:flex}
+#search-everywhere::backdrop{background:var(--ij-backdrop)}
+#search-everywhere .everywhere-chrome{
+  display:flex;align-items:center;gap:4px;padding:6px 8px 4px;flex-shrink:0;
+}
+#search-everywhere nav{
+  display:flex;flex:1;min-width:0;gap:2px;padding:0;border:0;overflow:auto;
+}
+#search-everywhere nav button{
+  flex:none;height:24px;padding:0 10px;border:0;border-radius:var(--ij-tab-radius);
+  background:transparent;color:var(--ij-text-secondary);font:inherit;cursor:pointer;white-space:nowrap;
+}
+#search-everywhere nav button:hover{background:var(--ij-hover);color:var(--ij-text)}
+#search-everywhere nav button[aria-pressed=true]{
+  background:var(--ij-search-tab-selected);color:var(--ij-text);border-bottom:0;
+}
+#search-everywhere .everywhere-scope{
+  display:flex;align-items:center;gap:6px;margin:0;padding:0 4px;font-size:var(--ij-font-size-small);
+  color:var(--ij-text-secondary);white-space:nowrap;flex:none;
+}
+#search-everywhere .everywhere-scope input{width:auto;margin:0}
+#search-everywhere .everywhere-close{
+  flex:none;width:24px;height:24px;padding:0;border:0;border-radius:var(--ij-control-radius);
+  background:transparent;color:var(--ij-text-info);font-size:16px;line-height:1;cursor:pointer;
+}
+#search-everywhere .everywhere-close:hover{background:var(--ij-hover);color:var(--ij-text)}
+#everywhere-query{
+  box-sizing:border-box;width:calc(100% - 16px);margin:4px 8px 6px;padding:8px 10px;
+  color:var(--ij-text);background:var(--ij-field);border:1px solid var(--ij-control-border);
+  border-radius:var(--ij-control-radius);font:15px/1.3 var(--ij-font-ui);
+}
+#everywhere-query:focus{border-color:var(--ij-focus);outline:none;box-shadow:0 0 0 1px var(--ij-focus)}
+#everywhere-status{margin:0 12px 4px;color:var(--ij-popup-footer-text);font-size:var(--ij-font-size-small);min-height:1.2em}
+#everywhere-status:empty{display:none}
+#everywhere-results{flex:1;max-height:48vh;min-height:72px;overflow:auto;padding:2px 0 6px}
+.everywhere-row{
+  display:flex;align-items:center;gap:10px;margin:0 6px;padding:6px 10px;
+  border-radius:var(--ij-tab-radius);cursor:pointer;color:var(--ij-text);
+}
+.everywhere-row:hover{background:var(--ij-list-hover)}
+.everywhere-row[aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
+.everywhere-row>span:last-child{min-width:0;flex:1}
+.everywhere-row strong{
+  display:block;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.everywhere-row small{
+  display:block;color:var(--ij-text-info);font-size:var(--ij-font-size-small);
+  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.everywhere-row[aria-selected=true] small{color:var(--ij-text-secondary)}
+.everywhere-action-icon{width:16px;flex:none;color:var(--ij-text-info);text-align:center}
+#search-everywhere footer{
+  position:static;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:28px;padding:6px 12px;margin:0;border-top:1px solid var(--ij-popup-border);
+  background:var(--ij-popup-footer);color:var(--ij-popup-footer-text);
+  font-size:var(--ij-font-size-small);flex-shrink:0;
+}
+#search-everywhere footer .everywhere-path{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#search-everywhere footer .everywhere-hint{flex:none;color:var(--ij-text-info)}
+#search-everywhere :focus-visible{outline:2px solid var(--ij-focus);outline-offset:-2px}

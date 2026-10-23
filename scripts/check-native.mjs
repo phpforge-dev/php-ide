@@ -10,6 +10,35 @@ try{
  await writeFile(join(root,'SmokeTest.php'),'<?php\nuse PHPUnit\\Framework\\TestCase;\nfinal class SmokeTest extends TestCase {\n public function testPasses(): void { $this->assertTrue(true); }\n public function testFails(): void { $this->assertTrue(false); }\n}\n');await writeFile(join(root,'scratch.txt'),'initial\n');
  await writeFile(join(root,'notes.md'),'# Notas\n\nVeja o [guia](md-guide.md#seção) e <script>alert(1)</script>.\n\n![logo](md-logo.svg)\n');await writeFile(join(root,'md-guide.md'),'# Guia\n\n## Seção\n\nTexto.\n');await writeFile(join(root,'md-diagram.md'),'# Diagrama\n\n```mermaid\nflowchart LR\n  A[Início] --> B{Ok?}\n  B -- sim --> C[Fim]\n```\n\n```mermaid\nflowchart LR\n  A -->\n```\n\n[quebrado](nao-existe.md)\n');await writeFile(join(root,'md-logo.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>\n');
  for(const args of [['init','-q','-b','main'],['config','user.name','Native Fixture'],['config','user.email','native@example.invalid'],['add','.'],['commit','-qm','Initial native fixture']])run('git',['-C',root,...args]);
+ if(process.argv.includes('--svg-only')){
+  await writeFile(join(root,'preview.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="128" viewBox="0 0 256 128"><rect width="256" height="128" fill="#3871e1"/><circle cx="128" cy="64" r="32" fill="white"/></svg>');
+  await writeFile(join(root,'active-content.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" onload="parent.__svgExecuted=true"><script>parent.__svgExecuted=true</script><rect width="32" height="32" fill="red"/></svg>');
+ }
+ if(process.argv.includes('--ignored-tree-only')){
+  await writeFile(join(root,'.gitignore'),'ignored-cache/\nnode_modules/\n*.ignored\n');
+  await mkdir(join(root,'ignored-cache'));await writeFile(join(root,'ignored-cache','cache.txt'),'fixture');
+  await mkdir(join(root,'node_modules'));await writeFile(join(root,'node_modules','fixture.txt'),'fixture');
+  await writeFile(join(root,'fixture.ignored'),'fixture');await writeFile(join(root,'visible.txt'),'fixture');
+ }
+ if(process.argv.includes('--bash-only')){
+  await writeFile(join(root,'build.sh'),'#!/bin/bash\nNAME=fixture\ngreet() { printf "%s\\n" "$NAME"; }\ngreet\n');
+  await writeFile(join(root,'run-bash'),'#!/usr/bin/env bash\necho hello\n');
+  await writeFile(join(root,'.bashrc'),'export FIXTURE=hello\n');
+ }
+ if(process.argv.includes('--docker-language-only')){
+  await writeFile(join(root,'Dockerfile.dev'),'# Synthetic Docker fixture\nFROM php:8.3-cli AS builder\nWORKDIR /app\nCOPY --from=builder /app /app\n');
+  await writeFile(join(root,'composer.yml'),'services:\n  app:\n    image: php:8.3-cli\n    depends_on:\n      - db\n  db:\n    image: postgres:16\n');
+  await writeFile(join(root,'deployment.yml'),'services:\n  web:\n    image: nginx:alpine\n');
+ }
+ if(process.argv.includes('--dotenv-only')){
+  const composer=JSON.parse(await readFile(join(root,'composer.json'),'utf8'));composer.require['laravel/framework']='^12.0';await writeFile(join(root,'composer.json'),JSON.stringify(composer));
+  await writeFile(join(root,'.env'),'# Synthetic Laravel fixture\nAPP_NAME=Laravel\nAPP_DEBUG=true\nDB_PORT=3306\nMAIL_NAME="${APP_NAME}"\n');
+  await writeFile(join(root,'.env.testing'),'APP_NAME=Testing\nMAIL_NAME="${APP_NAME}"\n');
+ }
+ if(process.argv.includes('--database-only')){
+  const composer=JSON.parse(await readFile(join(root,'composer.json'),'utf8'));composer.require['laravel/framework']='^12.0';await writeFile(join(root,'composer.json'),JSON.stringify(composer));
+  await writeFile(join(root,'.env'),'DB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_PORT=3307\nDB_DATABASE=laravel_fixture\nDB_USERNAME=sail\nDB_PASSWORD="fixture-password"\n');
+ }
  const second=join(temp,'recent-fixture');await mkdir(second);await writeFile(join(second,'index.php'),'<?php echo "Recent project";\n');
  await mkdir(join(temp,'profile'));await writeFile(join(temp,'profile','recent-projects.json'),JSON.stringify([{path:await realpath(second),name:'recent-fixture'},{path:join(temp,'missing-project'),name:'missing-project'}]));
  const remote=join(temp,'remote.git');run('git',['init','--bare','-q',remote]);run('git',['-C',root,'remote','add','origin',remote]);
@@ -26,6 +55,12 @@ try{
   await writeFile(dockerState,JSON.stringify({containers:[{ID:dockerFixture.id,Names:dockerFixture.name,Image:'php:8.3-cli',State:'exited',Status:'Exited (0)',Ports:''}],images:[{ID:'sha256:'+'d'.repeat(64),Repository:'php',Tag:'8.3-cli',Size:'120 MB'}]}));
   await writeFile(join(root,'compose.yaml'),'services:\n  app:\n    image: php:8.3-cli\n');
  }
+ dockerFixture.svgOnly=process.argv.includes('--svg-only');
+ dockerFixture.ignoredTreeOnly=process.argv.includes('--ignored-tree-only');
+ dockerFixture.bashOnly=process.argv.includes('--bash-only');
+ dockerFixture.dockerLanguageOnly=process.argv.includes('--docker-language-only');
+ dockerFixture.dotenvOnly=process.argv.includes('--dotenv-only');
+ dockerFixture.databaseOnly=process.argv.includes('--database-only');
  dockerFixture.webOnly=process.argv.includes('--web-only');dockerFixture.searchOnly=process.argv.includes('--search-only');dockerFixture.editorOnly=process.argv.includes('--editor-only');dockerFixture.referencesOnly=process.argv.includes('--references-only');dockerFixture.insightsOnly=process.argv.includes('--insights-only');dockerFixture.compareP0=compareP0;dockerFixture.compareReps=Number(process.env.PHP_IDE_COMPARE_REPS)||3;
  const inputs=[];
  if(!process.argv.includes('--no-db')&&!compareP0){

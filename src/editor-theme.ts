@@ -44,7 +44,7 @@ export function editorRules(isLight: boolean): editor.ITokenThemeRule[] {
   {token:'identifier',foreground:c.text},{token:'type',foreground:c.type},{token:'type.identifier',foreground:c.type},
   {token:'delimiter',foreground:c.text},{token:'operator',foreground:c.text},
   {token:'annotation',foreground:c.metadata},{token:'attribute.name',foreground:c.attribute},{token:'attribute.value',foreground:c.string},
-  {token:'tag',foreground:c.tag},{token:'metatag.html',foreground:c.tag},
+  {token:'type.yaml',foreground:c.tag},{token:'tag',foreground:c.tag},{token:'metatag.html',foreground:c.tag},
   // Semantic tokens from php-editor-insights (variable, method, function, type+constructor, keyword=builtin).
   {token:'method',foreground:c.method},
   {token:'function',foreground:c.functionCall},

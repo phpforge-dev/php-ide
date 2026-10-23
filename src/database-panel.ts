@@ -1,3 +1,5 @@
+import './database-connection.css';
+import { toolIcon } from './tool-window';
 import { t as tr, msg, html } from './i18n';
 import type { DataSource, DatabaseDriver, DatabasePage, DatabaseSession, IdeApi, RedisEdit } from '../shared/contracts';
 import { buildUrl, defaultName, driverInfo, drivers, newSource, normalizeSource, parseUrl, plannedDrivers, toInput, validateSource } from '../shared/datasource';
@@ -8,7 +10,7 @@ const uid = () => crypto.randomUUID();
 /** Janela Database: fontes de dados do projeto, diálogo "Fontes de dados e drivers" e prévia de tabelas. */
 export function mountDatabase(api: IdeApi, hooks: { openConsole(session: DatabaseSession): void; disconnected(id: string): void }) {
   const root = document.getElementById('db')!;
-  root.innerHTML = html('<div class="tool-heading"><h3>Database</h3><div class="db-toolbar" role="toolbar" aria-label="Ações de banco"><button type="button" id="db-add" title="Nova fonte de dados">＋</button><button type="button" id="db-properties" title="Propriedades da fonte de dados" disabled>⚙</button><button type="button" id="db-refresh" title="Atualizar" disabled>⟳</button><button type="button" id="db-disconnect" title="Desconectar" disabled>⏻</button><button type="button" id="db-console-open" title="Abrir console" disabled>&gt;_</button></div></div><div class="db-empty"><span class="database-emblem">▤</span><strong>Conecte seu banco</strong><p>PostgreSQL, MySQL, MariaDB, SQL Server, Oracle, SQLite e Redis. Explore schemas, abra tabelas e execute comandos sem sair do editor.</p><button type="button" id="db-empty-add">Nova fonte de dados</button></div><p id="db-result" role="status" aria-live="polite"></p><div id="db-sources" role="tree" aria-label="Fontes de dados"></div>');
+  root.innerHTML = html('<div class="tool-heading"><h3>Database</h3><div class="db-toolbar" role="toolbar" aria-label="Ações de banco"><button type="button" id="db-add" title="Nova fonte de dados">＋</button><button type="button" id="db-properties" title="Propriedades da fonte de dados" disabled>⚙</button><button type="button" id="db-refresh" title="Atualizar" disabled>⟳</button><button type="button" id="db-disconnect" title="Desconectar" disabled>⏻</button><button type="button" id="db-console-open" title="Abrir console" disabled>&gt;_</button></div></div><div class="db-empty"><span class="database-emblem">▤</span><strong>Conecte seu banco</strong><p>PostgreSQL, MySQL, MariaDB, SQL Server, Oracle, SQLite e Redis. Explore schemas, abra tabelas e execute comandos sem sair do editor.</p><button type="button" id="db-empty-add">Nova fonte de dados</button><button type="button" id="db-empty-import" class="db-import-link">Importar do Laravel .env…</button></div><p id="db-result" role="status" aria-live="polite"></p><div id="db-sources" role="tree" aria-label="Fontes de dados"></div>');
 
   // Diálogo de fontes de dados
   const dialog = document.createElement('dialog'); dialog.className = 'connection-dialog datasources-dialog'; dialog.setAttribute('aria-label', tr('Fontes de dados e drivers'));
@@ -20,14 +22,15 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
  <aside class="ds-sidebar">
   <div class="ds-actions" role="toolbar" aria-label="Fontes de dados"><button type="button" id="ds-new" title="Adicionar fonte de dados" aria-haspopup="menu">＋</button><button type="button" id="ds-remove" title="Remover">−</button><button type="button" id="ds-duplicate" title="Duplicar">⧉</button></div>
   <div class="driver-menu" id="ds-driver-menu" role="menu" hidden><small>Fonte de dados</small><div class="driver-list"></div><p class="planned">Planejados: ${plannedDrivers.join(', ')}</p></div>
+  <button type="button" id="ds-import-env" class="ds-import-button">Importar do Laravel .env…</button><div class="ds-import-picker" id="ds-import-picker" hidden><label>Arquivo de ambiente<select id="ds-env-file"></select></label><button type="button" id="ds-import-read">Importar conexão</button></div><p id="ds-import-status" role="status" aria-live="polite"></p>
   <small class="ds-group">Fontes de dados do projeto</small>
   <ul class="ds-list" id="ds-list" role="listbox" aria-label="Fontes de dados do projeto"></ul>
  </aside>
  <section class="connection-settings">
   <div class="ds-none" id="ds-none"><p>Nenhuma fonte de dados. Use ＋ para escolher um driver.</p></div>
-  <div class="ds-editor" id="ds-editor">
+  <div class="ds-editor" id="ds-editor"><div class="ds-driver-heading"><span id="ds-driver-symbol"></span><div><strong id="ds-driver-title"></strong><span>Configuração da conexão</span></div></div>
    <div class="ds-head"><label class="inline">Nome:<input name="name" autocomplete="off"></label><button type="button" id="ds-reset-name" title="Restaurar nome padrão">↺</button></div>
-   <label class="inline">Comentário:<input name="comment" autocomplete="off"></label>
+
    <div class="ds-tabs" role="tablist"><button type="button" role="tab" data-tab="general" aria-selected="true">Geral</button><button type="button" role="tab" data-tab="options" aria-selected="false">Opções</button><button type="button" role="tab" data-tab="ssh" aria-selected="false">SSH/SSL</button><button type="button" role="tab" data-tab="schemas" aria-selected="false">Schemas</button></div>
    <div class="ds-panel" data-panel="general" role="tabpanel">
     <label class="grid">Driver:<select name="driver">${driverOptions}</select></label>
@@ -39,9 +42,9 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
     <label class="grid connect-row">Tipo de conexão:<select name="connectType"><option value="service">Service name</option><option value="sid">SID</option></select></label>
     <label class="grid database-row"><span id="ds-database-label">Banco de dados:</span><input name="database" autocomplete="off"></label>
     <label class="grid">URL:<input name="url" autocomplete="off" spellcheck="false"></label>
-    <p class="ds-hint" id="ds-hint"></p>
+    <p class="ds-hint" id="ds-hint"></p><p id="ds-import-note" class="ds-import-note" hidden></p>
    </div>
-   <div class="ds-panel" data-panel="options" role="tabpanel" hidden>
+   <div class="ds-panel" data-panel="options" role="tabpanel" hidden><label class="grid">Comentário:<input name="comment" autocomplete="off"></label>
     <label class="check"><input name="readOnly" type="checkbox"> Somente leitura</label><p class="ds-hint" id="ds-readonly-hint"></p>
     <label class="stack">Script de inicialização (executado em cada conexão)<textarea name="startup" rows="5" spellcheck="false" placeholder="SET search_path TO app, public;"></textarea></label>
    </div>
@@ -62,11 +65,11 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
     <div class="schema-list" id="ds-schemas"></div>
     <button type="button" id="ds-load-schemas">Carregar schemas</button>
    </div>
-   <div class="ds-test"><button type="button" id="db-test" class="link">Testar conexão</button><span id="db-connection-result" role="status" aria-live="polite"></span></div>
+
   </div>
  </section>
 </div>
-<footer><span>Senhas ficam só em memória; nada é gravado em disco.</span><button type="button" id="db-cancel">Cancelar</button><button type="button" id="db-apply">Aplicar</button><button id="db-connect" class="primary">OK</button></footer>`;
+<footer><div class="ds-test"><button type="button" id="db-test" class="link">Testar conexão</button><span id="db-connection-result" role="status" aria-live="polite"></span></div><button type="button" id="db-cancel">Cancelar</button><button type="button" id="db-apply">Aplicar</button><button id="db-connect" class="primary">Conectar</button></footer>`;
   const menuList = form.querySelector<HTMLElement>('.driver-menu .driver-list')!;
   for (const d of drivers) { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.dataset.driver = d.id; b.append(badge(d.id), d.name); menuList.append(b); }
 
@@ -83,6 +86,29 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
   const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const field = <T extends HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = HTMLInputElement>(name: string) => form.elements.namedItem(name) as T;
 
+  toolIcon(el('ds-new'),'<path d="M12 5v14M5 12h14"/>',tr('Adicionar fonte de dados'));
+  toolIcon(el('ds-remove'),'<path d="M5 12h14"/>',tr('Remover'));
+  toolIcon(el('ds-duplicate'),'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M15 8V4H4v11h4"/>',tr('Duplicar'));
+  let importRequest=0;
+  const imported=new Map<string,string>();
+  async function chooseEnv(){
+    const token=++importRequest;const version=epoch;el('ds-driver-menu').hidden=true;el('ds-import-status').textContent=tr('Procurando arquivos .env…');el('ds-import-picker').hidden=true;
+    try{const files=await api.databaseLaravelFiles();if(token!==importRequest||version!==epoch||!dialog.open)return;
+      const select=el<HTMLSelectElement>('ds-env-file');select.replaceChildren(...files.map(file=>new Option(file,file)));el('ds-import-picker').hidden=!files.length;
+      el('ds-import-status').textContent=files.length?tr('Selecione o ambiente. A importação não conecta ao banco.'):tr('Nenhum arquivo .env encontrado na raiz do projeto.');
+    }catch(error){if(token===importRequest&&dialog.open)el('ds-import-status').textContent=tr(String(error));}
+  }
+  el('ds-import-env').onclick=()=>void chooseEnv();
+  el('ds-import-read').onclick=async()=>{
+    const token=++importRequest;const version=epoch;const file=el<HTMLSelectElement>('ds-env-file').value;if(!file)return;
+    el<HTMLButtonElement>('ds-import-read').disabled=true;el('ds-import-status').textContent=tr('Lendo conexão…');
+    try{const result=await api.databaseImportLaravel(file);if(token!==importRequest||version!==epoch||!dialog.open)return;
+      const source=newSource(result.driver,uid());Object.assign(source,{host:result.host,port:result.port,database:result.database,user:result.user,file:result.file});source.name=defaultName(source);source.comment='Laravel · '+file;
+      typed.set(source.id,result.password);imported.set(source.id,[msg`Importado de ${file}. Revise os campos antes de conectar.`,...result.warnings.map(tr)].join(' '));
+      drafts.push(source);edit(source.id);showTab('general');el('ds-import-picker').hidden=true;el('ds-import-status').textContent=tr('Conexão importada para revisão.');field(driverInfo(source.driver).file?'file':'host').focus();
+    }catch(error){if(token===importRequest&&dialog.open)el('ds-import-status').textContent=tr(String(error));}
+    finally{el<HTMLButtonElement>('ds-import-read').disabled=false;}
+  };
   let sources: DataSource[] = [];
   const sessions = new Map<string, DatabaseSession>();
   let selected: string | undefined;
@@ -341,6 +367,7 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
       const name = document.createElement('span'); name.textContent = source.name || defaultName(source); li.append(badge(source.driver), name);
       li.onclick = () => edit(source.id); li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); edit(source.id); } }; ul.append(li);
     }
+    el<HTMLButtonElement>('db-test').disabled= !current;
     el<HTMLButtonElement>('ds-remove').disabled = el<HTMLButtonElement>('ds-duplicate').disabled = !current;
     el('ds-none').hidden = !!current; el('ds-editor').hidden = !current;
   }
@@ -359,6 +386,7 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
   function fill() {
     if (!current) { list(); return; }
     const s = current; const info = driverInfo(s.driver);
+    el('ds-driver-symbol').replaceChildren(badge(s.driver));el('ds-driver-title').textContent=info.name;el('ds-import-note').textContent=imported.get(s.id)??'';el('ds-import-note').hidden=!imported.has(s.id);
     field('name').value = s.name; field('comment').value = s.comment; field<HTMLSelectElement>('driver').value = s.driver;
     field('host').value = s.host; field('port').value = String(s.port); field('file').value = s.file; field<HTMLSelectElement>('auth').value = s.auth;
     field('user').value = s.user; field('password').value = typed.get(s.id) ?? ''; field<HTMLSelectElement>('savePassword').value = s.savePassword; field('database').value = s.database;
@@ -449,13 +477,14 @@ export function mountDatabase(api: IdeApi, hooks: { openConsole(session: Databas
   async function toggleOpen(id: string) { const node = el('db-sources').querySelector<HTMLElement>(`.db-source[data-id="${CSS.escape(id)}"]`); if (node && !node.classList.contains('expanded')) await toggle(id); }
   const closeDialog = () => dialog.close();
   el('db-dialog-close').onclick = closeDialog; el('db-cancel').onclick = closeDialog;
-  dialog.addEventListener('close', () => { typed.clear(); field('password').value = ''; el('ds-driver-menu').hidden = true; });
+  dialog.addEventListener('close', () => { importRequest++;imported.clear();el('ds-import-picker').hidden=true;el('ds-import-status').textContent='';typed.clear(); field('password').value = ''; el('ds-driver-menu').hidden = true; });
   function showDialog(options: { id?: string; add?: boolean } = {}) {
     drafts = structuredClone(sources); named.clear(); for (const s of drafts) if (s.name && s.name !== defaultName(s)) named.add(s.id);
     current = drafts.find(s => s.id === (options.id ?? selected)) ?? drafts[0]; status(''); showTab('general'); fill(); dialog.showModal();
     if (options.add || !drafts.length) { el('ds-driver-menu').hidden = false; el('ds-driver-menu').querySelector<HTMLButtonElement>('button')!.focus(); } else field('name').focus();
   }
 
+  el('db-empty-import').onclick=()=>{showDialog();void chooseEnv();};
   el('db-add').onclick = () => showDialog({ add: true });
   el('db-empty-add').onclick = () => showDialog({ add: true });
   el('db-properties').onclick = () => { if (selected) showDialog({ id: selected }); };

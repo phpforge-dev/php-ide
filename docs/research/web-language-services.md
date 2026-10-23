@@ -45,3 +45,11 @@ Licenças e notices dos pacotes estão preservadas em `licenses/web-language-ser
 ## Resultado da entrega
 
 Typecheck, dois catálogos de idioma e 28 testes Rust passaram (um teste de banco real permanece ignorado por padrão). A regressão WebKit de seleção/cores PHP, multicursor, abas e busca geral passou. Os cinco cenários de linguagem e o ciclo de vida dos snapshots passaram em WebKit, inclusive com o worker Vue compilado para produção. O teste do aplicativo Tauri empacotado passou para TS/React/Vue, com navegação pelo toolbar e leitura real do projeto temporário. Esses resultados validam o recorte próprio, sem promover equivalência comparativa com PhpStorm.
+
+## Disponibilidade e plugins — 23/10/2026
+
+Vue.js e React são serviços incluídos/habilitados com o aplicativo. A tela Aparência → Plugins agora mostra cartões separados em **Suporte de linguagem incluído**, com ativação automática por `.vue` e `.jsx`/`.tsx`. Isso não cria pacotes de terceiros nem instala dependências no projeto; torna visível uma capacidade que já era inicializada por installWebLanguages. O catálogo de plugins ativos do host PHP continua separado desses serviços.
+
+O aplicativo 0.2.6 existente passou em `npm run test:packaged -- --no-db --web-only` antes do ajuste da lista. Após o ajuste, typecheck, locales e 72 testes Rust passaram (5 ignorados); `npm run test:native -- --no-db --web-only` confirmou os dois cartões habilitados e o fluxo real TypeScript/React/Vue. O teste abre a tela Plugins e depois verifica props JSX, inferência de useState, props Vue importadas e navegação entre arquivos. Nenhuma dependência foi instalada em projeto externo. Os limites de Vue 3, tsconfig/aliases, snapshots e tipos fallback descritos acima permanecem.
+
+Entrega 0.2.7: `npm run test:packaged -- --no-db --web-only` passou no release, incluindo cartões Vue/React e serviços reais. Aplicativo/DMG gerados, hdiutil verify válido e SHA-256 registrado.

@@ -9,7 +9,7 @@ try {
  await (await import('./native')).installNativeApi();
  const api=window.ide;
  const native=await (await import('@tauri-apps/api/core')).invoke<any>('ide',{method:'nativeInfo',args:[]});
- async function workbench(){try{splash.style.display='grid';status.textContent=tr('Abrindo projeto…');const main=await import('./main');await main.ready;clearTimeout(slow);splash.remove();}catch(error){failed(error);throw error;}}
+ async function workbench(){try{await (await import('./window-layout')).workbenchWindow();splash.style.display='grid';status.textContent=tr('Abrindo projeto…');const main=await import('./main');await main.ready;clearTimeout(slow);splash.remove();}catch(error){failed(error);throw error;}}
  const startup=await api.startupInfo();
  if(startup.project){await workbench();if(native.smoke)await (await import('./native-smoke')).nativeSmoke(native);}
  else {const welcome=await import('./welcome');await welcome.showWelcome(api,workbench);splash.style.display='none';clearTimeout(slow);if(native.smoke&&native.startupSmoke)await (await import('./startup-smoke')).startupSmoke(native.startupSmoke);}

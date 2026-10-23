@@ -56,6 +56,32 @@ async fn operation(root: &Path, conflicts: bool) -> Option<&'static str> {
     // Conflito sem estado de operação: tipicamente `stash apply`.
     conflicts.then_some("conflict")
 }
+/// Query only requested visible paths; Git owns ignore precedence and tracked-file rules.
+pub async fn ignored(root: &Path, paths: &Value) -> Res<Value> {
+    let paths = paths.as_array().ok_or("Lista de caminhos inválida")?;
+    if paths.len() > 10000 { return Err("Lista de caminhos excede o limite".into()); }
+    let mut input = String::new();
+    for value in paths {
+        let path = s(value)?;
+        if path.is_empty() || path.contains('\0') { return Err("Caminho inválido".into()); }
+        // Keep relative input names for Git output, and tolerate rows removed during refresh.
+        let relative = if Path::new(path).is_absolute() { Path::new(path).strip_prefix(root).map_err(err)?.to_string_lossy().into_owned() } else { path.to_string() };
+        if Path::new(&relative).components().any(|c| matches!(c, std::path::Component::ParentDir)) { return Err("Caminho inválido".into()); }
+        if !root.join(&relative).try_exists().map_err(err)? { continue; }
+        workspace::confined(root, &relative)?;
+        input.push_str(&relative); input.push('\0');
+    }
+    if input.len() > 1024 * 1024 { return Err("Lista de caminhos excede 1 MiB".into()); }
+    if paths.is_empty() { return Ok(json!([])); }
+    if git(root, &["rev-parse", "--is-inside-work-tree"]).await.is_err() { return Ok(json!([])); }
+    let raw = match run(root, "git", &["check-ignore".into(), "--stdin".into(), "-z".into()], Some(&input)).await {
+        Ok(raw) => raw,
+        Err(error) if error.trim().is_empty() => String::new(), // exit 1: no matches
+        Err(error) => return Err(error),
+    };
+    Ok(json!(raw.split('\0').filter(|p| !p.is_empty()).collect::<Vec<_>>()))
+}
+
 pub async fn status(root: &Path) -> Res<Value> {
     repository(root).await?;
     let raw = git(
@@ -650,7 +676,9 @@ pub async fn dispatch(root: &Path, method: &str, args: &[Value]) -> Res<Value> {
             git(root, &argv).await?;
             Ok(Value::Null)
         }
+        "gitCommitMessage" => Ok(json!(git(root, &["log", "-1", "--format=%B"]).await?.trim_end())),
         "gitCommit" => {
+            let amend = a(2).as_bool().unwrap_or(false);
             let message = s(a(0))?;
             if message.trim().is_empty() || message.len() > 10000 || message.contains('\0') {
                 return Err("Mensagem inválida".into());
@@ -663,12 +691,16 @@ pub async fn dispatch(root: &Path, method: &str, args: &[Value]) -> Res<Value> {
             if c.iter().any(conflicted) {
                 return Err("Resolva os conflitos".into());
             }
-            if state["mergeHead"].is_null()
+            if amend && (state["head"].is_null() || !state["operation"].is_null() || !state["mergeHead"].is_null()) {
+                return Err("Amend exige um commit e nenhuma operação em andamento".into());
+            }
+            if !amend && state["mergeHead"].is_null()
                 && !c.iter().any(|v| v["index"] != " " && v["index"] != "?")
             {
                 return Err("Nada preparado".into());
             }
-            git(root, &["commit", "-m", message]).await?;
+            if amend { git(root, &["commit", "--amend", "-m", message]).await?; }
+            else { git(root, &["commit", "-m", message]).await?; }
             Ok(json!(reference(root, "HEAD").await))
         }
         "gitLog" => {
@@ -696,7 +728,8 @@ pub async fn dispatch(root: &Path, method: &str, args: &[Value]) -> Res<Value> {
                 &[
                     "log",
                     "-100",
-                    "--format=%H%x00%an%x00%aI%x00%s%x00",
+                    "--topo-order",
+                    "--format=%H%x00%an%x00%aI%x00%s%x00%P%x00%D%x00",
                     requested,
                     "--",
                 ],
@@ -704,9 +737,9 @@ pub async fn dispatch(root: &Path, method: &str, args: &[Value]) -> Res<Value> {
             .await?;
             let p: Vec<_> = output.split('\0').collect();
             Ok(json!(p
-                .chunks(4)
-                .filter(|v| v.len() == 4)
-                .map(|p| json!({"hash":p[0].trim(),"author":p[1],"date":p[2],"subject":p[3]}))
+                .chunks(6)
+                .filter(|v| v.len() == 6)
+                .map(|p| json!({"hash":p[0].trim(),"author":p[1],"date":p[2],"subject":p[3],"parents":p[4].split_whitespace().collect::<Vec<_>>(),"refs":p[5]}))
                 .collect::<Vec<_>>()))
         }
         "gitBranches" => branches(root).await,
@@ -1052,6 +1085,31 @@ mod tests {
         dir
     }
     #[tokio::test]
+    async fn amend_preserves_unstaged_content_and_rejects_stale_review() {
+        let dir = fixture(); let root = dir.path().canonicalize().unwrap();
+        fs::write(root.join("file.txt"), "initial").unwrap();
+        command(&root, &["add", "."]);
+        command(&root, &["commit", "-qm", "Subject\n\nFull message body"]);
+        let original = status(&root).await.unwrap();
+        assert_eq!(dispatch(&root, "gitCommitMessage", &[]).await.unwrap(), "Subject\n\nFull message body");
+        fs::write(root.join("file.txt"), "unstaged").unwrap();
+        let hash = dispatch(&root,"gitCommit",&[json!("Edited message"),original["indexToken"].clone(),json!(true)]).await.unwrap();
+        assert_ne!(hash, original["head"]);
+        assert_eq!(git(&root,&["show","HEAD:file.txt"]).await.unwrap(),"initial");
+        assert_eq!(fs::read_to_string(root.join("file.txt")).unwrap(),"unstaged");
+        assert_eq!(git(&root,&["rev-list","--count","HEAD"]).await.unwrap().trim(),"1");
+        assert!(dispatch(&root,"gitCommit",&[json!("Stale"),original["indexToken"].clone(),json!(true)]).await.is_err());
+        let diff = diff(&root,"file.txt",false).await.unwrap();
+        dispatch(&root,"gitStage",&[json!("file.txt"),json!(false),diff["token"].clone()]).await.unwrap();
+        let staged = status(&root).await.unwrap();
+        dispatch(&root,"gitCommit",&[json!("Amended content"),staged["indexToken"].clone(),json!(true)]).await.unwrap();
+        assert_eq!(git(&root,&["show","HEAD:file.txt"]).await.unwrap(),"unstaged");
+        let empty = fixture(); let empty_root=empty.path().canonicalize().unwrap();
+        let state=status(&empty_root).await.unwrap();
+        assert!(dispatch(&empty_root,"gitCommit",&[json!("Invalid"),state["indexToken"].clone(),json!(true)]).await.is_err());
+    }
+
+    #[tokio::test]
     async fn branches_fetch_pull_and_tracking_preserve_local_commits() {
         let dir = fixture();
         let root = dir.path().canonicalize().unwrap();
@@ -1150,6 +1208,11 @@ mod tests {
             .unwrap()
             .iter()
             .any(|c| c["subject"] == "Local only"));
+        for entry in feature_log.as_array().unwrap() {
+            let parents = git(&root, &["show", "-s", "--format=%P", entry["hash"].as_str().unwrap()]).await.unwrap();
+            assert_eq!(entry["parents"], json!(parents.split_whitespace().collect::<Vec<_>>()));
+            assert!(entry["refs"].is_string());
+        }
         assert!(dispatch(&root, "gitLog", &[json!("--help")]).await.is_err());
     }
     #[tokio::test]
@@ -1300,5 +1363,42 @@ mod tests {
         assert!(staged.contains("first"));
         assert!(!staged.contains("second"));
         assert_eq!(fs::read_to_string(root.join("a.txt")).unwrap(), value);
+    }
+}
+
+#[cfg(test)]
+mod ignored_tree_tests {
+    use super::*;
+    #[tokio::test]
+    async fn git_ignore_rules_tracked_exceptions_nested_and_literal_names() {
+        let dir=tempfile::tempdir().unwrap();let root=dir.path().canonicalize().unwrap();
+        git(&root,&["init","-q"]).await.unwrap();
+        fs::create_dir_all(root.join("node_modules/pkg")).unwrap();fs::create_dir_all(root.join("folder")).unwrap();
+        fs::write(root.join(".gitignore"),"node_modules/\n*.ignored\nfolder/*\n!folder/keep.txt\n").unwrap();
+        fs::write(root.join("node_modules/pkg/file.txt"),"fixture").unwrap();
+        for path in ["cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt","line\nname.ignored"] { fs::write(root.join(path),"fixture").unwrap(); }
+        fs::write(root.join(".git/info/exclude"),"local.txt\n").unwrap();
+        git(&root,&["add","-f","--","tracked.ignored"]).await.unwrap();
+        let paths=json!(["node_modules","node_modules/pkg/file.txt","cache.ignored","tracked.ignored","folder/drop.txt","folder/keep.txt","local.txt","line\nname.ignored"]);
+        let found=ignored(&root,&paths).await.unwrap();let found=found.as_array().unwrap();
+        for path in ["node_modules","node_modules/pkg/file.txt","cache.ignored","folder/drop.txt","local.txt","line\nname.ignored"] { assert!(found.contains(&json!(path)),"{path}"); }
+        assert!(!found.contains(&json!("tracked.ignored")));assert!(!found.contains(&json!("folder/keep.txt")));
+        fs::write(root.join(".gitignore"),"").unwrap();assert_eq!(ignored(&root,&json!(["cache.ignored"])).await.unwrap(),json!([]));
+        assert_eq!(ignored(&root,&json!(["removed-row.txt"])).await.unwrap(),json!([]));
+    }
+    #[tokio::test]
+    async fn no_repository_has_no_ignored_status_and_outside_paths_are_rejected() {
+        let dir=tempfile::tempdir().unwrap();let root=dir.path().canonicalize().unwrap();fs::write(root.join("plain.txt"),"fixture").unwrap();
+        assert_eq!(ignored(&root,&json!(["plain.txt"])).await.unwrap(),json!([]));
+        assert!(ignored(&root,&json!(["../outside.txt"])).await.is_err());
+        assert!(ignored(&root,&json!(["bad\0path"])).await.is_err());
+    }
+    #[test]
+    fn project_tree_keeps_ignored_candidates_visible_without_recursing() {
+        let dir=tempfile::tempdir().unwrap();let root=dir.path().canonicalize().unwrap();
+        for path in ["node_modules","dist","target",".cache",".git",".tools",".php-ide"] { fs::create_dir(root.join(path)).unwrap(); }
+        let entries=workspace::tree(&root,"").unwrap();let entries=entries.as_array().unwrap();
+        for path in ["node_modules","dist","target",".cache"]{assert!(entries.iter().any(|e|e["path"]==path));}
+        assert_eq!(entries.len(),4);
     }
 }

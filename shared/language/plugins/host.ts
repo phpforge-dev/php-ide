@@ -48,7 +48,7 @@ export class PluginHost {
   if (rel.startsWith('..')) return;
   const all = this.all();
   for (const p of all) if (p.invalidates?.(rel)) p.invalidate?.();
-  if (rel === 'composer.json' || rel === 'composer.lock' || /^\.env(\.|$)/.test(rel) || all.some(p => p.markers?.includes(rel))) this.active = undefined;
+  if (rel === 'composer.json' || rel === 'composer.lock' || /^\.env(\.|$)/.test(rel) || all.some(p => p.markers?.includes(rel) || p.activationChanged?.(rel))) this.active = undefined;
  }
  site(path: string, text: string, offset: number): StringSite | null {
   if (!path.endsWith('.php')) return null;

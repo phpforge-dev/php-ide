@@ -1,3 +1,5 @@
+> Para guias atuais de desenvolvimento e plugins, veja o [índice geral](../README.md). Os documentos abaixo preservam pesquisa, decisões e evidências; recortes Electron são históricos.
+
 > Base ativa: [Rust + Tauri 2](tauri-migration.md). Recortes anteriores descrevem a implementação histórica e seus limites.
 
 > Continuação executável em `~/Projects/php-ide`: [recorte 01](implementation-slice-01.md). Abaixo permanece a pesquisa inicial, com seus limites de observação.
@@ -52,4 +54,14 @@ Continuação Git: [observações e contrato](phpstorm-git.md), [recorte 03 impl
 [Laravel: Eloquent e inspeções: recorte 25](implementation-slice-25.md).
 [Driver Oracle e edição/paginação Redis: recorte 26](implementation-slice-26.md).
 [Cobertura Rust/Tauri de Git avançado, remotos e versões de banco: recorte 27](implementation-slice-27.md).
+[Fundação visual Islands Dark/Light: recorte 28](implementation-slice-28.md).
+[Comparação C01–C06 na janela Tauri real: recorte 29](implementation-slice-29.md) — casos com referência × IDE listados como “compatível neste perfil” só neste recorte.
+[Regressão do resize de Services no smoke nativo: recorte 30](implementation-slice-30.md).
+[Conferência da fundação Islands vs 03/05/40: recorte 31a](implementation-slice-31-foundation-check.md).
+[Popups Islands: recorte 31](implementation-slice-31.md).
+[Tool windows Islands: recorte 32](implementation-slice-32.md).
+[Diálogos/config + tema claro Islands: recorte 33](implementation-slice-33.md).
+[Editor / Markdown Islands: recorte 34](implementation-slice-34.md).
+[Search Everywhere fechado cobria o editor (Cmd+clique): recorte 35](implementation-slice-35.md).
+[Referência visual PhpStorm 2026.1 (23/10/2026)](phpstorm-reference-2026-10-23.md).
 [Passagem de trabalho de 23/10/2026: estado e próximos passos](handoff-2026-10-23.md).

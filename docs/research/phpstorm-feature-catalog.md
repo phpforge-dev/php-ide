@@ -358,7 +358,7 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [registro OBS/DOC e roteiro](phpstorm-git.md); menus e árvore pública de acessibilidade da referência local.
 - **Critérios de aceitação:** GIT-01 a GIT-11 no roteiro; verificar HEAD/index/disco e preservação do conteúdo não selecionado; keyboard-only, erros recuperáveis e atualização externa.
 - **Estado de implementação:** Em desenvolvimento; [recorte 04](implementation-slice-04.md) amplia staging por trecho, histórico/diff, branches, merge/rebase, conflitos, stash e remoto, com testes próprios. [Recorte 27](implementation-slice-27.md): testes Rust de merge/rebase/cherry-pick/revert/stash com conflito, push/pull/fetch SSH e HTTPS contra servidores descartáveis e recarga de arquivo aberto alterado fora da IDE; quatro correções (abort de cherry-pick/revert, aceitar lado em exclusão/binário novo, arquivo externo).
-- **Diferenças conhecidas:** faltam changelists, seleção por linha, grafo/filtros do Log, perfis avançados de branches/conflitos/remoto, amend, tags, reset, blame e worktrees. Staging versus changelists e divergência entre páginas oficiais precisam de ensaio na versão local. Nenhuma compatibilidade validada.
+- **Diferenças conhecidas:** faltam changelists, seleção por linha, grafo/filtros do Log, perfis avançados de branches/conflitos/remoto, tags, reset, blame e worktrees. Staging versus changelists e divergência entre páginas oficiais precisam de ensaio na versão local. Nenhuma compatibilidade validada.
 
 - **Contas por repositório:** [recorte 07](implementation-slice-07.md): identidade local, usuário HTTPS/chave SSH e teste de leitura; OAuth e comparação pendentes.
 - **Recorte 12:** [Resolve Conflicts e Merge Revisions observados e reproduzidos](implementation-slice-12.md): resultado inicia pela base, contador de alterações/conflitos, aplicar não conflitantes, conflitos simples, confirmação ao aplicar com pendências, lista que fecha sozinha. Ações por chunk sem oracle.
@@ -436,7 +436,7 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Prioridade / complexidade estimada:** P1 / Alta.
 - **Dependências:** Índice, watcher, LSP.
 - **Comportamento observado:** a referência ativa suporte Laravel a partir de `composer.json` e mostra `Laravel: 12.0` na barra de status. A arquitetura interna dos plugins da referência não foi e não será inferida.
-- **Evidência da implementação:** [recorte 10](implementation-slice-10.md), `electron/plugins/`.
+- **Evidência da implementação:** [recorte 10 histórico](implementation-slice-10.md), [recorte 24](implementation-slice-24.md), `shared/language/plugins/`, `src-tauri/src/plugins.rs`; [guia de autores e API atual](../plugins/README.md).
 - **Critérios de aceitação preliminares:** Ativação por projeto; invalidação incremental; leitura confinada; falha de um plugin não derruba a IDE.
 - **Estado de implementação:** Em desenvolvimento — plugins internos e de terceiros ([recorte 24](implementation-slice-24.md)): manifesto `plugin.json`, descoberta por usuário e por projeto (`.php-ide/plugins`), Web Worker sem IPC, ponte com permissões (`project.read`, `project.write`, `process`, `network`) conferidas também no backend, consentimento na primeira ativação, tela Plugins e instalação por pasta/.zip.
 - **Diferenças conhecidas:** Sem marketplace, assinatura e atualização automática; sem hover/rename/format para terceiros; isolamento validado em worker_threads, não por ataque dirigido na WebView.
@@ -632,6 +632,8 @@ SVGs oficiais open source da IntelliJ Platform, individualmente Apache 2.0, para
 
 Claro, escuro e sistema; painel não modal com prévia ao vivo, amostras e botão rápido; paleta compartilhada com Welcome, editor e ferramentas. Recorte implementado; equivalência **Em desenvolvimento**. Aceitação, dependências, contraste, evidências e limites em [appearance-themes.md](appearance-themes.md).
 
+Fundação Islands (Dark/Light): [recorte 28](implementation-slice-28.md); checagem vs 03/05/40: [recorte 31a](implementation-slice-31-foundation-check.md). Fidelidade por área (tokens, sem promoção): popups [31](implementation-slice-31.md), tool windows [32](implementation-slice-32.md), diálogos/light [33](implementation-slice-33.md), editor/Markdown [34](implementation-slice-34.md). Regressão Search Everywhere/`display:flex` × Cmd+clique: [recorte 35](implementation-slice-35.md). Não marcar a família como “compatível neste perfil” só pela fundação ou por CSS. Smoke/Services resize: [recorte 30](implementation-slice-30.md). Oracle C01–C06 na janela real: [recorte 29](implementation-slice-29.md) (só os casos listados ali como compatíveis neste perfil).
+
 ### UI-LANGUAGE-001 — Idiomas da interface (2026-10-22)
 
 Português e inglês selecionáveis em Aparência e Welcome; catálogo extensível, preferência persistida, aplicação por recarga protegida contra buffers não salvos. Recorte implementado; equivalência **Em desenvolvimento**. Critérios, evidências e limites: [interface-languages.md](interface-languages.md).
@@ -702,3 +704,41 @@ Estado: Implementada. Prioridade: alta. Complexidade: baixa/média; integração
 - **Critérios de aceitação do recorte:** Completar expressão, navegar ao script, apontar erro de tipo e sugerir props de componente importado.
 - **Estado de implementação:** Em desenvolvimento — recorte funcional; cobertura completa e comparação pendentes.
 - **Diferenças conhecidas:** opções TS fixas, limites de snapshots/dependências; sem marketplace de plugins ou equivalência validada. Ver limites no documento vinculado.
+
+### Welcome compacta — 23/10/2026
+
+PROJECT-WELCOME/SESSION-001: janela menor centralizada sem projeto, restauração do tamanho anterior ao abrir projeto. Estado comparativo continua Em desenvolvimento/Não validada; requisito relatado pelo usuário, sem nova medição do PhpStorm. Detalhes em startup-welcome.md.
+
+### Git — reprodução visual (23/10/2026)
+
+Log com toolbar vertical, árvore Local/Remote pesquisável, grafo baseado em pais reais, referências, filtros de autor/data e arquivos/detalhes à direita; Commit com toolbar compacta e mensagem na base. Referência documental examinada; equivalência visual em desenvolvimento. [Evidências e limites](git-ui-2026-10-23.md).
+
+Commit refinado a partir das duas capturas do usuário: toolbar, árvore com checkboxes, nomes/pastas e área Amend/mensagem/ações. Staging explícito, amend com revisão e Commit and Push ligado à revisão de envio. [Detalhes e limites](git-ui-2026-10-23.md). Sem validação integral de equivalência.
+
+### Banco — diálogo e importação Laravel (23/10/2026)
+
+Diálogo reorganizado e importação de `.env` para rascunho revisável, sem conexão automática nem persistência de senha. Fixtures WebKit, Rust e janela Tauri passaram. Configuração PHP/cache, interpolação e opções adicionais de URL ficam fora do recorte. Estado comparativo permanece **Em desenvolvimento / não validada**. [Evidências e limites](database-connection-laravel.md).
+
+### DotEnv — editor (23/10/2026)
+
+TOOL-DOTENV-001: corrigida a ausência de linguagem/providers para `.env`; realce, sugestões em `${...}` e navegação para declarações locais. Ativação Laravel/DotEnv e fluxo do editor confirmados em Tauri com fixture sintética. Estado comparativo **Em desenvolvimento / não validada**. [Evidências e limites](dotenv-editor.md).
+
+### TOOL-DOCKER-LANGUAGE-001 — Dockerfile e Compose (23/10/2026)
+
+P1, complexidade média. Plugin interno com detecção de variantes/nomes alternativos, realce Monaco, completion de instruções/propriedades, hover, navegação entre estágios/serviços e diagnósticos locais YAML/Dockerfile. Dependências: host TypeScript, Monaco e yaml (ISC), sem engine Docker. Critério exercitado: abrir fixture, completar, navegar e corrigir erro visível na janela Tauri. Estado **Em desenvolvimento / não validada comparativamente**; schema completo, merges entre arquivos e validação de build/daemon permanecem fora. [Escopo e evidências](docker-editor.md).
+
+### TOOL-BASH-LANGUAGE-001 — Bash e scripts sh (23/10/2026)
+
+P1, complexidade média. Plugin interno para extensões/dotfiles/shebang, realce, completion de builtins e símbolos locais, hover e F12. Verificação de sintaxe no buffer via shell do sistema em modo -n, sem executar script. Critério exercitado em Tauri: abrir, completar, navegar e corrigir diagnóstico visível; fixture também comprova ausência de execução. Estado **Em desenvolvimento / não validada comparativamente**. Dependências e limites (versão do shell, índice léxico, sem ShellCheck/semântica global): [evidências](bash-editor.md).
+
+### Árvore — arquivos e pastas ignorados (23/10/2026)
+
+TOOL-GIT-001: cor de ignorado aplicada a nomes na árvore usando estado Git real, incluindo herança, negação e exceção de rastreados. Dependências antes ocultas por nome ficam visíveis e expandem sob demanda. Atualização preserva expansão e foi exercitada nos dois temas em Tauri com fixture. Estado comparativo **Em desenvolvimento / não validada**. [Implementação, evidências e limites](git-ignored-tree.md).
+
+### TOOL-SVG-PREVIEW-001 — Fonte e imagem SVG (23/10/2026)
+
+P1, complexidade média. Fonte XML, visualização dividida/imagem, atualização do buffer, zoom/fundos e recuperação de erro. Dependências: Monaco e contexto de imagem do navegador; sem execução de scripts SVG na IDE. Critérios exercitados em Tauri: pixels mudam sem salvar, XML inválido recupera, modo/layout alternam e zoom 100% permanece correto no WebKit. Regressão Markdown passou. Estado **Em desenvolvimento / não validada comparativamente**. [Evidências e limites](svg-preview.md).
+
+### Vue.js e React — disponibilidade (23/10/2026)
+
+WEB-VUE-001 e WEB-REACT-001: serviços já incluídos/habilitados agora aparecem em Aparência → Plugins. Tela e fluxo dos serviços reais verificados na janela Tauri. Não é instalação de extensão de terceiros nem nova cobertura de framework; estado comparativo continua Em desenvolvimento / não validada. [Disponibilidade, testes e limites](web-language-services.md).

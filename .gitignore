@@ -6,3 +6,12 @@ dist-electron/
 .DS_Store
 graphify-out/
 src-tauri/target/
+
+# Local credentials (synthetic fixtures remain versioned)
+.env
+.env.*
+!**/.env.example
+!fixtures/**/.env
+!fixtures/**/.env.*
+*.p12
+*.pfx

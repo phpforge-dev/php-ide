@@ -44,3 +44,11 @@ Diferenças: sem grupos/favoritos, wizard de frameworks/Composer, remote develop
 A regressão geral no pacote assinado passou nos 17 grupos (`.artifacts/native-packaged.json`, sem falhas), além dos seis cenários dedicados à inicialização e dos 13 testes Rust. Foi corrigido o temporizador do splash, que agora termina antes dos testes/uso do workbench. A marca Git recebeu alvo DOM explícito e identificação do bloco, evitando depender da classificação do gutter pelo hit-test do Monaco; o fluxo nativo de diff e autoria passou.
 
 `codesign --verify --deep --strict` inicialmente detectou assinatura inconsistente do bundle macOS. A assinatura ad-hoc do pacote completo corrigiu essa verificação; `bundle.macOS.signingIdentity` agora usa `-`, mecanismo descrito pela [documentação oficial do Tauri](https://v2.tauri.app/distribute/sign/macos/). Trata-se do pacote para uso local, sem notarização de distribuição pública. Essa inconsistência é evidência adicional de empacotamento; não prova, isoladamente, a causa da tela branca relatada.
+
+## Janela compacta — 23/10/2026
+
+Requisito do usuário: ao fechar o projeto, retornar a uma janela menor centralizada, como relatado no PhpStorm. `src/window-layout.ts` aplica Welcome de 960×680 pontos lógicos, mínimo 760×520, saindo de maximização/tela cheia antes de centralizar. Ao abrir/criar/clonar um projeto, restaura dimensões e, quando ainda está no monitor atual, posição anterior; também restaura maximização/tela cheia. O estado dura a sessão e sobrevive ao reload de Fechar projeto via sessionStorage. Sem estado anterior, usa a área de trabalho padrão de 1440×940.
+
+As permissões Tauri foram limitadas às operações de janela necessárias. O smoke de startup confere tamanho compacto na abertura e após fechar, além da restauração ao abrir projeto. O requisito é próprio, informado pelo usuário; não há medição comparativa nova. Telas pequenas, múltiplos monitores e transições de tela cheia ainda precisam de ensaios adicionais.
+
+Validação deste ajuste: typecheck aprovado; 62 testes Rust aprovados (5 ignorados); smoke do aplicativo empacotado aprovado com 10 cenários, incluindo dimensões da Welcome e restauração ao abrir projeto. Centralização é aplicada pela API nativa Tauri; a geometria em múltiplos monitores não foi medida automaticamente.

@@ -75,3 +75,24 @@ The JavaScript/TypeScript and Vue workers bundle TypeScript 5.9.3 (Apache-2.0), 
 ## Fontes Inter 4 e JetBrains Mono (SIL OFL 1.1)
 
 Empacotadas localmente em `src/assets/fonts/` (subconjunto latino em WOFF2, sem CDN), obtidas dos pacotes npm `@fontsource/inter@5.3.0` e `@fontsource/jetbrains-mono@5.3.0` (cópias sem modificação dos binários publicados por esses pacotes). Inter: Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter). JetBrains Mono: Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono). Ambas sob SIL Open Font License 1.1; textos completos em `licenses/fonts/Inter-OFL.txt` e `licenses/fonts/JetBrainsMono-OFL.txt`. As fontes não são vendidas isoladamente e mantêm os nomes originais (sem Reserved Font Name). Hashes SHA-256 em `src/assets/fonts/SHA256SUMS`.
+
+## YAML parser
+
+Docker/Compose editor support bundles `yaml` 2.9.1, copyright Eemeli Aro, under the ISC license. It runs in the browser without a Node runtime.
+
+```text
+Copyright Eemeli Aro <eemeli@gmail.com>
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+```
