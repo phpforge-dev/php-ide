@@ -66,6 +66,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: ${{ matrix.platform }}
+          cache-on-failure: true
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -81,7 +82,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:locales
       - name: Rust tests on target OS
-        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+        run: cargo test --release --locked --manifest-path src-tauri/Cargo.toml
       - name: Build native installers
         env:
           NO_STRIP: 'true'

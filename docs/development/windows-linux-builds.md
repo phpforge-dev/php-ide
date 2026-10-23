@@ -19,6 +19,15 @@ gh run list --repo phpforge-dev/php-ide --workflow desktop-builds.yml
 
 Os arquivos ficam também nos artifacts de cada execução. Para não substituir pacotes já entregues, o upload falha se um arquivo com o mesmo nome já existir na release. Investigue a falha; não remova arquivos públicos automaticamente. Alterações no código do aplicativo exigem uma nova versão/tag, preservando a origem dos pacotes publicados.
 
+### Validar antes de criar o tag
+
+Use `source_ref` com o SHA completo do commit e `publish=false`. Assim os dois sistemas compilam e salvam artifacts sem publicar uma versão. `actions/checkout` não trata um SHA abreviado como commit; informe os 40 caracteres. Após verificar os resultados, o tag e a release devem apontar exatamente para o commit compilado. No modo de publicação, o workflow compara o HEAD com o commit do tag antes de compilar.
+
+```sh
+gh workflow run desktop-builds.yml --repo phpforge-dev/php-ide \
+  -f release_tag=v0.2.8 -f source_ref=SHA_COMPLETO -f publish=false
+```
+
 ## Requisitos para usar
 
 - Windows: arquitetura x64, WebView2 (o instalador NSIS usa o mecanismo padrão do Tauri para instalar o runtime quando necessário).
