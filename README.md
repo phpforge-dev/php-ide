@@ -2,6 +2,14 @@
 
 IDE desktop independente, experimental, com referência de usabilidade no PhpStorm. A aplicação usa **Tauri 2 e backend Rust**. A interface usa TypeScript, Monaco e xterm.js no WebView do sistema. Não depende de Electron nem de servidor Node em execução.
 
+Projeto de **Jeidison Farias**, na organização [PHP Forge](https://github.com/phpforge-dev).
+
+- [Site e downloads](https://phpforge-dev.github.io/php-ide/).
+- [Releases e instaladores](https://github.com/phpforge-dev/php-ide/releases).
+- [Plugins](https://github.com/phpforge-dev/plugins).
+
+O instalador disponível inicialmente é para macOS Apple Silicon. Windows, Linux e macOS Intel dependem de builds e validações próprios; a página mostra apenas os pacotes publicados.
+
 ## Documentação
 
 - [Índice geral](docs/README.md): guias atuais, pesquisa e compatibilidade.
