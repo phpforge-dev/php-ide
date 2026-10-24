@@ -30,9 +30,12 @@ O [repositório de catálogo](https://github.com/phpforge-dev/plugins) contém `
 - [.env](https://github.com/phpforge-dev/plugin-dotenv)
 - [Dockerfile e Compose](https://github.com/phpforge-dev/plugin-docker)
 - [Bash](https://github.com/phpforge-dev/plugin-bash)
+- [Prettier](https://github.com/phpforge-dev/plugin-prettier)
 - [TODO Hints](https://github.com/phpforge-dev/plugin-todo-hints)
 
-Laravel, .env, Docker e Bash acompanham a IDE como pacotes prontos. Na primeira abertura, são instalados na pasta do usuário com a leitura do projeto já autorizada, como ocorria com os módulos internos que substituem. É possível revogar a permissão, desativar ou remover esses pacotes; eles não são reinstalados na abertura seguinte.
+Laravel, .env, Docker, Bash e Prettier são baixados automaticamente dos seus repositórios na primeira abertura de um projeto. A IDE mantém apenas metadados em `default-plugins.json`: commit, versão, SHA-256 do JavaScript e permissões de leitura autorizadas. Os downloads acontecem em segundo plano, sem bloquear a abertura. A barra de plugins mostra o pacote em instalação; em Aparência → Plugins aparecem falhas e **Tentar novamente**. A primeira instalação precisa de internet e Git; após instalada, funciona offline.
+
+É possível revogar permissões, desativar ou remover esses pacotes; a instalação automática respeita essas decisões. Instalações antigas preservam também as remoções dos quatro pacotes anteriores. Pacotes já instalados não são sobrescritos automaticamente; atualizações continuam pelo Marketplace. Uma falha deixa o pacote pendente para tentar novamente.
 
 A sintaxe e a detecção dos tipos de arquivo continuam na IDE, assim como os serviços nativos de bancos, terminal e Docker. Vue/React, Composer, Symfony, Markdown, ignore e o executor de testes ainda têm integrações internas. Esta migração separa os quatro pacotes acima; não transforma todos os serviços da aplicação em extensões.
 
@@ -51,3 +54,17 @@ Esta é uma implementação própria, sem nova comparação de comportamento com
 Os instaladores 0.2.8 não têm este recurso. É necessário compilar a versão 0.2.9 ou instalar um pacote dessa versão quando ele for publicado.
 
 Na validação local em macOS, os dois caminhos de instalação do TODO Hints passaram na janela Tauri: URL Git e busca no catálogo, incluindo consentimento, desativação e remoção. Os builds dos quatro pacotes de linguagem também passaram nos seus próprios workflows do GitHub.
+
+## Build e testes dos pacotes separados
+
+O build da aplicação não incorpora código desses plugins nem precisa baixá-los. `npm run setup:plugins` usa `default-plugins.json` e `test-plugins.json` para preparar dependências de teste em `.tools/plugin-packages/` (ignorado pelo Git), conferindo commit, ID, versão e hash. Typecheck e testes unitários fazem essa preparação automaticamente; o cache permite repeti-los offline. Para alterar um plugin, use seu próprio repositório, publique o pacote pronto e atualize o catálogo e os metadados fixados da IDE. Não execute builds de plugins como parte da instalação.
+
+O teste `npm run test:plugins:native` usa um perfil descartável e exercita a instalação automática pelos repositórios reais; a primeira instalação requer rede. O teste de formatação também pode usar o pacote fixado no cache, instalado pela IPC real. A validação da integração não promove equivalência com PhpStorm.
+
+Verificação do Docker: o pacote Git no commit fixado confere com o SHA-256 dos metadados. A comparação inicial por saída textual transformava caracteres de controle; a conferência binária não encontrou divergência. Prettier 1.0.1 codifica NULs no JavaScript gerado e tem build reproduzível e testes no repositório próprio.
+
+Para executar testes nativos em paralelo, use `PHP_IDE_NATIVE_PORT` (somente debug/smoke), `PHP_IDE_NATIVE_REPORT` e, quando necessário, `PHP_IDE_NATIVE_BIN`. `CARGO_TARGET_DIR` separa os artefatos Rust; estas opções pertencem ao runner de testes.
+
+Validação própria em macOS: `--plugins-only` confirmou os cinco pacotes baixados, origem fixada, permissões e workers ativos; `--format-only` confirmou PHP, Prettier, configuração, seleção, undo e erros recuperáveis na janela Tauri. `test:plugins:ui` confirmou primeira pintura independente do download, progresso, falha de conexão e recuperação pelo botão de repetição. Essas evidências não validam Windows/Linux nem equivalência com PhpStorm.
+
+Verificação final do recorte: typecheck, 143 testes TypeScript (1 ignorado), 78 testes Rust (5 ignorados), Clippy com warnings como erros, arquitetura e traduções aprovados. O build web e os roteiros Tauri de instalação dos cinco padrões e formatação passaram.

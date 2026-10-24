@@ -1,0 +1,82 @@
+[
+  {
+    "plugin": {
+      "id": "phpforge.laravel",
+      "name": "Laravel",
+      "description": "Rotas, views, Blade, configurações, traduções e Eloquent para Laravel.",
+      "author": "Jeidison Farias",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.9",
+      "repository": "https://github.com/phpforge-dev/plugin-laravel",
+      "revision": "bacd48e36811433bd559bed8bb8a4be3fa55e7b8"
+    },
+    "sha256": "97fbf0e6f3dd37e3c082756e9bf44ba63c40fd164dea3c289121e930fa8f1474",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.dotenv",
+      "name": ".env",
+      "description": "Sugestões e navegação em variáveis de ambiente.",
+      "author": "Jeidison Farias",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.9",
+      "repository": "https://github.com/phpforge-dev/plugin-dotenv",
+      "revision": "d340824de5c5aa0eb79401915c8890f6d8d56b0d"
+    },
+    "sha256": "bcaa5817c5bf3fc113abe430d3f62d3d04685ba7d970dc846e53c573dd9d9c62",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.docker",
+      "name": "Docker",
+      "description": "Sugestões, navegação e diagnósticos para Dockerfile e Compose.",
+      "author": "Jeidison Farias",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.9",
+      "repository": "https://github.com/phpforge-dev/plugin-docker",
+      "revision": "6750bc55f045c9a190d6d5519be3a4289c216349"
+    },
+    "sha256": "64dbd99b92399b76d185a66b9a03e01af20c282c069727fbafa035b7b3eb4494",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.bash",
+      "name": "Bash",
+      "description": "Sugestões e navegação em funções e variáveis Bash.",
+      "author": "Jeidison Farias",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.9",
+      "repository": "https://github.com/phpforge-dev/plugin-bash",
+      "revision": "bc23ea5f02512476d4caa0eea5843bfea8f39955"
+    },
+    "sha256": "c62a775a77838f0b91221400a85e25114d055a429606533e308dab03165f29a4",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.prettier",
+      "name": "Prettier",
+      "description": "Formatador Prettier offline para JavaScript, TypeScript, Vue, JSON, HTML, CSS, SCSS, Markdown e YAML. Lê configurações JSON/YAML do projeto; PHP usa o formatador próprio da IDE.",
+      "author": "Jeidison Farias",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.10",
+      "repository": "https://github.com/phpforge-dev/plugin-prettier",
+      "revision": "7b633cc21b92b9a7ac5dcd56faa58e1a26868728"
+    },
+    "sha256": "8718109b69e67e67629cdb190fe8537d46cacad14b9e7507784bb406b1e865bc",
+    "permissions": [
+      "project.read"
+    ]
+  }
+]

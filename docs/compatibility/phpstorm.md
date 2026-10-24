@@ -293,3 +293,17 @@ P1, complexidade média. Fonte XML, visualização dividida/imagem, atualizaçã
 ### Vue.js e React — disponibilidade (23/10/2026)
 
 WEB-VUE-001 e WEB-REACT-001: serviços já incluídos/habilitados agora aparecem em Aparência → Plugins. Tela e fluxo dos serviços reais verificados na janela Tauri. Não é instalação de extensão de terceiros nem nova cobertura de framework; estado comparativo continua Em desenvolvimento / não validada. [Disponibilidade, testes e limites](../research/web-language-services.md).
+
+### Formatação — 23/10/2026
+
+CODE-FORMAT-001 / PLUGIN-API-001: Em desenvolvimento, não validadas contra a referência. Hook format, pacote Prettier instalável e printer PHP independente com verificação AST/tokens, undo e descarte de respostas obsoletas. Critérios, testes e limites em [formatação](../development/formatting.md). Não equivale ao conjunto completo do Code Style PhpStorm.
+
+Instalação de plugins padrão por repositórios (23/10/2026): requisito próprio de distribuição. Build sem cópias dos pacotes; não estabelece compatibilidade com o Marketplace ou plugins do PhpStorm. Ver [fluxo e limites](../plugins/marketplace.md).
+
+
+#### Visualização de imagens (23/10/2026)
+
+Requisito próprio implementado: arquivos raster abrem em abas de visualização, com ajuste, zoom, fundos para transparência, dimensões e recuperação de erro. Leitura confinada ao projeto por `readImage`, até 5 MiB; SVG mantém seu fluxo separado de fonte/prévia. Transporte habilitado para PNG/JPEG/GIF/WebP/BMP/ICO/AVIF, com decodificação dependente do sistema. Roteiros específicos: `npm run test:images`, `npm test -- preview_images` e `npm run test:native -- --no-db --image-only`. Não equivale a aprovação de todos os formatos nem a validação comparativa com PhpStorm. Detalhes e resultados no catálogo de funcionalidades.
+
+
+Evidência deste recorte de imagens: typecheck, idiomas, teste Rust `preview_images`, nove cenários WebKit do visualizador e cenário PNG em Tauri real aprovados. Relatórios `.artifacts/image-preview-webkit.json` e `.artifacts/image-preview-native.json`. A suíte Rust geral teve falha/interrupção em cenários Git; não foi declarada aprovada. Demais codecs e equivalência com PhpStorm seguem sem validação individual.

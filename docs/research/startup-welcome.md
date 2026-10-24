@@ -52,3 +52,21 @@ Requisito do usuário: ao fechar o projeto, retornar a uma janela menor centrali
 As permissões Tauri foram limitadas às operações de janela necessárias. O smoke de startup confere tamanho compacto na abertura e após fechar, além da restauração ao abrir projeto. O requisito é próprio, informado pelo usuário; não há medição comparativa nova. Telas pequenas, múltiplos monitores e transições de tela cheia ainda precisam de ensaios adicionais.
 
 Validação deste ajuste: typecheck aprovado; 62 testes Rust aprovados (5 ignorados); smoke do aplicativo empacotado aprovado com 10 cenários, incluindo dimensões da Welcome e restauração ao abrir projeto. Centralização é aplicada pela API nativa Tauri; a geometria em múltiplos monitores não foi medida automaticamente.
+
+## Splash AppKit antes do WebView — 23/10/2026
+
+Requisito próprio: imagem embutida visível antes do WebView e fechamento quando a IDE estiver pronta. No macOS, `native_splash.rs` cria uma NSWindow sem bordas de 460×300 com NSImageView e o PNG do logo existente, incorporado por `include_bytes!`. O Tauri inicializa o event loop primeiro; a criação automática da janela principal é desabilitada apenas no macOS. O setup mostra a splash antes de criar explicitamente o WebView oculto. Nenhum HTML, JavaScript, rede ou leitura de imagem em disco é necessário para a splash.
+
+O bootstrap chama o IPC restrito `startup_ready` após Welcome ou `main.ready`. O Rust mostra a janela principal antes de fechar a splash; objetos AppKit permanecem na thread principal e o fechamento é idempotente. Erro do frontend ou espera de 20s revela a recuperação existente. Um watchdog Rust de 30s também revela a janela e habilita Reiniciar se o bootstrap não executar. Não há atraso mínimo artificial no aplicativo.
+
+`scripts/check-native-splash.mjs` bloqueia a entrega de JavaScript, verifica pelo WindowServer que apenas a splash está visível, permite capturar exclusivamente essa janela com `--screenshot` e libera o frontend para executar o smoke de boas-vindas em perfil e repositório descartáveis. O log de ciclo de vida fica ativo somente com `PHP_IDE_NATIVE_SMOKE`; o smoke geral verifica a ordem de criação e fechamento.
+
+Limites: implementação AppKit específica de macOS. Windows/Linux mantêm a splash HTML anterior. Sem nova comparação com PhpStorm; não promove compatibilidade da família. O watchdog depende de a thread principal continuar responsiva; não recupera travamentos do processo nativo.
+
+Validação deste recorte: `npm run typecheck` aprovado; `npm test`: 75 aprovados e 5 ignorados; `npm run test:native`: 36 grupos aprovados com bancos descartáveis. `node scripts/check-native-splash.mjs`: splash como única janela visível com JavaScript bloqueado, sequência de handoff aprovada e 10 cenários de startup aprovados. A captura opcional via `screencapture` falhou nesta sessão; não há screenshot validado. A geometria/visibilidade foi observada pelo WindowServer, separadamente dos logs do aplicativo. O teste usa build debug com frontend de produção; pacote release com esta splash ainda não foi validado.
+
+Também aprovado: `node scripts/check-native-splash.mjs --watchdog`, retendo JavaScript por 30s e verificando abertura da recuperação e fechamento da splash antes de liberar o frontend; os 10 cenários de startup passaram após a recuperação.
+
+Ajuste visual: splash AppKit com cantos de 20 pontos, janela transparente e conteúdo recortado pela camada nativa. O fundo escuro fica na camada arredondada; a sombra continua sendo gerada pela janela do macOS. Não altera o fluxo de prontidão.
+
+Validação após arredondar: typecheck e build Rust aprovados; 75 testes Rust aprovados (5 ignorados); smoke nativo da splash e seus 10 cenários aprovados. Captura visual dos cantos permanece pendente.

@@ -19,7 +19,7 @@ async function scan(dir) {
     }
   }
 }
-await Promise.all(['src', 'shared', 'bundled-plugins'].map(scan));
+await Promise.all(['src', 'shared'].map(scan));
 if (await access('electron').then(() => true, () => false)) failures.push('Runtime Electron legado reintroduzido');
 if (failures.length) throw new Error(failures.join('\n'));
 console.log('Arquitetura OK: frontend/shared sem imports Node/Electron; backend Rust/Tauri.');

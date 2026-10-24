@@ -24,7 +24,7 @@ Contrato experimental da IDE 0.2.0, conferido no [backend](../../src-tauri/src/p
 | `id` | Obrigatório; dois ou mais segmentos separados por ponto, minúsculas/números/hífens; até 80 bytes no total, até 40 por segmento; segmentos não começam/terminam com hífen |
 | `name` | Obrigatório; não vazio, até 80 caracteres, sem controles |
 | `version`, `minIdeVersion` | Obrigatórios; parte numérica `x.y.z`; versão mínima comparada à versão do pacote Rust. Sufixos `-`/`+` não participam dessa comparação; não assumir todas as regras SemVer |
-| `main` | Obrigatório; arquivo `.js` relativo existente, até 1 MiB, confinado à pasta do plugin |
+| `main` | Obrigatório; arquivo `.js` relativo existente, até 8 MiB desde a IDE 0.2.10, confinado à pasta do plugin |
 | `description` | Opcional; até 300 caracteres |
 | `activation` | Opcional; listas `languages`, `documents`, `files`, até 20 itens cada |
 | `permissions` | Opcional, padrão vazio; somente as quatro permissões documentadas |
@@ -46,6 +46,7 @@ O pacote é descoberto e validado pelo Rust. Depois de consentimento, seu `main`
 | `defineString` | `site, files` | `PluginLocation[]` ou `null` |
 | `completeCode` | `site, files` | `{from, items}` ou `null`; substitui de `from` ao cursor |
 | `defineCode` | `site, files` | `PluginLocation[]` ou `null` |
+| `format` | `request, files` | `{text}` com o buffer inteiro formatado, ou `null` para não tratar; ver [formatação](../development/formatting.md) |
 | `diagnose` | `path, text, files` | `PluginDiagnostic[]` |
 | `codeLenses` | `path, text, files` | `PluginCodeLens[]` |
 | `invalidates` | `path` | Booleano; se true, o worker chama invalidate |
@@ -122,4 +123,10 @@ Plugins instaláveis podem fornecer `hover(site, files, stringSite)`, retornando
 
 Diagnósticos podem incluir `fixes: [{ title, edits: [{ uri, range, newText }] }]`. Só edições com destinos dentro do projeto são aceitas. Elas aparecem como sugestões para o usuário aplicar; o plugin não escreve arquivos ao emitir um diagnóstico. A criação de arquivos e documentos virtuais continua fora desse contrato.
 
-Os plugins Laravel, DotEnv, Docker e Bash incluídos na IDE usam esse mesmo worker. Seu fonte é mantido em repositórios próprios, com versões fixadas em `bundled-plugins/lock.json`. Consulte o [Marketplace](marketplace.md) para instalar, atualizar e gerenciar esses pacotes.
+Os plugins padrão Laravel, DotEnv, Docker, Bash e Prettier usam esse mesmo worker. Seu fonte e pacote ficam em repositórios próprios, com versões fixadas em `default-plugins.json` e instalação automática pela rede. Consulte o [Marketplace](marketplace.md) para instalar, atualizar e gerenciar esses pacotes.
+
+## Hook de formatação (0.2.10+)
+
+`format(request, files)` recebe `{path, text, language, options: {tabSize, insertSpaces}, range?: {start, end}}`. Range usa offsets UTF-16 no texto completo; o plugin retorna `{text: string}` com o documento completo, não salva arquivos. `null` permite consultar o próximo provedor. Erros são exibidos e registrados; não há fallback silencioso para outro estilo quando um formatador falha. Limite de resultado: 2 Mi unidades UTF-16, com o mesmo timeout de 4 segundos dos hooks.
+
+A ação Reformatar código consulta o hook para documentos não PHP em qualquer linguagem do editor, independentemente dos provedores antigos de completion/diagnóstico. PHP puro usa o formatador próprio por padrão. A aplicação verifica modelo/versão antes de aplicar, usa uma edição mínima e cria uma unidade de undo. Formatar não salva.

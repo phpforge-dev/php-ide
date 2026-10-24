@@ -26,6 +26,7 @@ export async function installNativeApi() {
   if(key==='onComposerProgress')return (fn:(event:{id:string;text:string})=>void)=>{composerProgress.add(fn);return ()=>composerProgress.delete(fn);};
   if(key==='onEvent')return (fn:(event:IdeEvent)=>void)=>{events.add(fn);return ()=>events.delete(fn);};
   if(key==='onTerminalEvent')return (fn:(event:TerminalEvent)=>void)=>{terminals.add(fn);return ()=>terminals.delete(fn);};
+  if(key==='formatDocument')return (input:import('../shared/language/plugins/api').FormatRequest)=>language.format(input);
   if(key==='language')return (input:any)=>language.request(input);
   if(key==='plugins')return ()=>language.plugins();
   // Recorte 29: hierarquia de métodos (usos atual/base, implementações, rename da família).

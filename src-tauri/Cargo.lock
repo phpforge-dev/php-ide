@@ -2763,6 +2763,7 @@ dependencies = [
  "block2",
  "objc2",
  "objc2-core-foundation",
+ "objc2-core-graphics",
  "objc2-foundation",
  "objc2-quartz-core",
 ]
@@ -2891,6 +2892,7 @@ dependencies = [
  "bitflags 2.13.2",
  "objc2",
  "objc2-core-foundation",
+ "objc2-core-graphics",
  "objc2-foundation",
 ]
 
@@ -3140,13 +3142,17 @@ dependencies = [
 
 [[package]]
 name = "php-ide"
-version = "0.2.9"
+version = "0.2.10"
 dependencies = [
  "chrono",
  "dunce",
  "flate2",
  "futures-util",
  "notify",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "objc2-quartz-core",
  "oracle-rs",
  "portable-pty",
  "redis",

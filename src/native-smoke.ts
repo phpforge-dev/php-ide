@@ -6,14 +6,30 @@ export async function nativeSmoke(info:any){
  const checks:string[]=[];const failures:string[]=[];const errors:string[]=[];window.addEventListener('error',e=>errors.push(e.error?.stack??e.message));
  const raw=(method:string,args:unknown[]=[])=>invoke<any>('ide',{method,args});const assert=(value:unknown,message:string)=>{if(!value)throw Error(message);};
  const wait=async(test:()=>boolean,ms=30000,label='Tempo esgotado')=>{const end=Date.now()+ms;while(!test()){if(Date.now()>end)throw Error(label);await new Promise(r=>setTimeout(r,40));}};
- async function check(name:string,work:()=>Promise<void>){if(info.docker?.marketplaceOnly&&!name.startsWith('Marketplace:'))return;if(info.docker?.svgOnly&&!name.startsWith('SVG:')&&!name.startsWith('Markdown:'))return;if(info.docker?.ignoredTreeOnly&&!name.startsWith('Árvore Git:'))return;if(info.docker?.bashOnly&&!name.startsWith('Bash:'))return;if(info.docker?.dockerLanguageOnly&&!name.startsWith('Docker editor:'))return;if(info.docker?.dotenvOnly&&!name.startsWith('DotEnv:'))return;if(info.docker?.databaseOnly&&!name.startsWith('Banco:'))return;if(!!info.docker?.webOnly!==name.startsWith('Web:'))return;if(info.docker?.searchOnly&&!name.startsWith('Busca geral:'))return;if(info.docker?.insightsOnly&&!name.startsWith('PHP: usos no editor'))return;if(info.docker?.referencesOnly&&!name.startsWith('PHP: referências de funções'))return;if((info.docker?.editorOnly||(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_EDITOR_ONLY==='1'))&&!name.startsWith('Editor: seleção'))return;if(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_REFACTOR_ONLY==='1'&&!name.startsWith('Refatoração:'))return;try{await raw('nativeSmokeProgress',[name]);await work();checks.push(name);}catch(e){failures.push(name+': '+String(e));}finally{
+ async function check(name:string,work:()=>Promise<void>){if(info.docker?.imageOnly&&!name.startsWith('Imagem:'))return;if(info.docker?.formatOnly&&!name.startsWith('Formatter:'))return;if(info.docker?.marketplaceOnly&&!name.startsWith('Marketplace:'))return;if(info.docker?.svgOnly&&!name.startsWith('SVG:')&&!name.startsWith('Markdown:'))return;if(info.docker?.ignoredTreeOnly&&!name.startsWith('Árvore Git:'))return;if(info.docker?.bashOnly&&!name.startsWith('Bash:'))return;if(info.docker?.dockerLanguageOnly&&!name.startsWith('Docker editor:'))return;if(info.docker?.dotenvOnly&&!name.startsWith('DotEnv:'))return;if(info.docker?.databaseOnly&&!name.startsWith('Banco:'))return;if(!!info.docker?.webOnly!==name.startsWith('Web:'))return;if(info.docker?.searchOnly&&!name.startsWith('Busca geral:'))return;if(info.docker?.insightsOnly&&!name.startsWith('PHP: usos no editor'))return;if(info.docker?.referencesOnly&&!name.startsWith('PHP: referências de funções'))return;if((info.docker?.editorOnly||(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_EDITOR_ONLY==='1'))&&!name.startsWith('Editor: seleção'))return;if(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_REFACTOR_ONLY==='1'&&!name.startsWith('Refatoração:'))return;try{await raw('nativeSmokeProgress',[name]);await work();checks.push(name);}catch(e){failures.push(name+': '+String(e));}finally{
   // Feature scenarios edit buffers deliberately; restore only their synthetic fixtures.
   const paths=name.startsWith('Bash:')?['build.sh']:name.startsWith('Docker editor:')?['Dockerfile.dev','composer.yml']:name.startsWith('DotEnv:')?['.env']:[];
   for(const path of paths){try{await raw('nativeSmokeProgress',[name+' cleanup']);const file=await window.ide.read(path);monaco.editor.getModel(monaco.Uri.parse(file.uri))?.setValue(file.text);}catch(e){failures.push(name+' cleanup: '+String(e));}}
  }}
  // Modo --compare-p0: só os roteiros C01–C06 (recorte 29), sem os demais checks.
  if(info.docker?.compareP0){let result:any;try{await wait(()=>!!document.querySelector('#tree button'));result=await(await import('./compare-p0')).compareP0(info.docker.compareReps??3);}catch(e){failures.push('compare-p0: '+String((e as Error)?.stack??e));}if(errors.length)failures.push('renderer: '+errors.join('; '));await raw('nativeSmokeReport',[{ok:failures.length===0,runtime:info.runtime,backend:info.backend,failures,...result}]);return;}
+ if(!info.docker?.formatOnly){
+ // Default packages are installed asynchronously after the first workbench paint.
+ await raw('nativeSmokeProgress',['Plugins padrão: downloads reais por commit e hash']);
+ try {
+  const end=Date.now()+120000; let list:any;
+  while(Date.now()<end){list=await raw('pluginList');if(list.defaults.every((p:any)=>!p.pending))break;await new Promise(r=>setTimeout(r,200));}
+  assert(list?.defaults.every((p:any)=>!p.pending),'plugins padrão não terminaram: '+document.getElementById('plugins')?.textContent);
+  for(const p of list.defaults){const installed=list.plugins.find((x:any)=>x.manifest?.id===p.id);assert(installed?.enabled&&!installed.needsConsent,'plugin padrão não ativo: '+p.id);assert(installed.origin?.repository===p.repository&&/^[a-f0-9]{40}$/.test(installed.origin?.revision),'origem não fixada: '+p.id);}
+  document.getElementById('plugins')!.click();
+  await wait(()=>list.defaults.every((p:any)=>document.querySelector('[data-installed-plugin="'+p.id+'"] .plugin-on')),30000,'Workers dos plugins padrão não ativaram');
+  (document.getElementById('plugins-dialog') as HTMLDialogElement).close();
+  checks.push('Plugins padrão: cinco pacotes baixados dos repositórios, origem fixada, permissões e workers ativos');
+ } catch(error){failures.push('Plugins padrão: '+String(error));}
+ }
+ if(info.docker?.pluginsOnly){if(errors.length)failures.push('renderer: '+errors.join('; '));await raw('nativeSmokeReport',[{ok:failures.length===0,runtime:info.runtime,backend:info.backend,checks,failures}]);return;}
  const api=window.ide;let pending:AgentEvent[]=[];api.onEvent(e=>{if(e.type==='acp')pending.push(e.event);});
+ if(info.docker?.formatOnly)await check('Formatter: PHP próprio, Prettier no worker, seleção, undo e erros recuperáveis',async()=>{await (await import('./formatting-smoke')).formattingSmoke(info);});
  if(info.docker?.marketplaceOnly) await check('Marketplace: busca, instalação pelo Git, permissões, desativação e remoção',async()=>{
   await wait(()=>!!document.querySelector('#tree button'));
   document.getElementById('appearance')!.click();document.querySelector<HTMLButtonElement>('#appearance-dialog .plugins-open')!.click();
@@ -55,6 +71,25 @@ export async function nativeSmoke(info:any){
   await wait(()=>card()?.textContent?.includes('Ativo')??false,15000,'Plugin do catálogo não ativou');
   clickText(card()!,'Remover');clickText(card()!,'Confirmar remoção');await wait(()=>!card());
   d.close();
+ });
+ await check('Imagem: abrir PNG, zoom, transparência, erro recuperável e retorno ao editor', async () => {
+  await wait(() => !!document.querySelector('#tree button[aria-label="preview.png"]'));
+  const ed = monaco.editor.getEditors().find(e => e.getDomNode()?.closest('#editor'))!;
+  const open = async (path: string) => { document.querySelector<HTMLButtonElement>(`#tree button[aria-label="${path}"]`)!.click(); await wait(() => document.querySelector('#tabs .active')?.getAttribute('title') === path); };
+  await open('preview.png'); const preview = document.getElementById('image-preview')!;
+  await wait(() => preview.dataset.state === 'ready', 10000, 'PNG não abriu: ' + preview.textContent);
+  assert((document.getElementById('editor') as HTMLElement).hidden, 'editor binário visível');
+  assert(ed.getOption(monaco.editor.EditorOption.readOnly), 'buffer de imagem editável');
+  const img = preview.querySelector('img')!; assert(img.naturalWidth === 1 && img.naturalHeight === 1, 'dimensões incorretas');
+  document.getElementById('image-actual')!.click(); assert(img.style.width === '1px', '100% incorreto');
+  document.getElementById('image-zoom-in')!.click(); assert(img.style.width === '1.25px', 'zoom não alterou pixels');
+  const viewport = preview.querySelector<HTMLElement>('.image-viewport')!; viewport.dispatchEvent(new KeyboardEvent('keydown', { key: '0', bubbles: true }));
+  assert(document.getElementById('image-fit')!.getAttribute('aria-pressed') === 'true', 'atalho de ajustar falhou');
+  const background = preview.querySelector('select')!; background.value = 'dark'; background.dispatchEvent(new Event('change')); assert(viewport.dataset.background === 'dark', 'fundo não mudou');
+  document.getElementById('image-reload')!.click(); await wait(() => preview.dataset.state === 'ready');
+  await open('broken.png'); await wait(() => preview.dataset.state === 'error'); assert(!!preview.querySelector('.image-error button'), 'erro sem recuperação');
+  await open('preview.png'); await wait(() => preview.dataset.state === 'ready');
+  await open('scratch.txt'); assert(!(document.getElementById('editor') as HTMLElement).hidden && preview.hidden, 'não voltou ao editor de texto'); assert(!ed.getOption(monaco.editor.EditorOption.readOnly), 'texto ficou somente leitura');
  });
  await check('SVG: fonte, imagem, zoom, edição ao vivo e conteúdo isolado',async()=>{
   await wait(()=>!!document.querySelector('#tree button[aria-label="preview.svg"]'));

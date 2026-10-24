@@ -1,7 +1,7 @@
 import { setExternalPlugins } from '../shared/language/plugins/host';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DockerPlugin, dockerLines } from '../shared/language/plugins/docker';
+import { DockerPlugin, dockerLines } from '../.tools/plugin-packages/docker/src/shared/language/plugins/docker';
 import { PluginHost } from '../shared/language/plugins/host';
 import { NativeLanguage } from '../src/native-language';
 import { isComposeDocument, isDockerfilePath } from '../shared/docker-document';

@@ -4,7 +4,7 @@ Uma IDE de código aberto para PHP e Laravel, construída com **Rust e Tauri 2**
 
 **Disponível em versão beta para macOS, Windows e Linux.**
 
-**[Baixar PHP IDE](https://phpforge-dev.github.io/php-ide/)** · [Notas das versões](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentação](docs/README.md)
+**[Baixar PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Notas das versões](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentação](docs/README.md)
 
 ## Recursos
 
@@ -18,7 +18,7 @@ Uma IDE de código aberto para PHP e Laravel, construída com **Rust e Tauri 2**
 
 ## Instalação
 
-Escolha o instalador do seu sistema no **[site do projeto](https://phpforge-dev.github.io/php-ide/)** ou nas [releases do GitHub](https://github.com/phpforge-dev/php-ide/releases):
+Escolha o instalador do seu sistema nas **[releases do GitHub](https://github.com/phpforge-dev/php-ide/releases)**:
 
 | Sistema | Pacotes disponíveis |
 |---|---|

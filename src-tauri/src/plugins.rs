@@ -177,8 +177,8 @@ fn entry_file(dir: &Path, main: &str) -> Res<PathBuf> {
     if !file.starts_with(&dir) || !meta.is_file() {
         return Err("Ponto de entrada fora da pasta do plugin".into());
     }
-    if meta.len() > 1024 * 1024 {
-        return Err("Ponto de entrada acima de 1 MB".into());
+    if meta.len() > 8 * 1024 * 1024 {
+        return Err("Ponto de entrada acima de 8 MB".into());
     }
     Ok(file)
 }
@@ -323,73 +323,60 @@ impl Dirs {
     }
 }
 
-/// Install the four shipped language packages once. Removed packages stay removed.
-pub fn seed_bundled(dirs: &Dirs) -> Res<()> {
-    let marker = dirs.state.with_file_name("bundled-plugins-v1.json");
-    if marker.exists() {
-        return Ok(());
+/// Only metadata is shipped; executable packages come from pinned public repositories.
+#[derive(Deserialize)]
+pub struct DefaultPlugin {
+    pub plugin: crate::plugin_catalog::CatalogPlugin,
+    pub sha256: String,
+    pub permissions: Vec<String>,
+}
+pub fn defaults() -> Res<Vec<DefaultPlugin>> {
+    serde_json::from_str(include_str!("../../default-plugins.json")).map_err(err)
+}
+fn completed_defaults(dirs: &Dirs) -> Res<std::collections::BTreeSet<String>> {
+    let path = dirs.state.with_file_name("default-plugins.json");
+    let mut done: std::collections::BTreeSet<String> = match fs::read(path) {
+        Ok(bytes) => serde_json::from_slice(&bytes).map_err(err)?,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Default::default(),
+        Err(e) => return Err(err(e)),
+    };
+    // Preserve removals and permission decisions made before the repository migration.
+    if dirs.state.with_file_name("bundled-plugins-v1.json").exists() {
+        done.extend(["laravel", "dotenv", "docker", "bash"].map(|n| format!("phpforge.{n}")));
     }
-    let packages = [
-        (
-            "laravel",
-            include_str!("../../bundled-plugins/laravel/plugin.json"),
-            include_str!("../../bundled-plugins/laravel/main.js"),
-        ),
-        (
-            "dotenv",
-            include_str!("../../bundled-plugins/dotenv/plugin.json"),
-            include_str!("../../bundled-plugins/dotenv/main.js"),
-        ),
-        (
-            "docker",
-            include_str!("../../bundled-plugins/docker/plugin.json"),
-            include_str!("../../bundled-plugins/docker/main.js"),
-        ),
-        (
-            "bash",
-            include_str!("../../bundled-plugins/bash/plugin.json"),
-            include_str!("../../bundled-plugins/bash/main.js"),
-        ),
-    ];
-    fs::create_dir_all(&dirs.user).map_err(err)?;
-    for (name, manifest, code) in packages {
-        let m: Manifest = serde_json::from_str(manifest).map_err(err)?;
-        if dirs.user.join(&m.id).exists() {
-            continue;
-        }
-        let temp = tempfile::tempdir().map_err(err)?;
-        fs::write(temp.path().join(MANIFEST), manifest).map_err(err)?;
-        fs::write(temp.path().join("main.js"), code).map_err(err)?;
-        fs::write(temp.path().join("LICENSE"), include_str!("../../LICENSE")).map_err(err)?;
-        if name == "docker" {
-            fs::write(
-                temp.path().join("YAML-LICENSE"),
-                include_str!("../../bundled-plugins/docker/YAML-LICENSE"),
-            )
-            .map_err(err)?;
-        }
-        let e = install(dirs, temp.path(), env!("CARGO_PKG_VERSION"))?;
-        // These exact packages ship with the application and replace previously trusted modules.
-        dirs.store(
-            &e.state_key,
-            Some(State {
-                enabled: true,
-                consented: true,
-                reviewed: m.permissions.clone(),
-                granted: m.permissions,
-            }),
-        )?;
-        fs::write(
-            e.dir.join(".php-ide-origin.json"),
-            serde_json::to_vec(&json!({
-                "repository":format!("https://github.com/phpforge-dev/plugin-{name}"),
-                "version":m.version,"bundled":true,"revision":serde_json::from_str::<Value>(include_str!("../../bundled-plugins/lock.json")).ok().and_then(|v|v.as_array()?.iter().find(|p|p["name"]==name).map(|p|p["revision"].clone()))
-            }))
-            .map_err(err)?,
-        )
-        .map_err(err)?;
-    }
-    fs::write(marker, b"{\"version\":1}").map_err(err)
+    Ok(done)
+}
+fn finish_default(dirs: &Dirs, id: &str) -> Res<()> {
+    let mut done = completed_defaults(dirs)?;
+    done.insert(id.to_owned());
+    fs::create_dir_all(dirs.state.parent().ok_or("Invalid state directory")?).map_err(err)?;
+    let path = dirs.state.with_file_name("default-plugins.json");
+    let temp = path.with_extension("tmp");
+    fs::write(&temp, serde_json::to_vec(&done).map_err(err)?).map_err(err)?;
+    fs::rename(temp, path).map_err(err)
+}
+fn default_status(dirs: &Dirs) -> Res<Value> {
+    let done = completed_defaults(dirs)?;
+    Ok(json!(defaults()?.iter().map(|p| json!({
+        "id":p.plugin.id,"name":p.plugin.name,"repository":p.plugin.repository,
+        "pending":!done.contains(&p.plugin.id) && !dirs.user.join(&p.plugin.id).exists()
+    })).collect::<Vec<_>>()))
+}
+static DEFAULT_INSTALL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+async fn install_default(dirs: &Dirs, id: &str) -> Res<Value> {
+    let _lock = DEFAULT_INSTALL.lock().await;
+    let p = defaults()?.into_iter().find(|p| p.plugin.id == id).ok_or("Unknown default plugin")?;
+    if completed_defaults(dirs)?.contains(id) { return Ok(Value::Null); }
+    // Never overwrite an existing installation or change its permissions.
+    if dirs.user.join(id).exists() { finish_default(dirs, id)?; return Ok(Value::Null); }
+    let installed = crate::plugin_catalog::install_default(dirs, &p).await?;
+    if installed.is_null() { finish_default(dirs, id)?; return Ok(Value::Null); }
+    let e = dirs.find(installed["key"].as_str().ok_or("Invalid installed plugin")?)?;
+    dirs.store(&e.state_key, Some(State {
+        enabled: true, consented: true, reviewed: p.permissions.clone(), granted: p.permissions,
+    }))?;
+    finish_default(dirs, id)?;
+    Ok(dirs.describe(&e))
 }
 
 fn s(args: &[Value], i: usize) -> Res<&str> {
@@ -411,9 +398,10 @@ pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
         return crate::plugin_catalog::dispatch(dirs, method, args).await;
     }
     match method {
+        "pluginInstallDefault" => install_default(dirs, s(args, 0)?).await,
         "pluginList" => Ok(
             json!({"ideVersion":ide,"userDir":dirs.user,"projectDir":dirs.project,"permissions":PERMISSIONS,
-            "plugins":dirs.discover(ide).iter().map(|e|dirs.describe(e)).collect::<Vec<_>>()}),
+            "defaults":default_status(dirs)?,"plugins":dirs.discover(ide).iter().map(|e|dirs.describe(e)).collect::<Vec<_>>()}),
         ),
         "pluginSource" => {
             let e = dirs.find(s(args, 0)?)?;
@@ -422,7 +410,7 @@ pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
             if d["enabled"] != true || d["needsConsent"] == true {
                 return Err("Plugin desativado ou sem consentimento".into());
             }
-            let code = workspace::text(fs::read(entry_file(&e.dir, &m.main)?).map_err(err)?)?;
+            let code = String::from_utf8(fs::read(entry_file(&e.dir, &m.main)?).map_err(err)?).map_err(err)?;
             Ok(
                 json!({"code":code,"manifest":m,"rootUri":url::Url::from_directory_path(&dirs.root).map_err(|_|"URI inválida")?.to_string()}),
             )
@@ -483,6 +471,7 @@ pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
             Ok(dirs.describe(&e))
         }
         "pluginRemove" => {
+            let _lock = DEFAULT_INSTALL.lock().await;
             let e = dirs.find(s(args, 0)?)?;
             if e.scope != "user" {
                 return Err(
@@ -492,6 +481,9 @@ pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
             let dir = e.dir.canonicalize().map_err(err)?;
             if !dir.starts_with(dirs.user.canonicalize().map_err(err)?) {
                 return Err("Pasta do plugin fora da pasta de plugins".into());
+            }
+            if let Ok(m) = &e.manifest {
+                if defaults()?.iter().any(|p| p.plugin.id == m.id) { finish_default(dirs, &m.id)?; }
             }
             fs::remove_dir_all(&dir).map_err(err)?;
             dirs.store(&e.state_key, None)?;
@@ -857,6 +849,52 @@ mod tests {
         dirs.user = base.join("config/plugins");
         (tmp, dirs)
     }
+    #[tokio::test]
+    async fn defaults_preserve_existing_permissions_and_removals_without_network() {
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path().join("root"); fs::create_dir(&root).unwrap();
+        let mut dirs = Dirs::new(&tmp.path().join("config"), &root);
+        dirs.user = tmp.path().join("plugins");
+        let source = tmp.path().join("source"); fs::create_dir(&source).unwrap();
+        fs::write(source.join("plugin.json"), r#"{"id":"phpforge.bash","name":"Existing","version":"1.0.0","minIdeVersion":"0.2.0","main":"main.js","permissions":["project.read"]}"#).unwrap();
+        fs::write(source.join("main.js"), "ide.register({})").unwrap();
+        let entry = install(&dirs, &source, env!("CARGO_PKG_VERSION")).unwrap();
+        // An existing manually installed package must still require its original consent.
+        assert_eq!(dirs.describe(&entry)["needsConsent"], true);
+        install_default(&dirs, "phpforge.bash").await.unwrap();
+        assert_eq!(dirs.describe(&entry)["needsConsent"], true);
+        dispatch(&dirs, "pluginRemove", &[json!("user:phpforge.bash")]).await.unwrap();
+        install_default(&dirs, "phpforge.bash").await.unwrap();
+        assert!(!dirs.user.join("phpforge.bash").exists());
+        assert!(completed_defaults(&dirs).unwrap().contains("phpforge.bash"));
+        assert!(install_default(&dirs, "unknown.plugin").await.is_err());
+        assert!(!completed_defaults(&dirs).unwrap().contains("phpforge.prettier"));
+    }
+    #[tokio::test]
+    async fn defaults_migrate_previous_removals_and_keep_new_packages_pending() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dirs = Dirs::new(tmp.path(), tmp.path());
+        fs::write(tmp.path().join("bundled-plugins-v1.json"), "{}" ).unwrap();
+        install_default(&dirs, "phpforge.docker").await.unwrap();
+        let status = default_status(&dirs).unwrap();
+        assert_eq!(status.as_array().unwrap().iter().filter(|p| p["pending"] == true).count(), 1);
+        assert_eq!(status[4]["id"], "phpforge.prettier");
+        assert!(!dirs.user.exists());
+    }
+    #[test]
+    fn default_repositories_are_pinned_and_permissions_are_read_only() {
+        let packages = defaults().unwrap();
+        assert_eq!(packages.len(), 5);
+        for p in packages {
+            assert_eq!(p.plugin.repository, format!("https://github.com/phpforge-dev/plugin-{}", p.plugin.id.strip_prefix("phpforge.").unwrap()));
+            assert_eq!(p.plugin.revision.len(), 40);
+            assert!(p.plugin.revision.bytes().all(|b| b.is_ascii_hexdigit()));
+            assert_eq!(p.sha256.len(), 64);
+            assert!(p.sha256.bytes().all(|b| b.is_ascii_hexdigit()));
+            assert!(p.permissions.iter().all(|p| p == "project.read"));
+        }
+    }
+
     #[test]
     fn manifest_rules() {
         let (tmp, _) = setup();
@@ -940,8 +978,11 @@ mod tests {
             .file_name()
             .to_string_lossy()
             .starts_with(".staging")));
-        // Plugin de exemplo distribuído em fixtures/plugins, instalado a partir da pasta.
-        let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../fixtures/plugins/todo-hints");
+        // A synthetic package keeps Rust folder-install tests offline and independent of plugin repos.
+        let fixture = tmp.path().join("folder-plugin");
+        fs::create_dir(&fixture).unwrap();
+        fs::write(fixture.join("plugin.json"), r#"{"id":"example.todo-hints","name":"Folder fixture","version":"1.0.0","minIdeVersion":"0.2.0","main":"main.js","permissions":["project.read"]}"#).unwrap();
+        fs::write(fixture.join("main.js"), "ide.register({})").unwrap();
         let e = install(&dirs, &fixture, env!("CARGO_PKG_VERSION")).unwrap();
         assert_eq!(e.key, "user:example.todo-hints");
         assert_eq!(
@@ -979,6 +1020,11 @@ mod tests {
             "não concede o que não foi declarado"
         );
         assert!(call("pluginSource", json!(["project:acme.todo"])).unwrap()["code"].is_string());
+        // Minified browser bundles may contain NUL inside a valid JavaScript literal.
+        let minified = "ide.register({format(){return {text:'a\0b'};}});";
+        fs::write(p.join("main.js"), minified).unwrap();
+        assert_eq!(call("pluginSource", json!(["project:acme.todo"])).unwrap()["code"], minified);
+
         assert_eq!(
             call("pluginExec", json!(["project:acme.todo", "echo", ["x"]])).unwrap_err(),
             "PermissionDenied: process",

@@ -12,7 +12,7 @@ npm run typecheck
 npm test
 ```
 
-A suíte usa o host compartilhado e o sandbox atuais, sem runtime Electron. O teste do exemplo usa os arquivos reais de `fixtures/plugins/todo-hints/`. Os testes Rust em `plugins::tests` cobrem manifesto, ZIP, consentimento e operações privilegiadas. Isso não é um teste de toda integração visual de plugins na janela Tauri.
+A suíte usa o host compartilhado e o sandbox atuais, sem runtime Electron. O teste do exemplo baixa a versão fixada em `test-plugins.json` para `.tools/plugin-packages/todo-hints/` com `npm run setup:plugins`. Os testes Rust em `plugins::tests` cobrem manifesto, ZIP, consentimento e operações privilegiadas. Isso não é um teste de toda integração visual de plugins na janela Tauri.
 
 Para validar a integração de sua extensão, execute `npm run dev` ou o aplicativo compilado, siga o [tutorial](getting-started.md), confira os recursos um a um, desative/recarregue e troque de projeto. O smoke nativo geral também não deve ser anunciado como cobertura de todos os hooks externos.
 
@@ -27,7 +27,8 @@ mkdir -p .artifacts/plugins
 python3 - <<'PYZIP'
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
-source = Path('fixtures/plugins/todo-hints')
+# Primeiro execute npm run setup:plugins
+source = Path('.tools/plugin-packages/todo-hints')
 with ZipFile('.artifacts/plugins/example.todo-hints-1.0.0.zip', 'w', ZIP_DEFLATED) as archive:
     for path in sorted(source.rglob('*')):
         if path.is_file():

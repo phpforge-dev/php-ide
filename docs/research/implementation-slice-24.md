@@ -1,3 +1,5 @@
+> Nota de manutenção: o exemplo TODO Hints foi movido para [seu repositório](https://github.com/phpforge-dev/plugin-todo-hints). Os caminhos `fixtures/plugins` abaixo registram o estado histórico deste recorte; os testes atuais baixam o pacote fixado em `test-plugins.json`.
+
 # Recorte 24 — Plugins de terceiros (PLUGIN-API-001)
 
 Objetivo: levar PLUGIN-API-001 de "somente plugins internos" a um sistema de plugins de terceiros

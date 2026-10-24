@@ -1,6 +1,6 @@
 # Criar o primeiro plugin
 
-Este tutorial usa o exemplo real [TODO Hints](../../fixtures/plugins/todo-hints/), já exercitado pelos testes do host. Não exige Node no runtime do plugin nem acesso a processos ou rede.
+Este tutorial usa o exemplo real [TODO Hints](https://github.com/phpforge-dev/plugin-todo-hints), já exercitado pelos testes do host. Não exige Node no runtime do plugin nem acesso a processos ou rede.
 
 ## 1. Preparar um projeto de teste
 
@@ -8,12 +8,12 @@ No terminal, a partir da raiz do repositório da IDE:
 
 ```sh
 mkdir -p /tmp/php-ide-plugin-demo/.php-ide/plugins
-cp -R fixtures/plugins/todo-hints /tmp/php-ide-plugin-demo/.php-ide/plugins/todo-hints
+git clone https://github.com/phpforge-dev/plugin-todo-hints /tmp/php-ide-plugin-demo/.php-ide/plugins/todo-hints
 printf 'ana\nbruno\n' > /tmp/php-ide-plugin-demo/.todo-owners
 printf '<?php\n// TODO(ana): revisar contrato\n// FIXME: tratar erro\n' > /tmp/php-ide-plugin-demo/demo.php
 ```
 
-Abra `/tmp/php-ide-plugin-demo` na IDE. O projeto contém somente dados sintéticos. O exemplo permanece também em `fixtures/plugins/todo-hints`, sem alterações.
+Abra `/tmp/php-ide-plugin-demo` na IDE. O projeto contém somente dados sintéticos. O exemplo é mantido no seu próprio repositório; a IDE não inclui uma cópia.
 
 ## 2. Entender o pacote
 
@@ -25,7 +25,7 @@ todo-hints/
   LICENSE
 ```
 
-[plugin.json](../../fixtures/plugins/todo-hints/plugin.json) identifica `example.todo-hints`, exige IDE 0.2.0 e declara `project.read` para ler `.todo-owners`. PHP, Blade e Markdown são documentos de ativação. O [main.js](../../fixtures/plugins/todo-hints/main.js) chama `ide.register({...})` uma vez.
+[plugin.json](https://github.com/phpforge-dev/plugin-todo-hints/blob/main/plugin.json) identifica `example.todo-hints`, exige IDE 0.2.0 e declara `project.read` para ler `.todo-owners`. PHP, Blade e Markdown são documentos de ativação. O [main.js](https://github.com/phpforge-dev/plugin-todo-hints/blob/main/main.js) chama `ide.register({...})` uma vez.
 
 O arquivo é JavaScript comum, avaliado como corpo de função com `ide` injetado. Não use `export default`, imports de módulos ou `require`. Se escrever em TypeScript ou usar dependências, compile tudo previamente para um único `.js` autocontido, sem runtime Node.
 
@@ -68,6 +68,7 @@ Use `activation.languages: ["php"]` para essa variante. Os índices de linha/col
 Na raiz da IDE:
 
 ```sh
+npm run setup:plugins
 node --import tsx --test tests/plugins.test.ts
 ```
 

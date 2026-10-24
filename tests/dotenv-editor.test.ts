@@ -1,7 +1,7 @@
 import { setExternalPlugins } from '../shared/language/plugins/host';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DotenvPlugin, envReferences, isEnvPath } from '../shared/language/plugins/dotenv';
+import { DotenvPlugin, envReferences, isEnvPath } from '../.tools/plugin-packages/dotenv/src/shared/language/plugins/dotenv';
 import { PluginHost } from '../shared/language/plugins/host';
 import { NativeLanguage } from '../src/native-language';
 const data: Record<string,string>={'.env':'APP_NAME=Disk\nDB_PASSWORD=fixture-secret\n', '.env.testing':'APP_NAME=Test'};

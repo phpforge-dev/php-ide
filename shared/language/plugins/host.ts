@@ -1,5 +1,5 @@
 import { bladeCode, codeOnly, literalAt, position } from '../php-source';
-import type { IdePlugin, PluginCodeLens, PluginDiagnostic, PluginLocation, PluginStatus, ProjectFiles, StringSite } from './api';
+import type { FormatRequest, FormatResult, IdePlugin, PluginCodeLens, PluginDiagnostic, PluginLocation, PluginStatus, ProjectFiles, StringSite } from './api';
 import type { HoverPlugin, PluginHover } from './extensions';
 const servesPath = (plugin: IdePlugin, path: string) => plugin.documents ? plugin.documents(path) : path.endsWith('.php');
 /** Chamada que contém a string: nome normalizado e índice do argumento. */
@@ -58,6 +58,14 @@ export class PluginHost {
   if (prefix.includes('\n')) return null;
   const call = callSite(codeOnly(source.slice(0, literal.start), blade), literal.start);
   return call ? { path, text, literal, prefix, ...call } : null;
+ }
+ /** Formatting is explicit: propagate failures, never silently fall through to another style. */
+ async format(request: FormatRequest): Promise<FormatResult | null> {
+  for(const {plugin} of await this.serving(request.path)){
+   const result=await plugin.format?.(request,this.files);
+   if(result!==undefined&&result!==null)return result;
+  }
+  return null;
  }
  async complete(path: string, text: string, offset: number) {
   const site = this.site(path, text, offset);

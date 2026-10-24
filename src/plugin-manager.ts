@@ -9,7 +9,8 @@ import { mountPluginMarketplace } from './plugin-marketplace';
 
 // Plugins de terceiros: descoberta pelo backend, consentimento na primeira ativação,
 // execução em Web Worker e tela Plugins (Aparência › Plugins ou clique na barra de status).
-type Listing = { ideVersion: string; userDir: string; projectDir: string; permissions: PluginPermission[]; plugins: InstalledPlugin[] };
+type DefaultPackage = { id: string; name: string; repository: string; pending: boolean };
+type Listing = { defaults?: DefaultPackage[]; ideVersion: string; userDir: string; projectDir: string; permissions: PluginPermission[]; plugins: InstalledPlugin[] };
 const permissionText = (p: PluginPermission): [string, string] => ({
  'project.read': [tr('Ler arquivos do projeto'), tr('Conteúdo de qualquer arquivo do projeto, inclusive .env e outros segredos.')],
  'project.write': [tr('Criar e alterar arquivos do projeto'), tr('Qualquer arquivo do projeto, exceto .git e .php-ide.')],
@@ -28,6 +29,8 @@ export function mountPluginManager(api: IdeApi) {
  const call = (method: string, ...args: unknown[]) => (api as any)[method](...args) as Promise<any>;
  let root = ''; let rootUri = 'file:///';
  let listing: Listing | null = null; let listError = ''; let feedback = '';
+ let defaultBusy = false; let defaultProgress = '';
+ const defaultErrors = new Map<string,string>();
  let generation = 0;
  const runtimes = new Map<string, SandboxedPlugin>();
  const startErrors = new Map<string, string>();
@@ -65,7 +68,7 @@ export function mountPluginManager(api: IdeApi) {
   clearTimeout(statusTimer);
   statusTimer = setTimeout(async () => {
    const bar = document.getElementById('plugins'); if (!bar) return;
-   try { bar.textContent = (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · '); } catch { /* barra de status é informativa */ }
+   try { bar.textContent = defaultProgress || (defaultErrors.size ? tr('Plugins padrão pendentes · clique para tentar novamente') : (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · ')); } catch { /* barra de status é informativa */ }
   }, 150);
  };
  const changed = () => { render(); refreshStatus(); };
@@ -89,6 +92,7 @@ export function mountPluginManager(api: IdeApi) {
   try {
    const info = await call('workspace'); root = info.root; rootUri = info.rootUri;
    listing = await call('pluginList'); listError = '';
+   for(const p of listing?.defaults ?? []) if(!p.pending) defaultErrors.delete(p.id);
   } catch (error) { listing = null; listError = String(error); changed(); return; }
   if (current !== generation) return;
   const pending: InstalledPlugin[] = [];
@@ -102,13 +106,24 @@ export function mountPluginManager(api: IdeApi) {
   setExternalPlugins(() => active);
   window.dispatchEvent(new Event('ide-plugins-changed'));
   changed();
-  // Primeira ativação: um pedido de consentimento por plugin e versão de permissões, por sessão.
-  for (const p of pending) {
-   if (current !== generation) return;
-   asked.add(askKey(p));
-   await decide(p);
-  }
-  if (pending.length && current === generation) return reload();
+  // Consent must not hold the workbench's first paint behind the native splash.
+  // The ready promise covers discovery and already-consented workers, not user decisions.
+  if(pending.length)void (async()=>{
+   for(const p of pending){if(current!==generation)return;asked.add(askKey(p));await decide(p);}
+   if(current===generation)await reload();
+  })().catch(error=>{feedback=String(error);changed();});
+ }
+ async function installDefaults() {
+  if (defaultBusy) return;
+  defaultBusy = true;
+  try {
+   for (const p of listing?.defaults?.filter(p => p.pending) ?? []) {
+    defaultProgress = tr('Instalando {0} do GitHub…', p.name); changed();
+    try { await call('pluginInstallDefault', p.id); defaultErrors.delete(p.id); }
+    catch (error) { defaultErrors.set(p.id, String(error)); }
+    await reload();
+   }
+  } finally { defaultBusy = false; defaultProgress = ''; changed(); }
  }
  async function decide(p: InstalledPlugin) {
   const granted = await consent(p);
@@ -235,7 +250,7 @@ export function mountPluginManager(api: IdeApi) {
   card.dataset.builtinPlugin=id;return card;
  }
  async function render() {
-  status.textContent = feedback; marketplace.refresh();
+  status.textContent = defaultProgress || feedback; marketplace.refresh();
   if (!dialog.open) return;
   const external = new Set(listing?.plugins.map(p => p.manifest?.id).filter(Boolean));
   let internal: string[] = [];
@@ -245,6 +260,14 @@ export function mountPluginManager(api: IdeApi) {
    node('h3',{textContent:tr('Suporte de linguagem incluído')}),
    webSupportCard('vue','Vue.js','Vue 3: templates, componentes, props, autocomplete e diagnósticos.','.vue'),
    webSupportCard('react','React','JSX/TSX, props e hooks. Verificação de tipos em TypeScript/TSX.','.jsx · .tsx'),
+   ...(listing?.defaults?.some(p => p.pending) ? [
+    node('h3', {textContent:tr('Plugins padrão')}),
+    node('p',{className:'plugin-meta',textContent:tr('Instalados do GitHub com versão verificada. A primeira instalação precisa de internet e Git; depois funcionam offline.')}),
+    ...listing.defaults.filter(p => p.pending).map(p => node('article',{className:'plugin-card'},
+     node('strong',{textContent:p.name}), node('p',{className:'plugin-meta',textContent:p.repository}),
+     defaultErrors.has(p.id) ? node('pre',{className:'plugin-error',textContent:defaultErrors.get(p.id)}) : node('p',{textContent:tr('Aguardando instalação')}))),
+    node('button',{type:'button',disabled:defaultBusy,textContent:tr('Tentar novamente'),onclick:()=>void installDefaults()})
+   ] : []),
    node('h3', { textContent: tr('Plugins instalados') }),
    ...(listing?.plugins.length ? listing.plugins.map(card) : [node('p', { className: 'plugin-meta', textContent: tr('Nenhum plugin instalado. Procure no Marketplace ou instale pela URL Git, pasta ou ZIP.') })]),
    node('h3', { textContent: tr('Integrados ativos neste projeto') }),
@@ -273,5 +296,6 @@ export function mountPluginManager(api: IdeApi) {
  if (project) new MutationObserver(later).observe(project, { childList: true, characterData: true, subtree: true });
  window.addEventListener('ide-workspace-file-changed', event => { const path = String((event as CustomEvent).detail?.path ?? ''); if (path.includes('/.php-ide/plugins/')) later(); });
  const ready = reload();
+ void ready.then(() => installDefaults()).catch(error => { feedback = String(error); changed(); });
  return { reload, show, ready };
 }

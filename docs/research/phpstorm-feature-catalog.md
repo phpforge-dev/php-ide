@@ -1,6 +1,7 @@
 # Catálogo inicial de funcionalidades — referência PhpStorm
 
-Site do projeto (23/10/2026): apresentação open source, Rust/Tauri 2 e inspiração no PhpStorm, com [proveniência das capturas da própria IDE](../../website/screenshots/README.md). Alteração de comunicação; não promove estados de implementação ou compatibilidade.
+Plugins separados (23/10/2026): [instalação automática de pacotes fixados por commit/hash](../plugins/marketplace.md), sem cópias no fonte ou instalador da IDE. Cinco plugins padrão, download em segundo plano, erros recuperáveis e preservação de remoções/permissões. Requisito próprio; sem promoção comparativa.
+
 
 Splash nativa macOS (23/10/2026): [imagem AppKit embutida antes do WebView e handoff de prontidão](startup-welcome.md). Requisito próprio; Windows/Linux permanecem com splash HTML, sem nova evidência comparativa.
 
@@ -752,3 +753,31 @@ P1, complexidade média. Fonte XML, visualização dividida/imagem, atualizaçã
 ### Vue.js e React — disponibilidade (23/10/2026)
 
 WEB-VUE-001 e WEB-REACT-001: serviços já incluídos/habilitados agora aparecem em Aparência → Plugins. Tela e fluxo dos serviços reais verificados na janela Tauri. Não é instalação de extensão de terceiros nem nova cobertura de framework; estado comparativo continua Em desenvolvimento / não validada. [Disponibilidade, testes e limites](web-language-services.md).
+
+## CODE-FORMAT-001 — Formatação (recorte 0.2.10)
+
+- **Prioridade / complexidade:** P1 / Alta.
+- **Propósito:** reformatar buffer/seleção com undo, estilo por projeto e falhas recuperáveis.
+- **Estado:** Em desenvolvimento; recorte implementado, comparação pendente.
+- **Evidência/contrato:** [formatação](../development/formatting.md), hook format e pacote Prettier offline; PHP com printer próprio e validação AST/tokens.
+- **Aceitação do recorte:** preservar conteúdo significativo; respeitar indentação; seleção PHP não altera espaços fora do intervalo; uma ação de undo; descartar resposta obsoleta; erro deixa o buffer intacto.
+- **Diferenças conhecidas:** sem paridade medida, sem Code Style completo, Blade/HTML misto PHP não suportado, sem format-on-save; Prettier incluído não usa versão/config executável do projeto.
+
+PLUGIN-API-001 recebe hook format desde 0.2.10; main de plugin limitado a 8 MiB para pacotes com parsers offline. O estado comparativo da família não muda.
+
+
+### Salvamento automático — requisito próprio (23/10/2026)
+
+Implementado no frontend Tauri: ativado por padrão, preferência global persistida em Configurações → Aparência → Salvamento automático. Salva cada buffer de arquivo após 800 ms sem alterações, inclusive abas inativas; console, DDL e bibliotecas virtuais ficam excluídos. Desativar cancela os agendamentos pendentes; uma gravação já enviada pode terminar. Reativar agenda buffers alterados. Cmd/Ctrl+S continua disponível. Gravações do mesmo buffer são serializadas, mantendo alterações feitas durante a escrita como pendentes. Reutiliza o IPC restrito e o etag existente para detectar conflitos; erros preservam o buffer e aparecem no rodapé, com orientação para tentar Salvar. Fechar/trocar projeto mantém a proteção de buffers pendentes. Não garante gravação ao encerrar abruptamente durante os 800 ms. Sem validação comparativa com PhpStorm.
+
+Validação específica: harness com as funções reais de agendamento/gravação e IPC simulado aprovou padrão ligado, cancelamento ao desativar, gravação ao reativar, serialização com etag atualizado, edição durante gravação, preservação do buffer em conflito e exclusão de buffers virtuais. Typecheck e validação dos idiomas aprovados. Esse harness não substitui validação na janela Tauri real.
+
+
+### Visualizador de imagens — requisito próprio (23/10/2026)
+
+Abrir PNG, JPEG, GIF, WebP, BMP, ICO e AVIF pela árvore/busca cria uma aba somente de visualização, sem leitura como texto ou autosave. O renderer usa a decodificação de imagem do sistema; disponibilidade de cada codec varia por plataforma. SVG mantém fonte/dividido/imagem existente. A prévia tem ajuste inicial sem ampliar imagens pequenas, zoom 5–800%, 100%, dimensões naturais/formato/zoom, rolagem, fundos quadriculado/claro/escuro e recarregamento explícito do disco. Teclas +/−/0 funcionam com foco na imagem. Estados de carregamento e erro incluem recuperação; respostas de abas anteriores são descartadas. Abas participam do fechamento e do fluxo de mover/renomear/excluir da IDE. A leitura reutiliza IPC `readImage`, confinado à raiz real do projeto, limitado a 5 MiB; não aceita caminhos externos nem symlinks que escapem. Imagens não são editáveis e não são enviadas como contexto ao agente. Atualização externa exige Recarregar. Sem evidência de paridade com PhpStorm.
+
+Validação aprovada: `npm run typecheck`, `npm run test:locales`, `npm test -- preview_images` (MIME, limite de 5 MiB, caminho externo e escape por symlink) e `npm run test:images` no WebKit (dimensões, ajuste/100%, zoom, teclado, fundos, erro de decodificação com recuperação, erro de IPC, resposta atrasada e bytes novos ao recarregar). O teste WebKit usa IPC simulado e não promove compatibilidade nativa. A suíte Rust completa falhou em um caso de Git e foi interrompida ao não concluir outro cenário de Git. Roteiro Tauri `--image-only` disponível; a primeira execução esbarrou na porta 1420 ocupada por outro teste. Não declarar todos os codecs validados por um PNG.
+
+
+Resultado nativo: build web e binário Rust compilados; o roteiro `node scripts/check-native.mjs --production-ui --no-db --image-only` passou na janela Tauri real, com PNG, tamanho original/zoom, fundo de transparência, recarga, erro de arquivo inválido e retorno ao texto editável. Relatório isolado: `.artifacts/image-preview-native.json`; o runner exige a presença do cenário `Imagem:` para evitar aprovação por relatório de outra suíte. `.artifacts/image-preview-webkit.json` registra os cenários isolados do frontend. Nenhuma chamada de inferência real ou banco real foi usada nesta validação. Os outros codecs têm transporte testado, sem validação visual nativa individual.

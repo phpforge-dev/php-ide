@@ -14,6 +14,7 @@ mod process;
 mod recent;
 mod rpc;
 mod startup;
+mod native_splash;
 mod shell;
 mod terminal;
 mod tests;
@@ -246,6 +247,15 @@ async fn ide(
         });
         return state.debug.dispatch(&root, &method, &args, emit).await;
     }
+    // Plugin downloads must not hold the workspace guard while waiting for the network.
+    if method.starts_with("plugin") && method != "plugins" {
+        let config = std::env::var_os("PHP_IDE_STATE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or(app.path().app_config_dir().map_err(err)?);
+        let root = state.project.read().await.root.clone();
+        let dirs = plugins::Dirs::new(&config, &root);
+        return plugins::dispatch(&dirs, &method, &args).await;
+    }
     let project = state.project.read().await;
     let root = &project.root;
     let s = |i| git::s(arg(&args, i));
@@ -319,14 +329,6 @@ async fn ide(
     }
     if method.starts_with("agent") {
         return project.agents.dispatch(&method, &args, &state.tools).await;
-    }
-    if method.starts_with("plugin") && method != "plugins" {
-        let config = std::env::var_os("PHP_IDE_STATE_DIR")
-            .map(PathBuf::from)
-            .unwrap_or(app.path().app_config_dir().map_err(err)?);
-        let dirs = plugins::Dirs::new(&config, root);
-        if method == "pluginList" { plugins::seed_bundled(&dirs)?; }
-        return plugins::dispatch(&dirs, &method, &args).await;
     }
     if method == "plugins" {
         return Err("Plugins são executados pela camada de linguagem da interface".into());
@@ -452,8 +454,30 @@ fn config_placeholder(cache: &std::path::Path) -> PathBuf {
 }
 fn main() {
     configure_path();
+    #[allow(unused_mut)]
+    let mut context = tauri::generate_context!();
+    #[cfg(debug_assertions)]
+    if std::env::var_os("PHP_IDE_NATIVE_SMOKE").is_some() {
+        if let Ok(port) = std::env::var("PHP_IDE_NATIVE_PORT") {
+            let port: u16 = port.parse().expect("Invalid native test port");
+            assert!(port > 0, "Invalid native test port");
+            context.config_mut().build.dev_url = Some(format!("http://127.0.0.1:{port}").parse().expect("Invalid native test URL"));
+        }
+    }
+    #[cfg(target_os = "macos")]
+    if let Some(window) = context
+        .config_mut()
+        .app
+        .windows
+        .iter_mut()
+        .find(|w| w.label == "main")
+    {
+        window.visible = false;
+        window.create = false;
+    }
     tauri::Builder::default()
         .setup(|app| {
+            native_splash::show();
             let resources = app.path().resource_dir()?;
             let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
             let base = if cfg!(debug_assertions) {
@@ -495,14 +519,20 @@ fn main() {
                 debug: debug::Debugger::default(),
                 active: std::sync::atomic::AtomicBool::new(active),
             });
+            #[cfg(target_os = "macos")]
+            {
+                let config = app.config().app.windows.iter()
+                    .find(|w| w.label == "main")
+                    .ok_or("Missing main window configuration")?;
+                native_splash::trace("creating-webview");
+                tauri::WebviewWindowBuilder::from_config(app, config)?.build()?;
+            }
             if std::env::var_os("PHP_IDE_NATIVE_SMOKE").is_some() {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.set_position(tauri::LogicalPosition::new(80.0, 80.0));
-                    let _ = window.show();
-                    let _ = window.unminimize();
-                    let _ = window.set_focus();
                 }
             }
+            native_splash::watchdog(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -520,7 +550,7 @@ fn main() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![ide])
-        .run(tauri::generate_context!())
+        .invoke_handler(tauri::generate_handler![ide, native_splash::startup_ready])
+        .run(context)
         .expect("Falha ao iniciar Tauri");
 }

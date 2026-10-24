@@ -3,9 +3,9 @@ name: Source quality
 on:
   push:
     branches: [main]
-    paths-ignore: ['docs/**', 'design/**', 'website/**', '*.md']
+    paths-ignore: ['docs/**', 'design/**', '*.md']
   pull_request:
-    paths-ignore: ['docs/**', 'design/**', 'website/**', '*.md']
+    paths-ignore: ['docs/**', 'design/**', '*.md']
   workflow_dispatch:
 
 permissions:

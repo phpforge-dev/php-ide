@@ -1,6 +1,6 @@
 import { analyze, phpTokens, position, type PhpToken } from '../php-source';
 import { CompletionKind, type CodeCompletion, type CodeSite, type IdePlugin, type PluginCompletion, type PluginLocation, type ProjectFiles, type StringSite } from './api';
-import { maskEnv, readEnv, type EnvEntry } from './dotenv';
+import { maskEnv, readEnv, type EnvEntry } from '../../env-document';
 
 // Symfony (symfony.com/doc): rotas por atributo `#[Route]` e YAML, templates Twig,
 // serviços e parâmetros de config/*.yaml e `%env()%` ligado aos arquivos .env.

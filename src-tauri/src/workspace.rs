@@ -69,7 +69,7 @@ fn base64(data: &[u8]) -> String {
     }
     out
 }
-/// Imagem do projeto como data URI para a prévia Markdown (a CSP só permite `self` e `data:`).
+/// Imagem do projeto como data URI para as prévias de imagem e Markdown (a CSP só permite `self` e `data:`).
 pub fn image(root: &Path, input: &str) -> Res<Value> {
     let path = confined(root, input)?;
     let ext = path
@@ -81,6 +81,9 @@ pub fn image(root: &Path, input: &str) -> Res<Value> {
         "jpg" | "jpeg" => "image/jpeg",
         "gif" => "image/gif",
         "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "ico" => "image/x-icon",
+        "avif" => "image/avif",
         "svg" => "image/svg+xml",
         _ => return Err("Formato de imagem não suportado na prévia".into()),
     };
@@ -287,6 +290,25 @@ mod tests {
             image(&root, "a.svg").unwrap(),
             json!("data:image/svg+xml;base64,PHN2Zy8+")
         );
+        for (ext, mime) in [
+            ("jpg", "image/jpeg"), ("jpeg", "image/jpeg"), ("gif", "image/gif"),
+            ("webp", "image/webp"), ("bmp", "image/bmp"), ("ico", "image/x-icon"),
+            ("avif", "image/avif"), ("PNG", "image/png"),
+        ] {
+            let name = format!("preview.{ext}");
+            fs::write(root.join(&name), [1, 2, 3]).unwrap();
+            assert_eq!(image(&root, &name).unwrap(), json!(format!("data:{mime};base64,AQID")));
+        }
+        let large = fs::File::create(root.join("large.png")).unwrap();
+        large.set_len(5 * 1024 * 1024 + 1).unwrap();
+        assert!(image(&root, "large.png").is_err());
+        let outside = tempfile::tempdir().unwrap();
+        fs::write(outside.path().join("secret.png"), [1]).unwrap();
+        assert!(image(&root, outside.path().join("secret.png").to_str().unwrap()).is_err());
+        #[cfg(unix)] {
+            std::os::unix::fs::symlink(outside.path().join("secret.png"), root.join("escape.png")).unwrap();
+            assert!(image(&root, "escape.png").is_err());
+        }
         assert!(image(&root, "notes.txt").is_err());
         assert!(image(&root, "../outside.png").is_err());
     }

@@ -21,7 +21,7 @@ Na tela Plugins é possível ativar/desativar, revisar permissões e ver erros e
 - [Manifesto, API e ciclo de vida](api.md).
 - [Empacotar, testar e solucionar problemas](distribution.md).
 - [Permissões e limites do isolamento](permissions.md).
-- [Exemplo completo TODO Hints](../../fixtures/plugins/todo-hints/README.md).
+- [Exemplo completo TODO Hints](https://github.com/phpforge-dev/plugin-todo-hints/blob/main/README.md).
 
 Para consultar a implementação: [contratos](../../shared/language/plugins/api.ts), [adaptador/worker](../../shared/language/plugins/sandbox.ts), [host](../../shared/language/plugins/host.ts) e [backend Rust](../../src-tauri/src/plugins.rs). A API ainda acompanha a versão da IDE, sem uma versão de protocolo independente.
 
@@ -38,3 +38,5 @@ O Marketplace tem busca local no catálogo, instalação e atualização manual.
 Os suportes de Vue.js e React já vêm incluídos e habilitados na IDE; não precisam de pasta/ZIP nem de plugin do marketplace. Consulte **Aparência → Plugins… → Suporte de linguagem incluído**. Ao abrir `.vue`, ativa-se o serviço Vue 3; `.jsx`/`.tsx` usam os serviços TypeScript/JavaScript para React. Os tipos do framework são usados quando encontrados nas dependências do projeto, com fallback offline incluído. Isso não instala Vue/React nem altera o package.json do projeto.
 
 Para testar, abra um componente do projeto e use Ctrl+Espaço e F12; em TSX, erros de tipos também são apontados. Vue 2/Nuxt, tsconfig/jsconfig e aliases de paths têm limitações descritas em [serviços web](../research/web-language-services.md).
+
+O [plugin Prettier](https://github.com/phpforge-dev/plugin-prettier) é instalado automaticamente do repositório e também está disponível pelo Marketplace, Git, pasta ou ZIP. PHP puro usa regras próprias da IDE; nenhum plugin Prettier para PHP é carregado.

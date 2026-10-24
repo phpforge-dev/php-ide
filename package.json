@@ -1,6 +1,6 @@
 {
   "name": "php-ide",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "private": true,
   "type": "module",
   "scripts": {
@@ -25,7 +25,18 @@
     "test:unit": "node --import tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm run test:architecture && npm run test:unit && npm test && npm run lint:rust && npm run test:locales",
     "lint:rust": "node scripts/cargo.mjs clippy --all-targets -- -D warnings",
-    "test:architecture": "node scripts/check-architecture.mjs"
+    "test:architecture": "node scripts/check-architecture.mjs",
+    "test:formatting": "node --import tsx --test tests/formatting.test.ts",
+    "test:formatting:ui": "node scripts/check-formatting.mjs",
+    "setup:plugins": "node scripts/prepare-plugin-tests.mjs",
+    "pretypecheck": "npm run setup:plugins",
+    "pretest:unit": "npm run setup:plugins",
+    "pretest:formatting": "npm run setup:plugins",
+    "pretest:native": "npm run setup:plugins",
+    "pretest:ui": "npm run setup:plugins",
+    "test:plugins:ui": "node scripts/check-default-plugins.mjs",
+    "test:images": "node scripts/check-image-preview.mjs",
+    "test:plugins:native": "npm run test:native -- --no-db --plugins-only"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
@@ -36,8 +47,11 @@
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "diff": "^9.0.0",
+    "dt-sql-parser": "4.5.1",
+    "ignore": "7.0.14",
     "mermaid": "11.17.2",
     "monaco-editor": "^0.57.0",
+    "php-parser": "3.7.0",
     "vue": "3.5.44",
     "yaml": "^2.9.1"
   },
@@ -46,6 +60,7 @@
     "@playwright/test": "^1.64.1",
     "@tauri-apps/cli": "^2.12.4",
     "@types/node": "^26.6.5",
+    "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
     "vite": "^8.3.5"

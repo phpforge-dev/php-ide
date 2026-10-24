@@ -68,6 +68,7 @@ export type TestRunOutput = { command: string; exitCode: number | null; cancelle
 export type ComposerRunner = { mode: 'auto' | 'path' | 'docker'; path?: string; image?: string };
 export type ComposerRunOutput = { command: string; exitCode: number | null; cancelled: boolean; timedOut: boolean; durationMs: number; output: string };
 export interface IdeApi {
+ formatDocument(request:import('./language/plugins/api').FormatRequest):Promise<import('./language/plugins/api').FormatResult|null>;
   searchSymbols(query:string):Promise<{name:string;kind:number;containerName?:string;location:{uri:string;range:{start:{line:number;character:number};end:{line:number;character:number}}}}[]>;
   onDockerProgress(listener: (event: {id: string; text: string}) => void): () => void;
   dockerCancel(id: string): Promise<void>;

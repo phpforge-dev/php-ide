@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BashPlugin, bashIndex } from '../shared/language/plugins/bash';
+import { BashPlugin, bashIndex } from '../.tools/plugin-packages/bash/src/shared/language/plugins/bash';
 import { isBashDocument, shellDialect } from '../shared/bash-document';
 import { PluginHost } from '../shared/language/plugins/host';
 import { NativeLanguage } from '../src/native-language';

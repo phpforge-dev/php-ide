@@ -18,4 +18,4 @@ Código compilado nos runners e no macOS: revisão `8b45c40`. [Execução final 
 
 Sem acesso a bancos reais, inferência de agente ou credenciais pessoais nos testes. ARM64 de Windows/Linux e macOS Intel não foram compilados neste recorte. A verificação sintática Bash pelo shell Unix permanece indisponível no Windows quando o shell esperado não existe. Os limites funcionais anteriores continuam aplicáveis.
 
-Operação e reprodução: [Windows e Linux](../development/windows-linux-builds.md), [macOS](../development/contributing.md#build-e-instalador-macos) e [página de downloads](../development/github-pages.md).
+Operação e reprodução: [Windows e Linux](../development/windows-linux-builds.md), [macOS](../development/contributing.md#build-e-instalador-macos).

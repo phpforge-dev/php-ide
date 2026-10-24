@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { projectFiles } from './fixtures/project-files';
 import { PluginHost, callSite } from '../shared/language/plugins/host';
-import { LaravelPlugin, parseRoutes } from '../shared/language/plugins/laravel';
-import { DotenvPlugin, parseEnv } from '../shared/language/plugins/dotenv';
+import { LaravelPlugin, parseRoutes } from '../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel';
+import { DotenvPlugin, parseEnv } from '../.tools/plugin-packages/dotenv/src/shared/language/plugins/dotenv';
 
 async function project() {
  const root = await realpath(await mkdtemp(join(tmpdir(), 'php-ide-plugins-')));
@@ -144,8 +144,8 @@ test('traduções __(), trans() e @lang em PHP, JSON e locais (DOC Laravel)', as
 
 test('SQL em strings PHP: completion e navegação para DDL (plugin database)', async () => {
  const { DatabasePlugin } = await import('../shared/language/plugins/database');
- const { LaravelPlugin } = await import('../shared/language/plugins/laravel');
- const { DotenvPlugin } = await import('../shared/language/plugins/dotenv');
+ const { LaravelPlugin } = await import('../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel');
+ const { DotenvPlugin } = await import('../.tools/plugin-packages/dotenv/src/shared/language/plugins/dotenv');
  const { model } = await import('./fixtures/sql-model');
  const { root } = await project();
  const ddl = "-- auto-generated definition\ncreate table orders\n(\n    id      serial\n        primary key,\n    user_id integer        not null\n        references users\n);\n";
@@ -196,8 +196,8 @@ function services(files: ProjectFiles) {
  return { s, calls };
 }
 const fixture = async () => ({
- manifest: JSON.parse(await readFile('fixtures/plugins/todo-hints/plugin.json', 'utf8')) as PluginManifest,
- code: await readFile('fixtures/plugins/todo-hints/main.js', 'utf8'),
+ manifest: JSON.parse(await readFile('.tools/plugin-packages/todo-hints/plugin.json', 'utf8')) as PluginManifest,
+ code: await readFile('.tools/plugin-packages/todo-hints/main.js', 'utf8'),
 });
 const manifest = (extra: Partial<PluginManifest> = {}): PluginManifest => ({ id: 'test.plugin', name: 'Test', version: '1.0.0', minIdeVersion: '0.2.0', main: 'main.js', activation: { languages: ['php'] }, permissions: [], ...extra });
 const sandbox = (m: PluginManifest, code: string, granted: PluginPermission[], s: PluginServices, hookTimeout = 2000) =>
@@ -325,8 +325,8 @@ test('ativação por arquivo marcador e padrões de documento', async () => {
 test('pacotes independentes de linguagem carregam no mesmo worker dos plugins instalados', async () => {
  const files = memoryFiles({ '.env': 'APP_NAME=Fixture\n', 'build.sh':'#!/bin/bash\nNAME=fixture\n', 'compose.yml':'services:\n  app:\n    image: php:8.3-cli\n', 'composer.json':'{"require":{"laravel/framework":"^12.0"}}' });
  for (const id of ['laravel','dotenv','docker','bash']) {
-  const m = JSON.parse(await readFile(`bundled-plugins/${id}/plugin.json`, 'utf8')) as PluginManifest;
-  const code = await readFile(`bundled-plugins/${id}/main.js`, 'utf8');
+  const m = JSON.parse(await readFile(`.tools/plugin-packages/${id}/plugin.json`, 'utf8')) as PluginManifest;
+  const code = await readFile(`.tools/plugin-packages/${id}/main.js`, 'utf8');
   const plugin = sandbox(m, code, ['project.read'], services(files).s);
   try {
    assert.equal(await plugin.ready, true, `${id}: ${plugin.info.errors.join('; ')}`);

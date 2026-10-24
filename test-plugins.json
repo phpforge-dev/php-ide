@@ -1,0 +1,11 @@
+[
+  {
+    "plugin": {
+      "id": "example.todo-hints",
+      "version": "1.0.0",
+      "repository": "https://github.com/phpforge-dev/plugin-todo-hints",
+      "revision": "38659cfffea118d20d024dc551bf8cbd6e0d630e"
+    },
+    "sha256": "8bf27323c66ad60913a90d249380745f986e6f909605b6bed7823bb144553ed0"
+  }
+]

@@ -23,6 +23,6 @@ Essas barreiras não são uma garantia de resistência a todo código hostil. A 
 
 ## Limites operacionais
 
-Main: 1 MiB; manifesto: 64 KiB; instalação: 2.000 arquivos / 20 MiB. Ponte limita texto de escrita/entrada de processo a aproximadamente 2 Mi de unidades JavaScript, com validação adicional de tamanho no backend. Processos têm limite de 30 segundos; requisições curl, 20 segundos e 3 redirecionamentos; saída/resposta textual limitada. Load/hook usam limites de 5/4 segundos por padrão.
+Main: 8 MiB a partir da IDE 0.2.10; manifesto: 64 KiB; instalação: 2.000 arquivos / 20 MiB. Ponte limita texto de escrita/entrada de processo a aproximadamente 2 Mi de unidades JavaScript, com validação adicional de tamanho no backend. Processos têm limite de 30 segundos; requisições curl, 20 segundos e 3 redirecionamentos; saída/resposta textual limitada. Load/hook usam limites de 5/4 segundos por padrão.
 
 Nunca inclua credenciais reais em exemplos, pacotes, logs ou pedidos de teste. Não use permissões amplas como substituto de uma capacidade que a API ainda não oferece.

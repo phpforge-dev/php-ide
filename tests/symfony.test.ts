@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SymfonyPlugin, defaultRouteName, parseRouteAttributes, parseServices, parseYamlRoutes, referenceAt } from '../shared/language/plugins/symfony';
-import { LaravelPlugin } from '../shared/language/plugins/laravel';
+import { LaravelPlugin } from '../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 

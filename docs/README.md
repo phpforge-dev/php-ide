@@ -13,12 +13,12 @@ O PHP IDE é uma IDE para PHP e Laravel, construída com Rust e Tauri 2, com int
 | Contribuir, testar e preparar uma entrega | [Desenvolvimento](development/contributing.md) |
 | Gerar e verificar o instalador macOS | [Build e instalador](development/contributing.md#build-e-instalador-macos) |
 | Gerar instaladores Windows e Linux | [Builds no GitHub Actions](development/windows-linux-builds.md) |
-| Publicar a página e disponibilizar downloads | [GitHub Pages e releases](development/github-pages.md) |
 | Instalar e gerenciar plugins | [Plugins](plugins/README.md) |
 | Pesquisar no Marketplace ou instalar pela URL Git | [Marketplace](plugins/marketplace.md) |
 | Criar o primeiro plugin | [Tutorial](plugins/getting-started.md) |
 | Consultar a API de plugins | [Referência da API](plugins/api.md) |
 | Empacotar e diagnosticar um plugin | [Distribuição e testes](plugins/distribution.md) |
+| Formatar PHP e instalar Prettier | [Formatação](development/formatting.md) |
 | Entender permissões e limites | [Permissões e isolamento](plugins/permissions.md) |
 
 ## Pesquisa e compatibilidade

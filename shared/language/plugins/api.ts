@@ -34,7 +34,11 @@ export interface ProjectFiles {
  exists(path: string): Promise<boolean>;
  uri(path: string): string;
 }
+/** UTF-16 offsets; range is optional (whole file). The result always describes the whole buffer. */
+export type FormatRequest = { path: string; text: string; language: string; range?: {start: number; end: number}; options: {tabSize: number; insertSpaces: boolean} };
+export type FormatResult = { text: string };
 export interface IdePlugin {
+ format?(request: FormatRequest, files: ProjectFiles): Promise<FormatResult | null>;
  readonly id: string;
  readonly name: string;
  /** Plugin interno que não aparece na barra de status. */

@@ -1,9 +1,11 @@
+import { mountImagePreview, isImagePath } from './image-preview';
+import {mountFormatting} from './formatting';
 import { mountSvgPreview, isSvgPath } from './svg-preview';
 import { mountTreeGitStatus } from './tree-git-status';
 import { isBashDocument } from '../shared/bash-document';
 import { isDockerfilePath, isComposeDocument } from '../shared/docker-document';
 import { registerDotenvLanguage } from './dotenv-language';
-import { isEnvPath } from '../shared/language/plugins/dotenv';
+import { isEnvPath } from '../shared/env-document';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
 import { showTabMenu } from './tab-menu';
@@ -84,8 +86,26 @@ const languageFor = (path: string, text = '') => isSvgPath(path) ? 'xml' : isDoc
 // Linguagens com navegação pelo backend: PHP/Blade (Phpactor + plugins) e Markdown (plugin).
 const navigable = ['shell','dockerfile','yaml','dotenv', ...phpLike, 'markdown','javascript','typescript','vue'];
 // virtual: console SQL (editável, não salvo em disco) ou DDL gerado (somente leitura).
-type Buffer = { file: FileBuffer; model: monaco.editor.ITextModel; saved: string; virtual?: 'console' | 'ddl' | 'library' };
+type Buffer = { file: FileBuffer; model: monaco.editor.ITextModel; saved: string; virtual?: 'console' | 'ddl' | 'library' | 'image' };
 const buffers = new Map<string, Buffer>();
+const autosaveTimers = new Map<Buffer, ReturnType<typeof setTimeout>>();
+const saving = new Map<Buffer, Promise<void>>();
+let autosaveEnabled = true;
+try { autosaveEnabled = localStorage.getItem('php-ide-autosave') !== 'false'; } catch { /* Default remains enabled. */ }
+function scheduleAutosave(b: Buffer) {
+ clearTimeout(autosaveTimers.get(b)); autosaveTimers.delete(b);
+ if (!autosaveEnabled || b.virtual || b.model.isDisposed() || !dirty(b)) return;
+ autosaveTimers.set(b, setTimeout(() => {
+  autosaveTimers.delete(b);
+  const path = [...buffers].find(([, value]) => value === b)?.[0];
+  if (path && autosaveEnabled) void saveBuffer(path, b).catch(error => status(tr('Falha no salvamento automático. Use Salvar para tentar novamente: ') + path + ': ' + String(error)));
+ }, 800));
+}
+function bufferChanged(model: monaco.editor.ITextModel) { tabs(); const b = [...buffers.values()].find(b => b.model === model); if (b) scheduleAutosave(b); }
+window.addEventListener('ide-autosave-changed', () => {
+ try { autosaveEnabled = localStorage.getItem('php-ide-autosave') !== 'false'; } catch { return; }
+ for (const b of buffers.values()) scheduleAutosave(b);
+});
 const dirty = (b: Buffer) => !b.virtual && b.model.getValue() !== b.saved;
 let active: string | undefined;
 const gitPanel = mountGit(api, () => [...buffers.values()].some(dirty), async () => { editor.setModel(null); buffers.forEach(b => b.model.dispose()); buffers.clear(); active = undefined; opened.clear(); views.clear(); backStack.length=0;forwardStack.length=0;navigationButtons(); tabs(); await tree(); });
@@ -131,16 +151,20 @@ function closeFile(path: string) {
  if(!webProject.retain(b.model))b.model.dispose(); buffers.delete(path); views.delete(path); tabs();
 }
 // Trocar de modelo não emite evento de cursor; atualizar a barra também ao ativar arquivo.
-function showCursor() { const p = editor.getPosition(); const count=editor.getSelections()?.length??0;const multiple=count>1?msg`${count} cursores`+' · ':'';const column=editor.getOption(monaco.editor.EditorOption.columnSelection)?tr('Seleção em coluna')+' · ':'';$('cursor-position').textContent = p ? `${column}${multiple}Ln ${p.lineNumber}, Col ${p.column} · UTF-8` : ''; }
+function showCursor() { if (active && buffers.get(active)?.virtual === 'image') { $('cursor-position').textContent = ''; return; } const p = editor.getPosition(); const count=editor.getSelections()?.length??0;const multiple=count>1?msg`${count} cursores`+' · ':'';const column=editor.getOption(monaco.editor.EditorOption.columnSelection)?tr('Seleção em coluna')+' · ':'';$('cursor-position').textContent = p ? `${column}${multiple}Ln ${p.lineNumber}, Col ${p.column} · UTF-8` : ''; }
 function activate(path: string, track = true) {
  const previous = place(); if(active) { const view = editor.saveViewState(); if(view) views.set(active, view); }
- active = path; opened.add(path); editor.setModel(buffers.get(path)!.model); editor.updateOptions({ readOnly: ['ddl','library'].includes(buffers.get(path)!.virtual??'') }); if(views.has(path)) editor.restoreViewState(views.get(path)!); showCursor(); tabs(); editor.focus(); if(track) remember(previous);
+ active = path; opened.add(path); editor.setModel(buffers.get(path)!.model); editor.updateOptions({ readOnly: ['ddl','library','image'].includes(buffers.get(path)!.virtual??'') }); if(views.has(path)) editor.restoreViewState(views.get(path)!); showCursor(); tabs(); if (buffers.get(path)!.virtual === 'image') document.querySelector<HTMLElement>('#image-preview .image-viewport')?.focus(); else editor.focus(); if(track) remember(previous);
 }
 async function open(path: string, track = true) {
  if(frameworkTypes[path]){const key='library:'+path;virtual(key,frameworkTypes[path],'typescript','library',monaco.Uri.file(path));activate(key,track);return;}
+ if (isImagePath(path)) {
+  if (!buffers.has(path)) virtual(path, '', 'plaintext', 'image', monaco.Uri.from({ scheme: 'php-ide-image', path: '/' + path }));
+  activate(path, track); return;
+ }
  if (buffers.get(path)?.virtual) { activate(path, track); return; }
  const file = await api.read(path);
- if (!buffers.has(file.path)) { const uri=monaco.Uri.parse(file.uri);const model = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text, languageFor(file.path,file.text),uri);webProject.claim(model);if(model.getValue()!==file.text)model.setValue(file.text); buffers.set(file.path,{file,model,saved:file.text}); model.onDidChangeContent(tabs); }
+ if (!buffers.has(file.path)) { const uri=monaco.Uri.parse(file.uri);const model = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text, languageFor(file.path,file.text),uri);webProject.claim(model);if(model.getValue()!==file.text)model.setValue(file.text); buffers.set(file.path,{file,model,saved:file.text}); model.onDidChangeContent(() => bufferChanged(model)); }
  activate(file.path, track);
  if(webLanguage(editor.getModel()!.getLanguageId()))run(()=>webProject.prepare());
  if (phpLike.includes(languageFor(file.path,file.text) ?? '')) {
@@ -217,6 +241,7 @@ mountMarkdown(api, editor, { path: () => active, status, open: async (path, line
 const databasePanel = mountDatabase(api, { openConsole: session => run(() => consoleUi.open(session)), disconnected: id => consoleUi.forget(id) });
 mountAppearance(editor);
 mountSvgPreview(editor,{path:()=>active});
+const imagePreview = mountImagePreview(editor, api, { path: () => active });
 // `expanded`: diretórios reabertos ao recarregar a árvore depois de ações de arquivo.
 async function tree(path = '', parent: HTMLElement = $('tree'), expanded?: Set<string>) {
  const entries = await api.tree(path);
@@ -231,14 +256,34 @@ async function tree(path = '', parent: HTMLElement = $('tree'), expanded?: Set<s
  void Promise.all(Array.from({length:Math.min(4,pending.length)},async()=>{while(next<pending.length){const item=pending[next++];if(!item.button.isConnected)continue;try{const text=buffers.get(item.path)?.model.getValue()??(await api.read(item.path)).text;if(item.button.isConnected)item.button.firstElementChild?.replaceWith(fileIcon(item.path,false,buffers.get(item.path)?.model.getValue()??text));}catch{/* Unreadable files keep the generic PHP icon. */}}}));
 }
 /** Buffer sem arquivo: reaproveita o modelo e atualiza o conteúdo gerado. */
-function virtual(path: string, text: string, language: string, kind: 'console' | 'ddl' | 'library', uri: monaco.Uri) {
+function virtual(path: string, text: string, language: string, kind: 'console' | 'ddl' | 'library' | 'image', uri: monaco.Uri) {
  const existing = buffers.get(path);
  if (existing) { if (kind === 'ddl' && existing.model.getValue() !== text) { existing.model.setValue(text); existing.saved = text; } return existing.model; }
  const model = monaco.editor.getModel(uri)??monaco.editor.createModel(text, language, uri);webProject.claim(model);
- buffers.set(path, { file: { path, uri: uri.toString(), text, etag: '' }, model, saved: text, virtual: kind }); model.onDidChangeContent(tabs);
+ buffers.set(path, { file: { path, uri: uri.toString(), text, etag: '' }, model, saved: text, virtual: kind }); model.onDidChangeContent(() => bufferChanged(model));
  return model;
 }
-async function save() { if (!active) return; const b = buffers.get(active)!; if (b.virtual) { status(b.virtual === 'library'?tr('Declaração de biblioteca: somente leitura.'):b.virtual === 'ddl' ? tr('DDL gerado: somente leitura.') : tr('O console não é salvo em disco; execute com ⌘/Ctrl+Enter.')); return; } const text = b.model.getValue(); b.file.etag = await api.save(active,text,b.file.etag); b.saved = text; tabs(); phpInsights.refresh(); await editorChanges.refresh(); status(tr('Arquivo salvo')); }
+async function saveBuffer(path: string, b: Buffer): Promise<void> {
+ const pending = saving.get(b);
+ if (pending) { await pending; if (dirty(b)) return saveBuffer(path, b); return; }
+ if (b.virtual || b.model.isDisposed() || buffers.get(path) !== b || !dirty(b)) return;
+ const text = b.model.getValue();
+ const operation = (async () => {
+  status(tr('Salvando…'));
+  b.file.etag = await api.save(path, text, b.file.etag); b.saved = text;
+  tabs(); phpInsights.refresh(); status(tr('Arquivo salvo') + ': ' + path);
+ })();
+ saving.set(b, operation);
+ try { await operation; } finally { saving.delete(b); }
+ if (dirty(b)) scheduleAutosave(b);
+ await editorChanges.refresh();
+}
+async function save() {
+ if (!active) return;
+ const b = buffers.get(active)!;
+ if (b.virtual) { status(b.virtual === 'image' ? tr('Imagem: somente visualização.') : b.virtual === 'library' ? tr('Declaração de biblioteca: somente leitura.') : b.virtual === 'ddl' ? tr('DDL gerado: somente leitura.') : tr('O console não é salvo em disco; execute com ⌘/Ctrl+Enter.')); return; }
+ await saveBuffer(active, b);
+}
 async function request(method: LanguageMethod, model: monaco.editor.ITextModel, position: monaco.Position): Promise<any> {
  const b = [...buffers.values()].find(b => b.model === model);
  if (!b) return null; // Read-only diff models are not workspace buffers.
@@ -264,7 +309,7 @@ async function toLocations(values: any[]) {
   if (uri.scheme === 'phar') { try { const stub = await api.languageStub(uri.toString()); virtual('library:'+uri.toString(), stub.text, 'php', 'library', uri); output.push({uri,range:range(item.range ?? item.targetSelectionRange)}); } catch(error) { status(msg`Stub nativo indisponível: ${String(error)}`); } continue; }
   if (uri.scheme !== 'file') continue;
   if(frameworkTypes[uri.fsPath]){virtual('library:'+uri.fsPath,frameworkTypes[uri.fsPath],'typescript','library',uri);output.push({uri,range:range(item.range ?? item.targetSelectionRange)});continue;}
-  const file = await api.read(uri.fsPath); if (!buffers.has(file.path)) { const m = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text,languageFor(file.path,file.text),uri);webProject.claim(m); buffers.set(file.path,{file,model:m,saved:file.text}); m.onDidChangeContent(tabs); }
+  const file = await api.read(uri.fsPath); if (!buffers.has(file.path)) { const m = monaco.editor.getModel(uri)??monaco.editor.createModel(file.text,languageFor(file.path,file.text),uri);webProject.claim(m); buffers.set(file.path,{file,model:m,saved:file.text}); m.onDidChangeContent(() => bufferChanged(m)); }
   // Referência a arquivo (string com caminho) abre o arquivo na última posição conhecida.
   const kept = item.preserveView ? views.get(file.path)?.cursorState[0]?.position : undefined;
   output.push({uri,range:kept?{startLineNumber:kept.lineNumber,startColumn:kept.column,endLineNumber:kept.lineNumber,endColumn:kept.column}:range(item.range ?? item.targetSelectionRange)});
@@ -326,6 +371,7 @@ monaco.languages.registerCompletionItemProvider('ignore',{triggerCharacters:['/'
 }});
 editor.onDidChangeModel(()=> { const uri=editor.getModel()?.uri.toString(); const entry=[...buffers].find(([,b])=>b.model.uri.toString()===uri); if(entry){active=entry[0];tabs();} });
 editor.onDidChangeCursorPosition(showCursor);
+mountFormatting(editor,api,{path:()=>active&&!buffers.get(active)?.virtual?active:undefined,status});
 keymap.registerAction({id:'file.save',label:'Salvar arquivo',category:'Arquivo',aliases:'save gravar',defaults:{mac:'Meta+S',other:'Ctrl+S'},enabled:()=>!!active,run:()=>run(save)});
 $('references').onclick=()=>run(()=>usages.show());
 // ⌘B em PHP: Declaration or Usages (declaração leva aos usos; uso único navega direto).
@@ -335,7 +381,7 @@ $('show-agent').onclick=()=>{$('agent').hidden=false;$('db').hidden=true;};
 $('show-db').onclick=()=>{$('agent').hidden=true;$('db').hidden=false;};
 const agentPanel = mountAgent(api, $('agent'), {
  context: () => { const b = active ? buffers.get(active) : undefined; if (!b || b.virtual) return undefined; const selection = editor.getSelection(); const selected = selection && !selection.isEmpty() ? b.model.getValueInRange(selection) : undefined; return { path: b.file.path, text: b.model.getValue(), ...(selected ? { selection: selected } : {}) }; },
- reload: async paths => { webProject.invalidate();for (const path of paths) { const b = buffers.get(path); if (!b || dirty(b)) continue; const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); } tabs(); },
+ reload: async paths => { webProject.invalidate();for (const path of paths) { const b = buffers.get(path); if (!b || dirty(b)) continue; if (b.virtual === 'image') { imagePreview.reload(); continue; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); } tabs(); },
  status, language: languageFor,
 });
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
@@ -346,7 +392,7 @@ mountWorkspaceSync(api, buffers, { tabs, status, editor, active: () => active })
 mountSearchEverywhere(api,editor,async(path,line,column)=>{await open(path);if(line){editor.setPosition({lineNumber:line,column:column??1});editor.revealLineInCenter(line);}});
 mountRecentProjects(api, chooseProject);
 const terminalPanel=mountTerminal(api);
-const affected = (prefix: string) => [...buffers.keys()].filter(path => !buffers.get(path)!.virtual && (!prefix || path === prefix || path.startsWith(prefix + '/')));
+const affected = (prefix: string) => [...buffers.keys()].filter(path => (!buffers.get(path)!.virtual || buffers.get(path)!.virtual === 'image') && (!prefix || path === prefix || path.startsWith(prefix + '/')));
 // Rename Symbol, quick fixes/autoimport, inspeções e Extract/Inline (recorte 19).
 const refactorings = mountRefactorings(api, editor, {
  status,
@@ -371,7 +417,7 @@ const projectActions = mountProjectActions(api, {
   const target = was && map(was); if (target && buffers.has(target)) activate(target, false); else if (!active) { const next = [...opened].at(-1); if (next) activate(next, false); }
   tabs();
  },
- reload: async path => { const b = buffers.get(path); if (!b || dirty(b)) return; const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); tabs(); },
+ reload: async path => { const b = buffers.get(path); if (!b || dirty(b)) return; if (b.virtual === 'image') { imagePreview.reload(); return; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); tabs(); },
  findUsages: async (path, line, column) => { await open(path); const position = new monaco.Position(line, column); editor.setPosition(position); editor.revealPositionInCenter(position); await usages.show(position); },
  terminal: cwd => terminalPanel.open(cwd),
 });

@@ -99,4 +99,8 @@ THIS SOFTWARE.
 
 ## Pacotes de linguagem incluídos
 
-Laravel, DotEnv, Docker e Bash são pacotes MIT mantidos por Jeidison Farias na PHP Forge, distribuídos em `bundled-plugins/` com suas licenças. O pacote Docker também inclui o parser YAML e seu aviso ISC (`YAML-LICENSE`). Esses pacotes rodam no worker de plugins; os avisos permanecem incluídos mesmo quando o fonte tem repositório separado.
+Laravel, DotEnv, Docker, Bash e Prettier são pacotes mantidos em repositórios próprios na PHP Forge. A IDE distribui apenas seus metadados em `default-plugins.json`; os pacotes são instalados do GitHub com suas licenças. Docker inclui YAML (ISC) e Prettier inclui os avisos de Prettier, YAML e ignore. Os pacotes instalados rodam no worker de plugins.
+
+## Formatting
+
+The independent PHP whitespace printer uses php-parser 3.7.0 (Glayzzle, BSD-3-Clause) for syntax/token validation, not for formatting rules. Its license is retained in licenses/formatting and shipped in application resources. The separately installable Prettier plugin bundles the versions recorded in the plugin repository’s versions.json; Prettier, YAML and ignore licenses accompany that package. No JetBrains PHP formatter implementation is included.

@@ -4,7 +4,7 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PluginHost } from '../shared/language/plugins/host';
-import { LaravelPlugin } from '../shared/language/plugins/laravel';
+import { LaravelPlugin } from '../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel';
 import { applyMigration, eloquentIndex, plural, tableName, type Column } from '../shared/language/plugins/eloquent';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 

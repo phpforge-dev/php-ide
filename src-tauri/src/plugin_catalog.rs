@@ -248,6 +248,30 @@ async fn inspect(
     fs::rename(temp.path(), preview_path(dirs, &token)?).map_err(err)?;
     Ok(json!({"token":token,"manifest":m,"origin":origin}))
 }
+fn verify_default(package: &plugins::DefaultPlugin, m: &plugins::Manifest, digest: Option<&str>) -> Res<()> {
+    if digest != Some(package.sha256.as_str()) || m.permissions != package.permissions
+        || package.permissions.iter().any(|p| p != "project.read") {
+        return Err("Default plugin integrity or permissions mismatch".into());
+    }
+    Ok(())
+}
+/// Install a release-pinned default using the same staged validation as a manual Git install.
+pub async fn install_default(dirs: &Dirs, package: &plugins::DefaultPlugin) -> Res<Value> {
+    let preview = inspect(dirs, &package.plugin.repository, &package.plugin.revision, Some(&package.plugin)).await?;
+    let token = preview["token"].as_str().ok_or("Invalid preview")?;
+    let p = preview_path(dirs, token)?;
+    let m = plugins::read_manifest(&p.join("checkout"), env!("CARGO_PKG_VERSION"))?;
+    if let Err(error) = verify_default(package, &m, preview["origin"]["entryHash"].as_str()) {
+        fs::remove_dir_all(p).map_err(err)?;
+        return Err(error);
+    }
+    // A manual install may have completed while this package was downloading.
+    if dirs.user.join(&package.plugin.id).exists() {
+        fs::remove_dir_all(p).map_err(err)?;
+        return Ok(Value::Null);
+    }
+    dispatch(dirs, "pluginConfirmInstall", &[json!(token)]).await
+}
 pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
     let arg = |i: usize| {
         args.get(i)
@@ -351,6 +375,18 @@ pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn defaults_reject_changed_package_bytes_and_extra_permissions() {
+        let package = plugins::defaults().unwrap().remove(0);
+        let mut manifest: plugins::Manifest = serde_json::from_value(json!({
+            "id":package.plugin.id,"name":package.plugin.name,"version":package.plugin.version,
+            "minIdeVersion":"0.2.9","main":"main.js","permissions":package.permissions
+        })).unwrap();
+        assert!(verify_default(&package, &manifest, Some(&package.sha256)).is_ok());
+        assert!(verify_default(&package, &manifest, Some("unexpected hash")).is_err());
+        manifest.permissions.push("network".to_owned());
+        assert!(verify_default(&package, &manifest, Some(&package.sha256)).is_err());
+    }
     #[tokio::test]
     async fn preview_confirmation_preserves_installed_version_on_invalid_package() {
         let tmp = tempfile::tempdir().unwrap();
@@ -397,29 +433,6 @@ mod tests {
             .unwrap();
         assert!(!p.exists());
         assert!(preview_path(&dirs, "../escape").is_err());
-    }
-    #[tokio::test]
-    async fn bundled_packages_can_be_disabled_removed_and_stay_removed() {
-        let tmp = tempfile::tempdir().unwrap();
-        let root = tmp.path().join("root");
-        fs::create_dir(&root).unwrap();
-        let mut dirs = Dirs::new(&tmp.path().join("config"), &root);
-        dirs.user = tmp.path().join("plugins");
-        plugins::seed_bundled(&dirs).unwrap();
-        let list = plugins::dispatch(&dirs, "pluginList", &[]).await.unwrap();
-        assert_eq!(list["plugins"].as_array().unwrap().len(), 4);
-        plugins::dispatch(
-            &dirs,
-            "pluginSetState",
-            &[json!("user:phpforge.bash"), json!({"enabled":false})],
-        )
-        .await
-        .unwrap();
-        plugins::dispatch(&dirs, "pluginRemove", &[json!("user:phpforge.bash")])
-            .await
-            .unwrap();
-        plugins::seed_bundled(&dirs).unwrap();
-        assert!(!dirs.user.join("phpforge.bash").exists());
     }
     #[test]
     fn rejects_commands_credentials_and_unpinned_catalogs() {

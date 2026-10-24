@@ -1,5 +1,5 @@
 import type { PluginFix, PluginHover } from './extensions';
-import type { CodeCompletion, CodeSite, IdePlugin, PluginCodeLens, PluginCompletion, PluginDiagnostic, PluginLocation, PluginManifest, PluginPermission, ProjectFiles, StringSite } from './api';
+import type { FormatRequest, FormatResult, CodeCompletion, CodeSite, IdePlugin, PluginCodeLens, PluginCompletion, PluginDiagnostic, PluginLocation, PluginManifest, PluginPermission, ProjectFiles, StringSite } from './api';
 import { PLUGIN_LANGUAGES } from './api';
 
 // Plugins de terceiros rodam isolados (Web Worker na interface; worker_threads nos testes).
@@ -213,6 +213,16 @@ export class SandboxedPlugin implements IdePlugin {
    return r && message ? { range: r, message, code: `${this.id}/${str(d.code, 80) ?? 'plugin'}`, severity: d.severity === 'error' ? 'error' : 'warning', fixes: list(d.fixes, 20, this.fix) } : null;
   });
  }
+ async format(request: FormatRequest): Promise<FormatResult | null> {
+  if(!await this.ready)throw new Error(this.info.errors.at(-1)??'Plugin indisponível');
+  if(!this.info.hooks.includes('format'))return null;
+  try{
+   const value=await this.call('format',[request]);
+   if(value===null)return null;
+   if(typeof value?.text!=='string'||value.text.length>2*1024*1024)throw new Error('Resultado de formatação inválido');
+   return {text:value.text};
+  }catch(error){this.error('format: '+String(error));throw error;}
+ }
  async codeLenses(path: string, text: string): Promise<PluginCodeLens[]> {
   return list(await this.hook('codeLenses', [path, text], []), 200, (l: any) => {
    const line = int(l?.line), title = str(l?.title, 120), command = str(l?.command, 80);
@@ -241,7 +251,7 @@ export const WORKER_SOURCE = String.raw`'use strict';
  for (let o = scope; o && o !== Object.prototype; o = Object.getPrototypeOf(o))
   for (const name of blocked) { try { if (Object.prototype.hasOwnProperty.call(o, name)) delete o[name]; } catch {} }
  for (const name of blocked) { try { Object.defineProperty(scope, name, { value: undefined, writable: false, configurable: false }); } catch {} }
- const HOOKS = ['detect', 'completeString', 'defineString', 'completeCode', 'defineCode', 'diagnose', 'codeLenses', 'hover'];
+ const HOOKS = ['detect', 'completeString', 'defineString', 'completeCode', 'defineCode', 'diagnose', 'codeLenses', 'hover', 'format'];
  let plugin = null, files = null, next = 0;
  const pending = new Map();
  const rpc = (method, ...args) => new Promise((resolve, reject) => { const id = ++next; pending.set(id, { resolve, reject }); send({ t: 'rpc', id, method, args }); });

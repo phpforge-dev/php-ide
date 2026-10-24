@@ -1,6 +1,6 @@
 import { isBashDocument } from '../shared/bash-document';
 import { isDockerDocument } from '../shared/docker-document';
-import { isEnvPath } from '../shared/language/plugins/dotenv';
+import { isEnvPath } from '../shared/env-document';
 import * as monaco from 'monaco-editor';
 import { msg } from './i18n';
 import type { IdeApi, LanguageMethod } from '../shared/contracts';

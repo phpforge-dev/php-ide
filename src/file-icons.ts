@@ -13,7 +13,7 @@ export function iconName(path:string,directory=false):string{
  if(name==='.editorconfig')return 'fileTypes/editorConfig';
  if(name.startsWith('.env')||['.gitignore','.gitattributes','.htaccess'].includes(name))return 'fileTypes/config';
  const extension=name.split('.').pop()!;
- const map:Record<string,string>={json:'json',jsonc:'json',js:'javaScript',jsx:'javaScript',mjs:'javaScript',cjs:'javaScript',ts:'typeScript',tsx:'typeScript',css:'css',scss:'css',sass:'css',less:'css',html:'html',htm:'html',md:'markdown',mdx:'markdown',markdown:'markdown',yaml:'yaml',yml:'yaml',xml:'xml',svg:'image',png:'image',jpg:'image',jpeg:'image',gif:'image',webp:'image',ico:'image',sql:'sql',sh:'shell',bash:'shell',zsh:'shell',toml:'toml',csv:'csv',zip:'archive',gz:'archive',tar:'archive',phar:'archive',txt:'text',log:'text',ini:'config',conf:'config',lock:'config'};
+ const map:Record<string,string>={json:'json',jsonc:'json',js:'javaScript',jsx:'javaScript',mjs:'javaScript',cjs:'javaScript',ts:'typeScript',tsx:'typeScript',css:'css',scss:'css',sass:'css',less:'css',html:'html',htm:'html',md:'markdown',mdx:'markdown',markdown:'markdown',yaml:'yaml',yml:'yaml',xml:'xml',svg:'image',png:'image',jpg:'image',jpeg:'image',gif:'image',webp:'image',ico:'image',bmp:'image',avif:'image',sql:'sql',sh:'shell',bash:'shell',zsh:'shell',toml:'toml',csv:'csv',zip:'archive',gz:'archive',tar:'archive',phar:'archive',txt:'text',log:'text',ini:'config',conf:'config',lock:'config'};
  return 'fileTypes/'+(map[extension]??'anyType');
 }
 export function fileIcon(path:string,directory=false,text?:string):HTMLElement{
