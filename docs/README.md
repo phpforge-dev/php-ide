@@ -6,7 +6,7 @@ O PHP IDE é uma IDE para PHP e Laravel, construída com Rust e Tauri 2, com int
 
 | Objetivo | Guia |
 |---|---|
-| Baixar e instalar a IDE | [Instalação](../README.md#instalação) |
+| Baixar e instalar a IDE | [Instalação](../README.pt-BR.md#instalação) |
 | Executar ou compilar a partir do código | [Ambiente de desenvolvimento](development/contributing.md#ambiente-e-execução) |
 | Se localizar no código | [Estrutura e arquitetura](development/project-structure.md) |
 | Ver o que mudou na limpeza do código | [Limpeza do fonte](development/source-cleanup.md) |

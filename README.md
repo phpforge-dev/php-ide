@@ -1,41 +1,56 @@
+**English** · [Português](README.pt-BR.md)
+
+<p align="center">
+  <img src="public/brand/php-ide-logo.png" alt="PHP IDE logo" width="120">
+</p>
+
 # PHP IDE
 
-Uma IDE de código aberto para PHP e Laravel, construída com **Rust e Tauri 2**, com **interface inspirada no PhpStorm**. Editor, Git, terminal, banco de dados e Docker ficam no mesmo ambiente, junto das ferramentas para trabalhar com Blade, Vue e React.
+An open-source IDE for PHP and Laravel, built with **Rust and Tauri 2** and a **PhpStorm-inspired interface**. The editor, Git, terminal, database, and Docker share the same environment, together with tools for Blade, Vue, and React.
 
-**Disponível em versão beta para macOS, Windows e Linux.**
+**Available in beta for macOS, Windows, and Linux.**
 
-**[Baixar PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Notas das versões](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentação](docs/README.md)
+**[Download PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Release notes](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentation](docs/README.md)
 
-## Recursos
+<p align="center">
+  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-completion.png" alt="PHP IDE showing the project tree, PHP code, and method suggestions with return types." width="100%">
+</p>
 
-- **PHP e Laravel:** autocomplete, navegação entre símbolos, busca de referências e refatorações, com suporte a Blade e arquivos `.env`.
-- **Git:** alterações, commits, histórico e branches em um painel integrado.
-- **Banco de dados:** conexão com PostgreSQL, MySQL e MariaDB, navegação por tabelas e execução de SQL. Em projetos Laravel, importe a conexão diretamente do `.env`.
-- **Terminal:** várias sessões dentro da IDE, acessíveis pelo atalho **Alt+F12**.
-- **Docker:** containers, logs e serviços Compose no painel **Alt+8**, além de suporte a Dockerfile, Compose e Bash no editor.
-- **Prévia de arquivos:** visualize SVG como imagem, código ou ambos, com atualização enquanto edita. Markdown também tem prévia.
-- **Vue e React:** suporte incluído para trabalhar no frontend do projeto.
+<p align="center">
+  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-navigation.png" alt="PHP editor with the Named interface open and the agent panel." width="49%">
+  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/database.png" alt="PHP code alongside the Database panel and a table of test customers." width="49%">
+</p>
 
-## Instalação
+## Features
 
-Escolha o instalador do seu sistema nas **[releases do GitHub](https://github.com/phpforge-dev/php-ide/releases)**:
+- **PHP and Laravel:** autocomplete, symbol navigation, find references, and refactorings, with support for Blade and `.env` files.
+- **Git:** changes, commits, history, and branches in an integrated panel.
+- **Database:** connect to PostgreSQL, MySQL, and MariaDB, browse tables, and run SQL. In Laravel projects, import the connection directly from `.env`.
+- **Terminal:** multiple sessions inside the IDE, available with **Alt+F12**.
+- **Docker:** containers, logs, and Compose services in the **Alt+8** panel, plus Dockerfile, Compose, and Bash support in the editor.
+- **File preview:** view SVG as an image, as code, or both, updating as you edit. Markdown has a preview as well.
+- **Vue and React:** built-in support for working on the project frontend.
 
-| Sistema | Pacotes disponíveis |
+## Installation
+
+Choose the installer for your system from the **[GitHub releases](https://github.com/phpforge-dev/php-ide/releases)**:
+
+| System | Available packages |
 |---|---|
-| macOS com Apple Silicon | `.dmg` |
+| macOS with Apple Silicon | `.dmg` |
 | Windows x64 | `.exe` |
-| Linux x64 | `.deb` e `.AppImage` |
+| Linux x64 | `.deb` and `.AppImage` |
 
-Depois de instalar, abra a IDE e clique no nome do projeto para escolher uma pasta. Seus projetos recentes ficam disponíveis nesse mesmo menu. Para usar as ferramentas de Docker, tenha o Docker e o Compose instalados, com o engine em execução.
+After installing, open the IDE and click the project name to choose a folder. Recent projects stay available in that same menu. To use the Docker tools, install Docker and Compose and keep the engine running.
 
-## Sobre a beta
+## About the beta
 
-A beta recebe melhorias e correções a cada versão. Alguns recursos têm limitações, e o comportamento pode variar entre os sistemas. Consulte as [notas da versão](https://github.com/phpforge-dev/php-ide/releases) e o [catálogo de funcionalidades](docs/research/phpstorm-feature-catalog.md) para conhecer o suporte atual.
+Each release brings improvements and fixes. Some features have limitations, and behavior can vary between systems. See the [release notes](https://github.com/phpforge-dev/php-ide/releases) and the [feature catalog](docs/research/phpstorm-feature-catalog.md) for current support.
 
-Encontrou um problema ou sentiu falta de algo no dia a dia? [Abra uma issue](https://github.com/phpforge-dev/php-ide/issues) e conte o que aconteceu, informando a versão da IDE e seu sistema operacional.
+Found a problem, or missing something in day-to-day use? [Open an issue](https://github.com/phpforge-dev/php-ide/issues) and describe what happened, including the IDE version and your operating system.
 
-## Participar do projeto
+## Join the project
 
-O PHP IDE é um projeto de [Jeidison Farias](https://github.com/jeidison), na [PHP Forge](https://github.com/phpforge-dev). Sugestões, relatos de uso e contribuições são bem-vindos. Para contribuir com código, consulte o [guia de desenvolvimento](docs/development/contributing.md). Para criar uma extensão, veja o [tutorial de plugins](docs/plugins/getting-started.md).
+PHP IDE is a project by [Jeidison Farias](https://github.com/jeidison) at [PHP Forge](https://github.com/phpforge-dev). Suggestions, usage reports, and contributions are welcome. To contribute code, see the [development guide](docs/development/contributing.md). To create an extension, see the [plugin tutorial](docs/plugins/getting-started.md).
 
-O projeto é independente e não tem vínculo com a JetBrains. A inspiração na interface do PhpStorm não implica equivalência de recursos. O código próprio é distribuído sob a licença MIT; as dependências mantêm suas [licenças e avisos](THIRD_PARTY_NOTICES.md).
+The project is independent and has no affiliation with JetBrains. A PhpStorm-inspired interface does not imply matching features. The project's own code is distributed under the MIT license; dependencies keep their own [licenses and notices](THIRD_PARTY_NOTICES.md).
