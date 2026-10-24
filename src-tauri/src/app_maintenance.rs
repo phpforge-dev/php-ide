@@ -1,5 +1,6 @@
 //! Profile-wide first-run choices, resumable plugin downloads and signed app updates.
 use crate::{
+    install_generation::Launch,
     plugin_catalog, plugins,
     workspace::{err, Res},
 };
@@ -120,7 +121,7 @@ fn existing_profile(config: &Path) -> bool {
             .is_ok_and(|mut entries| entries.next().is_some())
 }
 impl Maintenance {
-    pub fn new(config: PathBuf) -> Res<Self> {
+    pub fn open(config: PathBuf, launch: Launch) -> Res<Self> {
         let path = config.join("app-preferences.json");
         let mut warnings = vec![];
         let mut saved = match fs::read(&path) {
@@ -154,6 +155,9 @@ impl Maintenance {
             }
             Err(e) => return Err(err(e)),
         };
+        if launch == Launch::Reinstall {
+            saved.preferences.setup_complete = false;
+        }
         // An interrupted download is retried on the next application launch.
         for job in &mut saved.jobs {
             if job.status == "downloading" {
@@ -185,6 +189,9 @@ impl Maintenance {
         Ok(
             json!({"preferences":s.saved.preferences,"jobs":s.saved.jobs,"defaults":defaults,"checking":s.checking,"checkedAt":s.checked_at,"updates":s.updates,"ide":s.ide,"errors":s.errors,"ideProgress":s.ide_progress,"ideAutoUpdateAvailable":signed_updater_available(),"ideVersion":env!("CARGO_PKG_VERSION")}),
         )
+    }
+    pub(crate) fn note_pending_update(&self, version: &str) -> Res<()> {
+        crate::install_generation::mark_update(&self.config, version)
     }
     fn change(&self, change: impl FnOnce(&mut State)) -> Res<()> {
         let mut state = self.state.lock().map_err(err)?;
@@ -733,6 +740,10 @@ fn install_ready_ide(service: &Maintenance, restart: bool) -> Res<()> {
             s.bytes.take().ok_or("Download update first")?,
         )
     };
+    if let Err(error) = service.note_pending_update(&update.version) {
+        service.state.lock().map_err(err)?.bytes = Some(bytes);
+        return Err(error);
+    }
     if let Err(error) = update.restart_after_install(restart).install(&bytes) {
         service.state.lock().map_err(err)?.bytes = Some(bytes);
         return Err(err(error));
@@ -851,7 +862,7 @@ mod tests {
     fn failed_preference_write_does_not_change_the_live_automation_policy() {
         let temp = tempfile::tempdir().unwrap();
         let config = temp.path().join("profile");
-        let service = Maintenance::new(config.clone()).unwrap();
+        let service = Maintenance::open(config.clone(), Launch::Continue).unwrap();
         fs::rename(&config, temp.path().join("backup")).unwrap();
         fs::write(&config, "blocked").unwrap();
         assert!(service
@@ -865,7 +876,7 @@ mod tests {
     #[test]
     fn first_run_and_upgrade_keep_auto_updates_off() {
         let temp = tempfile::tempdir().unwrap();
-        let m = Maintenance::new(temp.path().into()).unwrap();
+        let m = Maintenance::open(temp.path().into(), Launch::Continue).unwrap();
         let s = m.snapshot().unwrap();
         assert_eq!(s["preferences"]["setupComplete"], false);
         assert_eq!(s["preferences"]["autoUpdatePlugins"], false);
@@ -874,7 +885,7 @@ mod tests {
         m.change(|s| s.saved.preferences.setup_complete = true)
             .unwrap();
         assert_eq!(
-            Maintenance::new(temp.path().into())
+            Maintenance::open(temp.path().into(), Launch::Continue)
                 .unwrap()
                 .snapshot()
                 .unwrap()["preferences"]["setupComplete"],
@@ -883,17 +894,33 @@ mod tests {
         let migrated = tempfile::tempdir().unwrap();
         fs::write(migrated.path().join("recent-projects.json"), "[]").unwrap();
         assert_eq!(
-            Maintenance::new(migrated.path().into())
+            Maintenance::open(migrated.path().into(), Launch::Continue)
                 .unwrap()
                 .snapshot()
                 .unwrap()["preferences"]["setupComplete"],
             true
         );
+        fs::write(
+            migrated.path().join("app-preferences.json"),
+            serde_json::to_vec(&json!({
+                "preferences": {"setupComplete": true, "autoUpdatePlugins": false, "autoUpdateIde": false, "checkUpdates": true},
+                "jobs": []
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let reinstalled = Maintenance::open(migrated.path().into(), Launch::Reinstall)
+            .unwrap()
+            .snapshot()
+            .unwrap();
+        assert_eq!(reinstalled["preferences"]["setupComplete"], false);
+        assert_eq!(reinstalled["preferences"]["autoUpdatePlugins"], false);
+        assert_eq!(reinstalled["preferences"]["autoUpdateIde"], false);
     }
     #[test]
     fn interrupted_downloads_resume_without_regranting_permissions() {
         let temp = tempfile::tempdir().unwrap();
-        let m = Maintenance::new(temp.path().into()).unwrap();
+        let m = Maintenance::open(temp.path().into(), Launch::Continue).unwrap();
         m.change(|s| {
             s.saved.jobs.push(Job {
                 id: "acme.example".into(),
@@ -908,7 +935,7 @@ mod tests {
             })
         })
         .unwrap();
-        let m = Maintenance::new(temp.path().into()).unwrap();
+        let m = Maintenance::open(temp.path().into(), Launch::Continue).unwrap();
         assert_eq!(m.snapshot().unwrap()["jobs"][0]["status"], "queued");
         assert_eq!(m.snapshot().unwrap()["jobs"][0]["approved"], json!([]));
         assert_eq!(
@@ -955,7 +982,7 @@ mod tests {
     fn corrupt_preferences_are_preserved_without_enabling_automation() {
         let temp = tempfile::tempdir().unwrap();
         fs::write(temp.path().join("app-preferences.json"), "not-json").unwrap();
-        let m = Maintenance::new(temp.path().into()).unwrap();
+        let m = Maintenance::open(temp.path().into(), Launch::Continue).unwrap();
         let state = m.snapshot().unwrap();
         assert_eq!(state["preferences"]["autoUpdatePlugins"], false);
         assert_eq!(state["errors"].as_array().unwrap().len(), 1);

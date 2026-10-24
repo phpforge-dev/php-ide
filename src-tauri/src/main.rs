@@ -1,4 +1,5 @@
 mod app_maintenance;
+mod install_generation;
 use phpforge_agents as agents;
 use phpforge_database as database;
 use phpforge_database::laravel_database;
@@ -549,11 +550,15 @@ fn main() {
             let config = std::env::var_os("PHP_IDE_STATE_DIR")
                 .map(PathBuf::from)
                 .unwrap_or(app.path().app_config_dir()?);
-            app.manage(app_maintenance::Maintenance::new(config.clone())?);
+            let launch = install_generation::prepare(&config)?;
+            app.manage(app_maintenance::Maintenance::open(config.clone(), launch)?);
             let recent = recent::Store::new(config);
             let requested = std::env::var_os("PHP_IDE_PROJECT")
                 .map(PathBuf::from)
-                .or_else(|| recent.restore());
+                .or_else(|| match launch {
+                    install_generation::Launch::Reinstall => None,
+                    install_generation::Launch::Continue => recent.restore(),
+                });
             let active = requested.as_ref().is_some_and(|p| p.is_dir());
             let empty = config_placeholder(&app.path().app_cache_dir()?);
             std::fs::create_dir_all(&empty)?;
