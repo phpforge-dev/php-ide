@@ -1,3 +1,4 @@
+import { setExternalPlugins } from '../shared/language/plugins/host';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DotenvPlugin, envReferences, isEnvPath } from '../shared/language/plugins/dotenv';
@@ -24,7 +25,8 @@ test('host uses unsaved declarations and does not include values in suggestions'
  assert(!JSON.stringify(result).includes('fixture-secret'));
  assert.deepEqual(await host.defineCode('.env',"X='${APP_NAME}'",7),[]);
 });
-test('native dotenv requests never fall through to PHP language server',async()=>{
+test('native dotenv requests never fall through to PHP language server',async t=>{
+ setExternalPlugins(()=>[new DotenvPlugin()]);t.after(()=>setExternalPlugins(null));
  const native=new NativeLanguage(async(method,args=[])=>{
   if(method==='workspace')return{root:'/fixture',rootUri:'file:///fixture/'};
   if(method==='listFiles')return Object.keys(data);

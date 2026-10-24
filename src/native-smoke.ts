@@ -6,14 +6,56 @@ export async function nativeSmoke(info:any){
  const checks:string[]=[];const failures:string[]=[];const errors:string[]=[];window.addEventListener('error',e=>errors.push(e.error?.stack??e.message));
  const raw=(method:string,args:unknown[]=[])=>invoke<any>('ide',{method,args});const assert=(value:unknown,message:string)=>{if(!value)throw Error(message);};
  const wait=async(test:()=>boolean,ms=30000,label='Tempo esgotado')=>{const end=Date.now()+ms;while(!test()){if(Date.now()>end)throw Error(label);await new Promise(r=>setTimeout(r,40));}};
- async function check(name:string,work:()=>Promise<void>){if(info.docker?.svgOnly&&!name.startsWith('SVG:')&&!name.startsWith('Markdown:'))return;if(info.docker?.ignoredTreeOnly&&!name.startsWith('Árvore Git:'))return;if(info.docker?.bashOnly&&!name.startsWith('Bash:'))return;if(info.docker?.dockerLanguageOnly&&!name.startsWith('Docker editor:'))return;if(info.docker?.dotenvOnly&&!name.startsWith('DotEnv:'))return;if(info.docker?.databaseOnly&&!name.startsWith('Banco:'))return;if(!!info.docker?.webOnly!==name.startsWith('Web:'))return;if(info.docker?.searchOnly&&!name.startsWith('Busca geral:'))return;if(info.docker?.insightsOnly&&!name.startsWith('PHP: usos no editor'))return;if(info.docker?.referencesOnly&&!name.startsWith('PHP: referências de funções'))return;if((info.docker?.editorOnly||(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_EDITOR_ONLY==='1'))&&!name.startsWith('Editor: seleção'))return;if(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_REFACTOR_ONLY==='1'&&!name.startsWith('Refatoração:'))return;try{await raw('nativeSmokeProgress',[name]);await work();checks.push(name);}catch(e){failures.push(name+': '+String(e));}finally{
+ async function check(name:string,work:()=>Promise<void>){if(info.docker?.marketplaceOnly&&!name.startsWith('Marketplace:'))return;if(info.docker?.svgOnly&&!name.startsWith('SVG:')&&!name.startsWith('Markdown:'))return;if(info.docker?.ignoredTreeOnly&&!name.startsWith('Árvore Git:'))return;if(info.docker?.bashOnly&&!name.startsWith('Bash:'))return;if(info.docker?.dockerLanguageOnly&&!name.startsWith('Docker editor:'))return;if(info.docker?.dotenvOnly&&!name.startsWith('DotEnv:'))return;if(info.docker?.databaseOnly&&!name.startsWith('Banco:'))return;if(!!info.docker?.webOnly!==name.startsWith('Web:'))return;if(info.docker?.searchOnly&&!name.startsWith('Busca geral:'))return;if(info.docker?.insightsOnly&&!name.startsWith('PHP: usos no editor'))return;if(info.docker?.referencesOnly&&!name.startsWith('PHP: referências de funções'))return;if((info.docker?.editorOnly||(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_EDITOR_ONLY==='1'))&&!name.startsWith('Editor: seleção'))return;if(import.meta.env.DEV&&import.meta.env.VITE_SMOKE_REFACTOR_ONLY==='1'&&!name.startsWith('Refatoração:'))return;try{await raw('nativeSmokeProgress',[name]);await work();checks.push(name);}catch(e){failures.push(name+': '+String(e));}finally{
   // Feature scenarios edit buffers deliberately; restore only their synthetic fixtures.
   const paths=name.startsWith('Bash:')?['build.sh']:name.startsWith('Docker editor:')?['Dockerfile.dev','composer.yml']:name.startsWith('DotEnv:')?['.env']:[];
-  for(const path of paths){try{const file=await window.ide.read(path);monaco.editor.getModel(monaco.Uri.parse(file.uri))?.setValue(file.text);}catch(e){failures.push(name+' cleanup: '+String(e));}}
+  for(const path of paths){try{await raw('nativeSmokeProgress',[name+' cleanup']);const file=await window.ide.read(path);monaco.editor.getModel(monaco.Uri.parse(file.uri))?.setValue(file.text);}catch(e){failures.push(name+' cleanup: '+String(e));}}
  }}
  // Modo --compare-p0: só os roteiros C01–C06 (recorte 29), sem os demais checks.
  if(info.docker?.compareP0){let result:any;try{await wait(()=>!!document.querySelector('#tree button'));result=await(await import('./compare-p0')).compareP0(info.docker.compareReps??3);}catch(e){failures.push('compare-p0: '+String((e as Error)?.stack??e));}if(errors.length)failures.push('renderer: '+errors.join('; '));await raw('nativeSmokeReport',[{ok:failures.length===0,runtime:info.runtime,backend:info.backend,failures,...result}]);return;}
  const api=window.ide;let pending:AgentEvent[]=[];api.onEvent(e=>{if(e.type==='acp')pending.push(e.event);});
+ if(info.docker?.marketplaceOnly) await check('Marketplace: busca, instalação pelo Git, permissões, desativação e remoção',async()=>{
+  await wait(()=>!!document.querySelector('#tree button'));
+  document.getElementById('appearance')!.click();document.querySelector<HTMLButtonElement>('#appearance-dialog .plugins-open')!.click();
+  const d=document.getElementById('plugins-dialog') as HTMLDialogElement;
+  const clickText=(root:ParentNode,text:string)=>{const b=[...root.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent===text);assert(b,'Botão ausente: '+text);b!.click();};
+  await wait(()=>d.querySelectorAll('[data-installed-plugin]').length>=4,10000,'Pacotes incluídos ausentes');
+  await raw('nativeSmokeProgress',['Marketplace: catálogo']);
+  clickText(d,'Marketplace');
+  await wait(()=>!!d.querySelector('[data-catalog-plugin="example.todo-hints"]'),30000,'Catálogo não carregou: '+d.textContent);
+  const search=d.querySelector<HTMLInputElement>('[aria-label="Buscar plugins no Marketplace"]')!;search.value='TODO';search.dispatchEvent(new Event('input'));
+  assert(d.querySelectorAll('[data-catalog-plugin]').length===1,'Busca não filtrou o catálogo');
+  clickText(d,'Instalar pelo Git…');
+  const git=d.querySelector<HTMLFormElement>('.plugin-git-form')!;
+  git.querySelector<HTMLInputElement>('input[type=url]')!.value='https://github.com/phpforge-dev/plugin-todo-hints';
+  await raw('nativeSmokeProgress',['Marketplace: Git']);
+  git.requestSubmit();
+  await wait(()=>!!document.querySelector('.plugin-install-preview'),60000,'Prévia Git ausente: '+d.textContent);
+  const preview=document.querySelector('.plugin-install-preview')!;assert(preview.textContent?.includes('example.todo-hints')&&preview.textContent.includes('Commit:'),'Prévia sem identidade/commit');
+  await raw('nativeSmokeProgress',['Marketplace: confirmar Git']);
+  clickText(preview,'Instalar');await wait(()=>!!document.querySelector('.plugin-consent:not(.plugin-install-preview)'),10000,'Consentimento ausente');
+  await raw('nativeSmokeProgress',['Marketplace: permissões']);
+  clickText(document.querySelector('.plugin-consent:not(.plugin-install-preview)')!,'Ativar plugin');
+  clickText(d,'Instalados');
+  const card=()=>d.querySelector<HTMLElement>('[data-installed-plugin="example.todo-hints"]');
+  await wait(()=>card()?.textContent?.includes('Ativo')??false,15000,'Plugin não ativou');
+  assert(card()!.textContent?.includes('https://github.com/phpforge-dev/plugin-todo-hints'),'Origem não aparece');
+  await raw('nativeSmokeProgress',['Marketplace: gerenciar']);
+  clickText(card()!,'Desativar');await wait(()=>card()?.textContent?.includes('Desativado')??false);
+  clickText(card()!,'Remover');clickText(card()!,'Confirmar remoção');await wait(()=>!card(),10000,'Plugin não foi removido');
+  clickText(d,'Marketplace');
+  await raw('nativeSmokeProgress',['Marketplace: instalar catálogo']);
+  d.querySelector<HTMLButtonElement>('[data-install-plugin="example.todo-hints"]')!.click();
+  await wait(()=>!!document.querySelector('.plugin-install-preview'),60000,'Prévia do catálogo ausente: '+d.textContent);
+  await raw('nativeSmokeProgress',['Marketplace: confirmar catálogo']);
+  clickText(document.querySelector('.plugin-install-preview')!,'Instalar');
+  await wait(()=>!!document.querySelector('.plugin-consent:not(.plugin-install-preview)'),10000,'Consentimento do catálogo ausente');
+  await raw('nativeSmokeProgress',['Marketplace: permissões catálogo']);
+  clickText(document.querySelector('.plugin-consent:not(.plugin-install-preview)')!,'Ativar plugin');clickText(d,'Instalados');
+  await wait(()=>card()?.textContent?.includes('Ativo')??false,15000,'Plugin do catálogo não ativou');
+  clickText(card()!,'Remover');clickText(card()!,'Confirmar remoção');await wait(()=>!card());
+  d.close();
+ });
  await check('SVG: fonte, imagem, zoom, edição ao vivo e conteúdo isolado',async()=>{
   await wait(()=>!!document.querySelector('#tree button[aria-label="preview.svg"]'));
   const ed=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
@@ -53,7 +95,9 @@ export async function nativeSmoke(info:any){
  });
  await check('Bash: ativação, realce, sugestões, F12 e validação sem executar',async()=>{
   await wait(()=>!!document.querySelector('#tree button[aria-label="build.sh"]'));
-  assert((await api.plugins()).some(p=>p.id==='bash'),'plugin Bash não ativado');
+  await raw('nativeSmokeProgress',['Bash: lista de plugins']);
+  assert((await api.plugins()).some(p=>p.id==='phpforge.bash'),'plugin Bash não ativado');
+  await raw('nativeSmokeProgress',['Bash: editor e navegação']);
   const ed=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
   const open=async(path:string)=>{document.querySelector<HTMLButtonElement>(`#tree button[aria-label="${path}"]`)!.click();await wait(()=>ed.getModel()?.uri.path.endsWith('/'+path)===true);return ed.getModel()!;};
   const model=await open('build.sh');assert(model.getLanguageId()==='shell','script sem linguagem Shell');
@@ -61,43 +105,55 @@ export async function nativeSmoke(info:any){
   await wait(()=>colors().size>=3,5000,'realce Bash ausente');
   ed.setPosition({lineNumber:4,column:3});document.getElementById('definition')!.click();await wait(()=>ed.getPosition()?.lineNumber===3,10000,'F12 não encontrou função');
   ed.setPosition({lineNumber:3,column:31});document.getElementById('definition')!.click();await wait(()=>ed.getPosition()?.lineNumber===2,10000,'F12 não encontrou variável');
+  await raw('nativeSmokeProgress',['Bash: completion']);
   model.setValue(model.getValue()+'echo "${NA');ed.setPosition(model.getPositionAt(model.getValueLength()));ed.focus();ed.trigger('bash-test','editor.action.triggerSuggest',{});
   await wait(()=>[...document.querySelectorAll('.suggest-widget .label-name')].some(e=>e.textContent==='NAME'),10000,'sugestão de variável ausente');ed.trigger('bash-test','hideSuggestWidget',{});
+  await raw('nativeSmokeProgress',['Bash: diagnóstico']);
   model.setValue('#!/bin/bash\nif true; then\n  echo fixture\n');
   await wait(()=>monaco.editor.getModelMarkers({resource:model.uri,owner:'php-ide-plugins'}).some(m=>String(m.code)==='bash.syntax'),10000,'erro de sintaxe não apareceu');
+  await raw('nativeSmokeProgress',['Bash: corrigir sintaxe']);
   model.setValue('#!/bin/bash\nif true; then\n  echo fixture\nfi\n');
   await wait(()=>!monaco.editor.getModelMarkers({resource:model.uri,owner:'php-ide-plugins'}).length,10000,'erro persistiu após correção');
+  await raw('nativeSmokeProgress',['Bash: validação direta']);
   const text='#!/bin/bash\nsource /never/source/this\nvalue=$(touch bash-must-not-run)\necho hello > bash-must-not-run\n';
   const result:any=await api.language({method:'textDocument/diagnostic',path:'build.sh',text,version:100,position:{line:0,character:0}});assert(!result.length,'script válido rejeitado');
   let executed=false;try{await raw('fileExists',['bash-must-not-run']);executed=true;}catch{}assert(!executed,'verificação executou comandos');
+  await raw('nativeSmokeProgress',['Bash: shebang']);
   assert((await open('run-bash')).getLanguageId()==='shell','shebang sem extensão não reconhecido');
   assert((await open('.bashrc')).getLanguageId()==='shell','.bashrc não reconhecido');
  });
  await check('Docker editor: ativação, realce, sugestões, F12 e diagnóstico no buffer',async()=>{
   await wait(()=>!!document.querySelector('#tree button[aria-label="Dockerfile.dev"]'));
-  assert((await api.plugins()).some(p=>p.id==='docker'),'plugin Docker não ativado');
+  await raw('nativeSmokeProgress',['Docker editor: lista']);
+  assert((await api.plugins()).some(p=>p.id==='phpforge.docker'),'plugin Docker não ativado');
   const ed=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
   const open=async(path:string)=>{document.querySelector<HTMLButtonElement>(`#tree button[aria-label="${path}"]`)!.click();await wait(()=>ed.getModel()?.uri.path.endsWith('/'+path)===true);return ed.getModel()!;};
+  await raw('nativeSmokeProgress',['Docker editor: abrir Dockerfile']);
   const docker=await open('Dockerfile.dev');assert(docker.getLanguageId()==='dockerfile','Dockerfile.dev sem linguagem');
   const colors=()=>new Set([...document.querySelectorAll('#editor .view-line span')].map(e=>getComputedStyle(e).color));
   await wait(()=>colors().size>=3,5000,'realce Dockerfile não renderizado');
+  await raw('nativeSmokeProgress',['Docker editor: F12 estágio']);
   ed.setPosition({lineNumber:4,column:15});document.getElementById('definition')!.click();await wait(()=>ed.getPosition()?.lineNumber===2,10000,'F12 não encontrou estágio de build');
+  await raw('nativeSmokeProgress',['Docker editor: completion']);
   docker.setValue(docker.getValue()+'CO');ed.setPosition(docker.getPositionAt(docker.getValueLength()));ed.focus();ed.trigger('docker-test','editor.action.triggerSuggest',{});
   await wait(()=>[...document.querySelectorAll('.suggest-widget .label-name')].some(e=>e.textContent==='COPY'),10000,'sugestões Dockerfile ausentes');ed.trigger('docker-test','hideSuggestWidget',{});
+  await raw('nativeSmokeProgress',['Docker editor: abrir Compose']);
   const compose=await open('composer.yml');assert(compose.getLanguageId()==='yaml','composer.yml sem YAML');
   await wait(()=>colors().size>=3,5000,'realce Compose não renderizado');
+  await raw('nativeSmokeProgress',['Docker editor: F12 serviço']);
   ed.setPosition({lineNumber:5,column:10});document.getElementById('definition')!.click();await wait(()=>ed.getPosition()?.lineNumber===6,10000,'F12 não encontrou serviço db');
+  await raw('nativeSmokeProgress',['Docker editor: completion Compose']);
   compose.setValue('services:\n  app:\n    im');ed.setPosition({lineNumber:3,column:7});ed.focus();ed.trigger('docker-test','editor.action.triggerSuggest',{});
   await wait(()=>[...document.querySelectorAll('.suggest-widget .label-name')].some(e=>e.textContent==='image'),10000,'sugestão de propriedade Compose ausente');ed.trigger('docker-test','hideSuggestWidget',{});
   compose.setValue('services:\n  app:\n    ports: "8080:80"');
-  await wait(()=>monaco.editor.getModelMarkers({resource:compose.uri,owner:'php-ide-plugins'}).some(m=>String(m.code)==='docker.compose.type'),10000,'erro Compose não exibido');
+  await wait(()=>monaco.editor.getModelMarkers({resource:compose.uri,owner:'php-ide-plugins'}).some(m=>String(m.code).endsWith('docker.compose.type')),10000,'erro Compose não exibido');
   compose.setValue('services:\n  app:\n    ports: ["8080:80"]');
   await wait(()=>!monaco.editor.getModelMarkers({resource:compose.uri,owner:'php-ide-plugins'}).length,10000,'erro não desapareceu após correção');
   assert((await open('deployment.yml')).getLanguageId()==='yaml','nome personalizado sem detecção por services');
  });
  await check('DotEnv: plugin ativo, cores, sugestões e navegação no buffer',async()=>{
   await wait(()=>!!document.querySelector('#tree button[aria-label=".env"]'));
-  const active=await api.plugins();assert(active.some(p=>p.id==='dotenv')&&active.some(p=>p.id==='laravel'),'plugins internos não detectados');
+  const active=await api.plugins();assert(active.some(p=>p.id==='phpforge.dotenv')&&active.some(p=>p.id==='phpforge.laravel'),'plugins internos não detectados');
   const ed=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
   const open=async(path:string)=>{document.querySelector<HTMLButtonElement>(`#tree button[aria-label="${path}"]`)!.click();await wait(()=>ed.getModel()?.uri.path.endsWith('/'+path)===true);return ed.getModel()!;};
   const model=await open('.env');assert(model.getLanguageId()==='dotenv','arquivo tratado como texto simples');
@@ -475,7 +531,12 @@ export async function nativeSmoke(info:any){
   await context('src/Bill.php');await choose('Copiar');await context('');await choose('Colar');await wait(()=>!!node('Bill.php'),10000,'colar na raiz falhou');
   await context('src/Bill.php');await choose('Copiar');await context('src');await choose('Colar');await submit();await wait(()=>!!node('src/Bill_1.php'),10000,'colar com conflito não sugeriu novo nome');
   await context('src/Bill_1.php');await choose('Recortar');await context('');await choose('Colar');await wait(()=>!!node('Bill_1.php')&&!node('src/Bill_1.php'),10000,'recortar/colar não moveu');
-  await context('src/User.php');await choose('Copiar caminho/referência','Referência PHP (FQN)');await wait(()=>status().includes('Fixture\\User'),5000).catch(()=>{throw Error('FQN não copiado: '+status()+' · diálogos: '+[...document.querySelectorAll('dialog[open], [role=dialog]')].map(d=>(d.className||d.tagName)+':'+(d.textContent??'').slice(0,120)).join(' | ')+' · abas: '+[...document.querySelectorAll('#tabs button')].map(b=>(b as HTMLElement).title+(b.textContent?.endsWith(' •')?'*':'')).join(','));});
+  // File-watcher feedback can replace the copy message before the polling interval.
+  // Observe the action's message, not whichever unrelated message happens to remain last.
+  let fqnReported=false;
+  const feedbackObserver=new MutationObserver(records=>{fqnReported ||= status().includes('Fixture\\User')||records.some(r=>(r.oldValue??'').includes('Fixture\\User')||[...r.removedNodes].some(n=>n.textContent?.includes('Fixture\\User')));});
+  feedbackObserver.observe(document.getElementById('status')!,{childList:true,subtree:true,characterData:true,characterDataOldValue:true});
+  try{await context('src/User.php');await choose('Copiar caminho/referência','Referência PHP (FQN)');await wait(()=>fqnReported||status().includes('Fixture\\User'),5000,'A ação não informou a referência PHP: '+status());}finally{feedbackObserver.disconnect();}
   await context('src/Bill.php');await choose('Histórico local','Mostrar histórico');await wait(()=>document.querySelectorAll('.local-history-list button').length>=2,10000,'histórico sem revisões');
   await wait(()=>!document.querySelector<HTMLButtonElement>('.local-history .restore')!.disabled,10000,'revisão não carregou');assert(document.querySelector('.local-history-list button')!.textContent!.includes('Antes de salvar'),'revisão mais recente incorreta');
   document.querySelector<HTMLButtonElement>('.local-history .restore')!.click();await wait(()=>status().startsWith('Restaurado src/Bill.php'),10000,'restaurar falhou: '+status());const restored=(await api.read('src/Bill.php')).text;assert(restored.includes('// v2')&&!restored.includes('// v3'),'conteúdo não restaurado: '+restored);document.querySelector<HTMLButtonElement>('.local-history .close')!.click();

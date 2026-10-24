@@ -321,3 +321,27 @@ test('ativação por arquivo marcador e padrões de documento', async () => {
  assert.equal(globToRegExp('a.b?').test('a.bc'), true);
  assert.equal(globToRegExp('a.b').test('axb'), false);
 });
+
+test('pacotes independentes de linguagem carregam no mesmo worker dos plugins instalados', async () => {
+ const files = memoryFiles({ '.env': 'APP_NAME=Fixture\n', 'build.sh':'#!/bin/bash\nNAME=fixture\n', 'compose.yml':'services:\n  app:\n    image: php:8.3-cli\n', 'composer.json':'{"require":{"laravel/framework":"^12.0"}}' });
+ for (const id of ['laravel','dotenv','docker','bash']) {
+  const m = JSON.parse(await readFile(`bundled-plugins/${id}/plugin.json`, 'utf8')) as PluginManifest;
+  const code = await readFile(`bundled-plugins/${id}/main.js`, 'utf8');
+  const plugin = sandbox(m, code, ['project.read'], services(files).s);
+  try {
+   assert.equal(await plugin.ready, true, `${id}: ${plugin.info.errors.join('; ')}`);
+   assert(await plugin.detect(files), `${id} não detectou o projeto`);
+   if (id === 'dotenv') {
+    const text='X="${APP_}"';
+    assert((await plugin.completeCode({path:'.env',text,offset:9,blade:false}))?.items.some(i=>i.label==='APP_NAME'));
+   }
+   if (id === 'bash') {
+    const text='#!/bin/bash\nNAME=fixture\necho "${NA';
+    assert((await plugin.completeCode({path:'build.sh',text,offset:text.length,blade:false}))?.items.some(i=>i.label==='NAME'));
+    assert((await plugin.hover({path:'build.sh',text:'echo fixture',offset:2,blade:false},files,null))?.contents.includes('echo'));
+   }
+   if (id === 'docker') assert((await plugin.diagnose('compose.yml','services: []')).some(d=>d.code.endsWith('docker.compose.services')));
+   assert.deepEqual(plugin.info.errors, [], id);
+  } finally { plugin.stop(); }
+ }
+});

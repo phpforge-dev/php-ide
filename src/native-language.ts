@@ -1,11 +1,8 @@
-import { BashPlugin } from '../shared/language/plugins/bash';
 import { isBashDocument } from '../shared/bash-document';
-import { DockerPlugin } from '../shared/language/plugins/docker';
 import { isDockerDocument } from '../shared/docker-document';
 import type { LanguageInput } from '../shared/contracts';
 import { PluginHost } from '../shared/language/plugins/host';
-import { LaravelPlugin } from '../shared/language/plugins/laravel';
-import { DotenvPlugin, isEnvPath } from '../shared/language/plugins/dotenv';
+import { isEnvPath } from '../shared/language/plugins/dotenv';
 import { DatabasePlugin } from '../shared/language/plugins/database';
 import { MarkdownPlugin } from '../shared/language/plugins/markdown';
 import { isMarkdownPath } from '../shared/markdown';
@@ -34,7 +31,7 @@ export class NativeLanguage {
  databaseChanged(){this.models.clear();}
  private async init(){if(this.host)return;const info=await this.call('workspace');const base=info.rootUri??new URL('file://'+info.root.replaceAll('\\','/')+'/').href;
  const files:ProjectFiles={root:info.root,read:async path=>{try{const f=await this.call('read',[path]);this.uris.set(path,f.uri);return f.text;}catch{return null;}},exists:async path=>{try{await this.call('fileExists',[path]);return true;}catch{return false;}},list:async(dir,accept)=>{const paths:string[]=await this.call('listFiles',[dir,false]);return paths.filter(p=>accept(p.split('/').pop()!));},uri:path=>this.uris.get(path)??new URL(path,base).href};this.files=files;
- this.host=new PluginHost(files,[new LaravelPlugin(),new DotenvPlugin(),new DockerPlugin(),new BashPlugin(),new DatabasePlugin({sessions:async()=>Promise.all([...this.databases].map(async id=>{let model=this.models.get(id);if(!model){model=this.call('databaseModel',[id]);this.models.set(id,model);}return{id,model:await model};})),ddl:(id,schema,table)=>this.call('databaseDdl',[id,schema,table])}),new MarkdownPlugin(),new GitignorePlugin(),new PhpTestsPlugin(),new ComposerPlugin(),new SymfonyPlugin()]);}
+ this.host=new PluginHost(files,[new DatabasePlugin({sessions:async()=>Promise.all([...this.databases].map(async id=>{let model=this.models.get(id);if(!model){model=this.call('databaseModel',[id]);this.models.set(id,model);}return{id,model:await model};})),ddl:(id,schema,table)=>this.call('databaseDdl',[id,schema,table])}),new MarkdownPlugin(),new GitignorePlugin(),new PhpTestsPlugin(),new ComposerPlugin(),new SymfonyPlugin()]);}
  async plugins(){await this.init();return this.host!.status();}
  private index(){return this.classes??= (async()=>{await this.init();const paths:string[]=await this.call('listFiles',['',true]);const items:any[]=[];let next=0;await Promise.all(Array.from({length:8},async()=>{while(next<paths.length){const path=paths[next++];if(!path.endsWith('.php'))continue;const text=await this.files!.read(path);if(text===null)continue;for(const d of analyze(text).declarations)items.push({...d,path,...position(text,d.offset)});}}));return items;})();}
  async request(input:LanguageInput){await this.init();if(/\.php$/i.test(input.path))void this.project().catch(()=>undefined);const offset=offsetOf(input.text,input.position);

@@ -1,6 +1,6 @@
 {
   "name": "php-ide",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
     "setup:acp": "node scripts/setup-acp.mjs",
     "dev:web": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "build:web": "tsc --noEmit && vite build",
-    "test:native": "node scripts/cargo.mjs build && node scripts/check-native.mjs",
+    "test:native": "npm run build:web && node scripts/cargo.mjs build && node scripts/check-native.mjs --production-ui",
     "test:rust": "node scripts/cargo.mjs test",
     "test:ui": "node scripts/check-native.mjs",
     "tauri": "node scripts/tauri.mjs",

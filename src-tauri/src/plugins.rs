@@ -86,7 +86,7 @@ pub struct Entry {
     state_key: String,
 }
 
-fn version(v: &str) -> Option<(u64, u64, u64)> {
+pub(crate) fn version(v: &str) -> Option<(u64, u64, u64)> {
     let core = v.split(['-', '+']).next()?;
     let mut parts = core.split('.').map(|p| p.parse::<u64>().ok());
     let out = (parts.next()??, parts.next()??, parts.next()??);
@@ -102,7 +102,7 @@ fn relative_ok(p: &str) -> bool {
             .components()
             .all(|c| matches!(c, Component::Normal(_)))
 }
-fn id_ok(id: &str) -> bool {
+pub(crate) fn id_ok(id: &str) -> bool {
     let label = |s: &str| {
         !s.is_empty()
             && s.len() <= 40
@@ -182,7 +182,7 @@ fn entry_file(dir: &Path, main: &str) -> Res<PathBuf> {
     }
     Ok(file)
 }
-fn read_manifest(dir: &Path, ide: &str) -> Result<Manifest, String> {
+pub(crate) fn read_manifest(dir: &Path, ide: &str) -> Result<Manifest, String> {
     let path = dir.join(MANIFEST);
     let meta = fs::symlink_metadata(&path).map_err(|_| "plugin.json ausente".to_owned())?;
     if !meta.is_file() || meta.len() > 64 * 1024 {
@@ -305,7 +305,7 @@ impl Dirs {
         let needs = !s.consented || declared.iter().any(|p| !s.reviewed.contains(p));
         let granted: Vec<_> = declared.iter().filter(|p| s.granted.contains(p)).collect();
         json!({"key":e.key,"scope":e.scope,"dir":e.dir,"manifest":e.manifest.as_ref().ok(),"error":e.manifest.as_ref().err(),
-            "enabled":s.enabled,"consented":s.consented,"needsConsent":needs,"granted":granted})
+            "enabled":s.enabled,"consented":s.consented,"needsConsent":needs,"granted":granted,"origin":fs::read(e.dir.join(".php-ide-origin.json")).ok().filter(|b|b.len()<4096).and_then(|b|serde_json::from_slice::<Value>(&b).ok())})
     }
     /// Confere de novo, no backend, que o plugin está ativo, consentido e com a permissão concedida.
     pub fn allowed(&self, key: &str, permission: &str) -> Res<Entry> {
@@ -323,6 +323,75 @@ impl Dirs {
     }
 }
 
+/// Install the four shipped language packages once. Removed packages stay removed.
+pub fn seed_bundled(dirs: &Dirs) -> Res<()> {
+    let marker = dirs.state.with_file_name("bundled-plugins-v1.json");
+    if marker.exists() {
+        return Ok(());
+    }
+    let packages = [
+        (
+            "laravel",
+            include_str!("../../bundled-plugins/laravel/plugin.json"),
+            include_str!("../../bundled-plugins/laravel/main.js"),
+        ),
+        (
+            "dotenv",
+            include_str!("../../bundled-plugins/dotenv/plugin.json"),
+            include_str!("../../bundled-plugins/dotenv/main.js"),
+        ),
+        (
+            "docker",
+            include_str!("../../bundled-plugins/docker/plugin.json"),
+            include_str!("../../bundled-plugins/docker/main.js"),
+        ),
+        (
+            "bash",
+            include_str!("../../bundled-plugins/bash/plugin.json"),
+            include_str!("../../bundled-plugins/bash/main.js"),
+        ),
+    ];
+    fs::create_dir_all(&dirs.user).map_err(err)?;
+    for (name, manifest, code) in packages {
+        let m: Manifest = serde_json::from_str(manifest).map_err(err)?;
+        if dirs.user.join(&m.id).exists() {
+            continue;
+        }
+        let temp = tempfile::tempdir().map_err(err)?;
+        fs::write(temp.path().join(MANIFEST), manifest).map_err(err)?;
+        fs::write(temp.path().join("main.js"), code).map_err(err)?;
+        fs::write(temp.path().join("LICENSE"), include_str!("../../LICENSE")).map_err(err)?;
+        if name == "docker" {
+            fs::write(
+                temp.path().join("YAML-LICENSE"),
+                include_str!("../../bundled-plugins/docker/YAML-LICENSE"),
+            )
+            .map_err(err)?;
+        }
+        let e = install(dirs, temp.path(), env!("CARGO_PKG_VERSION"))?;
+        // These exact packages ship with the application and replace previously trusted modules.
+        dirs.store(
+            &e.state_key,
+            Some(State {
+                enabled: true,
+                consented: true,
+                reviewed: m.permissions.clone(),
+                granted: m.permissions,
+            }),
+        )?;
+        fs::write(
+            e.dir.join(".php-ide-origin.json"),
+            serde_json::to_vec(&json!({
+                "repository":format!("https://github.com/phpforge-dev/plugin-{name}"),
+                "version":m.version,"bundled":true,"revision":serde_json::from_str::<Value>(include_str!("../../bundled-plugins/lock.json")).ok().and_then(|v|v.as_array()?.iter().find(|p|p["name"]==name).map(|p|p["revision"].clone()))
+            }))
+            .map_err(err)?,
+        )
+        .map_err(err)?;
+    }
+    fs::write(marker, b"{\"version\":1}").map_err(err)
+}
+
 fn s(args: &[Value], i: usize) -> Res<&str> {
     args.get(i)
         .and_then(Value::as_str)
@@ -330,6 +399,17 @@ fn s(args: &[Value], i: usize) -> Res<&str> {
 }
 pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
     let ide = env!("CARGO_PKG_VERSION");
+    if [
+        "pluginCatalog",
+        "pluginInspectGit",
+        "pluginInspectCatalog",
+        "pluginDiscardPreview",
+        "pluginConfirmInstall",
+    ]
+    .contains(&method)
+    {
+        return crate::plugin_catalog::dispatch(dirs, method, args).await;
+    }
     match method {
         "pluginList" => Ok(
             json!({"ideVersion":ide,"userDir":dirs.user,"projectDir":dirs.project,"permissions":PERMISSIONS,
@@ -540,6 +620,7 @@ async fn fetch(root: &Path, url: &str, options: &Value) -> Res<Value> {
 
 /// Copia (pasta) ou extrai (.zip) para uma área temporária, valida e move para a pasta do usuário.
 pub fn install(dirs: &Dirs, source: &Path, ide: &str) -> Res<Entry> {
+    let _lock = STATE.lock().map_err(err)?;
     fs::create_dir_all(&dirs.user).map_err(err)?;
     let staging = dirs.user.join(format!(".staging-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&staging).map_err(err)?;
@@ -574,17 +655,28 @@ pub fn install(dirs: &Dirs, source: &Path, ide: &str) -> Res<Entry> {
         }
         let m = read_manifest(&base, ide)?;
         let target = dirs.user.join(&m.id);
-        if target.exists() {
-            fs::remove_dir_all(&target).map_err(err)?;
+        let _ = fs::remove_file(base.join(".php-ide-origin.json"));
+        let backup = dirs.user.join(format!(".backup-{}", uuid::Uuid::new_v4()));
+        let replacing = target.exists();
+        if replacing {
+            fs::rename(&target, &backup).map_err(err)?;
         }
-        fs::rename(&base, &target).map_err(err)?;
+        if let Err(e) = fs::rename(&base, &target) {
+            if replacing {
+                let _ = fs::rename(&backup, &target);
+            }
+            return Err(err(e));
+        }
+        if replacing {
+            let _ = fs::remove_dir_all(backup);
+        }
         Ok(m.id)
     })();
     let _ = fs::remove_dir_all(&staging);
     let id = result?;
     dirs.find(&format!("user:{id}"))
 }
-fn copy_tree(from: &Path, to: &Path, count: &mut (usize, u64)) -> Res<()> {
+pub(crate) fn copy_tree(from: &Path, to: &Path, count: &mut (usize, u64)) -> Res<()> {
     for item in fs::read_dir(from).map_err(err)? {
         let item = item.map_err(err)?;
         let kind = item.file_type().map_err(err)?;

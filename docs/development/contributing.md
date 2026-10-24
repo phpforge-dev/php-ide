@@ -125,3 +125,7 @@ Estas variáveis ajudam quando as ferramentas estão instaladas fora dos caminho
 | `PHP_IDE_ACP_AGENT` | Configuração do agente ACP externo. |
 
 Instale e autentique as CLIs dos agentes antes de usá-las. O cliente ACP permite revisar alterações; o cliente Codex app-server está limitado a consultas de leitura. O adaptador Claude é externo e pode precisar de Node (`npm run setup:acp`). Não coloque senhas ou tokens na configuração dos agentes.
+
+## Teste nativo com interface compilada
+
+`npm run test:native` compila a interface e o backend antes de abrir a janela Tauri em um projeto temporário. A interface é servida pelo modo preview do Vite, sem hot reload. O teste do catálogo público fica separado por precisar de internet: `npm run test:native -- --no-db --marketplace-only`. Para executar o runner diretamente com a interface de desenvolvimento, use `node scripts/check-native.mjs --no-db`; ele mantém os logs do Vite nos erros de timeout.

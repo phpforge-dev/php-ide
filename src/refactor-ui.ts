@@ -340,6 +340,7 @@ export function mountRefactorings(rawApi: IdeApi, editor: monaco.editor.IStandal
  }
  const schedule = (model: monaco.editor.ITextModel, delay = 700) => { clearTimeout(timers.get(model)); timers.set(model, window.setTimeout(() => { timers.delete(model); void diagnose(model); }, delay)); };
  const watched = new WeakSet<monaco.editor.ITextModel>();
+ window.addEventListener('ide-plugins-changed',()=>{for(const model of monaco.editor.getModels())if(php(model))schedule(model,50);});
  const watch = (model: monaco.editor.ITextModel | null) => { if (!model || !php(model) || watched.has(model)) { if (model && php(model)) schedule(model, 50); return; } watched.add(model); model.onDidChangeContent(() => schedule(model)); model.onWillDispose(() => { problems.delete(model); clearTimeout(timers.get(model)); }); schedule(model, 50); };
  editor.onDidChangeModel(() => watch(editor.getModel())); watch(editor.getModel());
 

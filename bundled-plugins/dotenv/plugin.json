@@ -1,0 +1,19 @@
+{
+  "id": "phpforge.dotenv",
+  "name": ".env",
+  "description": "Sugestões e navegação em variáveis de ambiente.",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.9",
+  "main": "main.js",
+  "activation": {
+    "languages": [
+      "php",
+      "dotenv"
+    ],
+    "files": [],
+    "documents": []
+  },
+  "permissions": [
+    "project.read"
+  ]
+}

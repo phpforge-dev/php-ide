@@ -1,6 +1,6 @@
 import {spawn,execFileSync} from 'node:child_process';
 import {mkdtemp,cp,writeFile,readFile,rm,mkdir,realpath} from 'node:fs/promises';import {tmpdir,homedir} from 'node:os';import {join,resolve,delimiter} from 'node:path';
-const temp=await mkdtemp(join(tmpdir(),'php-ide-native-'));const root=join(temp,'project');const packaged=process.argv.includes('--packaged');const compareP0=process.argv.includes('--compare-p0');const report=resolve(compareP0?'.artifacts/compare-p0.json':packaged?'.artifacts/native-packaged.json':process.argv.includes('--no-db')?'.artifacts/native-smoke-core.json':'.artifacts/native-smoke.json');await mkdir('.artifacts',{recursive:true});await rm(report,{force:true});const owned=[];let app;let vite;let shooter;let composeCleanup;
+const temp=await mkdtemp(join(tmpdir(),'php-ide-native-'));const root=join(temp,'project');const packaged=process.argv.includes('--packaged');const compareP0=process.argv.includes('--compare-p0');const report=resolve(compareP0?'.artifacts/compare-p0.json':packaged?'.artifacts/native-packaged.json':process.argv.includes('--no-db')?'.artifacts/native-smoke-core.json':'.artifacts/native-smoke.json');await mkdir('.artifacts',{recursive:true});await rm(report,{force:true});const owned=[];let app;let vite;let shooter;let composeCleanup;let logs='';
 const allFeatures = !process.argv.some(arg => arg.endsWith('-only'));
 const run=(file,args,opts={})=>execFileSync(file,args,{encoding:'utf8',...opts}).trim();
 try{
@@ -59,6 +59,7 @@ try{
   await writeFile(join(root,'compose.yaml'),'services:\n  app:\n    image: php:8.3-cli\n');
  }
  run('git',['-C',root,'add','.']);run('git',['-C',root,'commit','-qm','Complete synthetic fixtures']);
+ dockerFixture.marketplaceOnly=process.argv.includes('--marketplace-only');
  dockerFixture.svgOnly=process.argv.includes('--svg-only');
  dockerFixture.ignoredTreeOnly=process.argv.includes('--ignored-tree-only');
  dockerFixture.bashOnly=process.argv.includes('--bash-only');
@@ -74,11 +75,12 @@ try{
    inputs.push({driver,host:'127.0.0.1',port:assigned,database:'fixture',user:driver==='postgres'?'postgres':'root',password:'fixture',tls:false});
   }
  }
- if(!packaged){vite=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','1420','--strictPort'],{stdio:['ignore','pipe','pipe']});
+ if(!packaged){vite=spawn(process.execPath,['node_modules/vite/bin/vite.js',...(process.argv.includes('--production-ui')?['preview']:[]),'--host','127.0.0.1','--port','1420','--strictPort'],{stdio:['ignore','pipe','pipe'],env:{...process.env,PHP_IDE_NATIVE_SMOKE_RUN:'1'}});
+ vite.stdout.on('data',d=>logs+=String(d));vite.stderr.on('data',d=>logs+=String(d));
  await new Promise((resolve_,reject)=>{const timer=setTimeout(()=>reject(Error('Vite startup timeout')),10000);vite.stdout.on('data',d=>{if(String(d).includes('1420')){clearTimeout(timer);resolve_();}});vite.once('exit',code=>reject(Error('Vite exit '+code)));});
  }
  app=spawn(resolve(packaged?'src-tauri/target/release/bundle/macos/PHP IDE.app/Contents/MacOS/php-ide':'src-tauri/target/debug/php-ide'),[],{stdio:['ignore','pipe','pipe'],env:{...process.env,SHELL:'/bin/sh',PHP_IDE_PROJECT:root,PHP_IDE_SMOKE_DOCKER:JSON.stringify(dockerFixture),PHP_IDE_DOCKER_BIN:dockerReal?'docker':resolve('scripts/fake-docker.mjs'),PHP_IDE_DOCKER_FIXTURE_STATE:dockerState,PHP_IDE_STATE_DIR:join(temp,'profile'),PHP_IDE_NATIVE_SMOKE:report,PHP_IDE_SMOKE_DATABASE:JSON.stringify(inputs),PHP_IDE_ACP_AGENT:JSON.stringify({id:'fake',name:'Agente de teste',command:process.execPath,args:[resolve('scripts/fake-acp-agent.mjs')]}),PATH:join(homedir(),'.cargo','bin')+delimiter+process.env.PATH}});
- let logs='';app.stderr.on('data',d=>logs+=String(d));
+ app.stderr.on('data',d=>logs+=String(d));
  // --compare-p0: o renderer pede capturas pelo arquivo de progresso (shot:nome:x:y:w:h).
  if(compareP0){const dir=resolve('.artifacts/compare-p0');await rm(dir,{recursive:true,force:true});for(const f of ['.progress','.partial.json'])await rm(report.replace(/\.json$/,f),{force:true});await mkdir(dir,{recursive:true});const done=new Set();const partial=[];shooter=setInterval(async()=>{let text='';try{text=await readFile(report.replace(/\.json$/,'.progress'),'utf8');}catch{return;}if(text.startsWith('data:')&&!done.has(text)){done.add(text);partial.push(JSON.parse(text.slice(5)));await writeFile(report.replace(/\.json$/,'.partial.json'),JSON.stringify(partial,null,1));return;}const m=/^shot:([\w-]+):(-?\d+):(-?\d+):(\d+):(\d+)$/.exec(text);if(!m||done.has(m[1]))return;done.add(m[1]);try{const id=run('osascript',['-l','JavaScript','-e',`ObjC.import('CoreGraphics');ObjC.deepUnwrap(ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionAll,0))).filter(w=>w.kCGWindowOwnerPID===${app.pid}&&w.kCGWindowLayer===0&&w.kCGWindowName==="PHP IDE"&&w.kCGWindowBounds.Height>200).map(w=>w.kCGWindowNumber)[0]`]);if(!/^\d+$/.test(id))throw Error('janela da IDE não encontrada');/* Só a janela da IDE (-l), nunca uma região da tela que possa mostrar outros apps. */run('screencapture',['-x','-o','-l',id,join(dir,m[1]+'.png')]);}catch(e){console.error('screencapture',m[1],String(e));}},100);}
  const code=await Promise.race([new Promise(r=>app.once('exit',r)),new Promise((_,reject)=>setTimeout(()=>reject(Error('Native smoke timeout. '+logs.slice(-2000))),Number(process.env.PHP_IDE_NATIVE_TIMEOUT_MS)||180000).unref())]);

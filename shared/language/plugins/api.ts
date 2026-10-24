@@ -83,6 +83,7 @@ export type PluginManifest = {
 export type InstalledPlugin = {
  key: string; scope: 'user' | 'project'; dir: string;
  manifest?: PluginManifest; error?: string;
+ origin?: { repository: string; revision?: string; version: string; bundled?: boolean };
  enabled: boolean; consented: boolean; needsConsent: boolean; granted: PluginPermission[];
 };
 /** Extensões de cada linguagem de ativação (mesma lista validada pelo backend). */

@@ -1,3 +1,4 @@
+import type { PluginFix, PluginHover } from './extensions';
 import type { CodeCompletion, CodeSite, IdePlugin, PluginCodeLens, PluginCompletion, PluginDiagnostic, PluginLocation, PluginManifest, PluginPermission, ProjectFiles, StringSite } from './api';
 import { PLUGIN_LANGUAGES } from './api';
 
@@ -169,6 +170,7 @@ export class SandboxedPlugin implements IdePlugin {
   const found = await this.hook('detect', [], null);
   return found && typeof found === 'object' ? (str(found.version, 40) ? { version: str(found.version, 40) } : {}) : null;
  }
+ activationChanged() { return true; }
  invalidates(path: string) { this.channel?.post({ t: 'changed', path }); return false; }
  private location = (v: any): PluginLocation | null => {
   const r = range(v?.range); if (!r || typeof v?.uri !== 'string') return null;
@@ -191,10 +193,24 @@ export class SandboxedPlugin implements IdePlugin {
  async defineCode(site: CodeSite): Promise<PluginLocation[] | null> {
   const v = await this.hook('defineCode', [site], null); return Array.isArray(v) ? list(v, 100, this.location) : null;
  }
+ async hover(site: CodeSite, _files: ProjectFiles, string: StringSite | null): Promise<PluginHover | null> {
+  const v = await this.hook('hover', [site, string], null);
+  const contents = str(v?.contents, 16000);
+  return contents ? { contents, ...(range(v.range) ? { range: range(v.range)! } : {}) } : null;
+ }
+ private fix = (v: any): PluginFix | null => {
+  const title = str(v?.title, 200); if (!title) return null;
+  const edits = list(v.edits, 100, (e: any) => {
+   const loc = this.location(e); const newText = str(e?.newText, 100000) ?? (e?.newText === '' ? '' : null);
+   return loc && newText !== null ? { uri: loc.uri, range: loc.range, newText } : null;
+  });
+  // Only edits inside the project are exposed; creating files remains a core action.
+  return edits.length ? { title, edits } : null;
+ };
  async diagnose(path: string, text: string): Promise<PluginDiagnostic[]> {
   return list(await this.hook('diagnose', [path, text], []), 500, (d: any) => {
    const r = range(d?.range), message = str(d?.message, 1000);
-   return r && message ? { range: r, message, code: `${this.id}/${str(d.code, 80) ?? 'plugin'}`, severity: d.severity === 'error' ? 'error' : 'warning' } : null;
+   return r && message ? { range: r, message, code: `${this.id}/${str(d.code, 80) ?? 'plugin'}`, severity: d.severity === 'error' ? 'error' : 'warning', fixes: list(d.fixes, 20, this.fix) } : null;
   });
  }
  async codeLenses(path: string, text: string): Promise<PluginCodeLens[]> {
@@ -225,7 +241,7 @@ export const WORKER_SOURCE = String.raw`'use strict';
  for (let o = scope; o && o !== Object.prototype; o = Object.getPrototypeOf(o))
   for (const name of blocked) { try { if (Object.prototype.hasOwnProperty.call(o, name)) delete o[name]; } catch {} }
  for (const name of blocked) { try { Object.defineProperty(scope, name, { value: undefined, writable: false, configurable: false }); } catch {} }
- const HOOKS = ['detect', 'completeString', 'defineString', 'completeCode', 'defineCode', 'diagnose', 'codeLenses'];
+ const HOOKS = ['detect', 'completeString', 'defineString', 'completeCode', 'defineCode', 'diagnose', 'codeLenses', 'hover'];
  let plugin = null, files = null, next = 0;
  const pending = new Map();
  const rpc = (method, ...args) => new Promise((resolve, reject) => { const id = ++next; pending.set(id, { resolve, reject }); send({ t: 'rpc', id, method, args }); });
@@ -259,7 +275,8 @@ export const WORKER_SOURCE = String.raw`'use strict';
      const fn = plugin.commands && plugin.commands[m.args[0]];
      if (typeof fn !== 'function' || !Object.prototype.hasOwnProperty.call(plugin.commands, m.args[0])) throw new Error('Comando desconhecido: ' + m.args[0]);
      value = await fn.apply(plugin.commands, [...(m.args[1] || []), files]);
-    } else value = await plugin[m.hook](...m.args, files);
+    } else if (m.hook === 'hover') value = await plugin.hover(m.args[0], files, m.args[1]);
+    else value = await plugin[m.hook](...m.args, files);
     send({ t: 'result', id: m.id, ok: true, value: value === undefined ? null : value });
    } catch (e) { send({ t: 'result', id: m.id, ok: false, error: String((e && e.message) || e) }); }
   }

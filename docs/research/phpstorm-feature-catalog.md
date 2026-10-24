@@ -1,5 +1,11 @@
 # Catálogo inicial de funcionalidades — referência PhpStorm
 
+Site do projeto (23/10/2026): apresentação open source, Rust/Tauri 2 e inspiração no PhpStorm, com [proveniência das capturas da própria IDE](../../website/screenshots/README.md). Alteração de comunicação; não promove estados de implementação ou compatibilidade.
+
+Splash nativa macOS (23/10/2026): [imagem AppKit embutida antes do WebView e handoff de prontidão](startup-welcome.md). Requisito próprio; Windows/Linux permanecem com splash HTML, sem nova evidência comparativa.
+
+Marketplace próprio (23/10/2026): [catálogo estático, instalação Git e pacotes independentes](../plugins/marketplace.md). Laravel, .env, Docker e Bash passam pelo gerenciador de plugins. Sem nova evidência comparativa com PhpStorm.
+
 Manutenção do fonte (23/10/2026): [remoção do runtime legado e verificações atuais](../development/source-cleanup.md). Os testes migrados usam os módulos ativos; esta limpeza não promove estados de compatibilidade.
 
 Distribuição própria (23/10/2026): [builds Windows/Linux e macOS](desktop-distribution.md). Compilação, testes e inicialização são evidências distintas; não promovem compatibilidade funcional com PhpStorm.

@@ -1,5 +1,9 @@
 > Backend ativo migrado para Rust/Tauri em 22/10/2026. [Validação nativa e lacunas](../research/tauri-migration.md). Resultados Electron históricos não são automaticamente atribuídos ao novo backend.
 
+Splash nativa macOS (23/10/2026): [imagem AppKit embutida antes do WebView e handoff de prontidão](../research/startup-welcome.md). Requisito próprio; Windows/Linux permanecem com splash HTML, sem nova evidência comparativa.
+
+Marketplace próprio (23/10/2026): [catálogo estático, instalação Git e pacotes independentes](../plugins/marketplace.md). Laravel, .env, Docker e Bash passam pelo gerenciador de plugins. Sem nova evidência comparativa com PhpStorm.
+
 # Matriz de compatibilidade funcional — PhpStorm
 
 Manutenção (23/10/2026): [legado removido e cobertura atual](../development/source-cleanup.md). Registros Electron anteriores são históricos e não contam como verificação do runtime Rust/Tauri.

@@ -5,6 +5,7 @@ import type { InstalledPlugin, PluginPermission, ProjectFiles } from '../shared/
 import { setExternalPlugins } from '../shared/language/plugins/host';
 import { SandboxedPlugin, WORKER_SOURCE, type Channel, type PluginServices } from '../shared/language/plugins/sandbox';
 import './plugin-manager.css';
+import { mountPluginMarketplace } from './plugin-marketplace';
 
 // Plugins de terceiros: descoberta pelo backend, consentimento na primeira ativação,
 // execução em Web Worker e tela Plugins (Aparência › Plugins ou clique na barra de status).
@@ -99,6 +100,7 @@ export function mountPluginManager(api: IdeApi) {
   if (current !== generation) return;
   const active = [...runtimes.values()];
   setExternalPlugins(() => active);
+  window.dispatchEvent(new Event('ide-plugins-changed'));
   changed();
   // Primeira ativação: um pedido de consentimento por plugin e versão de permissões, por sessão.
   for (const p of pending) {
@@ -118,6 +120,7 @@ export function mountPluginManager(api: IdeApi) {
   const m = p.manifest!;
   return new Promise(resolve => {
    const dialog = node('dialog', { className: 'plugin-consent' });
+   for(const type of ['click','keydown'])dialog.addEventListener(type,event=>event.stopPropagation());
    dialog.setAttribute('aria-label', tr('Ativar plugin'));
    const boxes = new Map<PluginPermission, HTMLInputElement>();
    const perms = m.permissions.length ? node('ul', { className: 'plugin-permissions' }, ...m.permissions.map(perm => {
@@ -144,8 +147,25 @@ export function mountPluginManager(api: IdeApi) {
 
  // Tela Plugins.
  const dialog = node('dialog', { id: 'plugins-dialog', className: 'plugins-dialog' });
+ // Dialog input belongs to the manager, not the editor's global clipboard/shortcut handlers.
+ for(const type of ['click','keydown'])dialog.addEventListener(type,event=>event.stopPropagation());
  dialog.setAttribute('aria-label', tr('Plugins'));
  const body = node('div', { className: 'plugins-body' });
+ const marketplace = mountPluginMarketplace({ call, ideVersion:()=>listing?.ideVersion??'0.0.0', installed: () => listing?.plugins ?? [], onInstalled: async p => {
+  feedback = tr('Instalado: {0} {1}', p.manifest?.name ?? p.key, p.manifest?.version ?? '');
+  if (p.needsConsent && p.enabled) { asked.add(askKey(p)); await decide(p); }
+  await reload();
+ } });
+ marketplace.element.hidden = true;
+ const installedTab = node('button', { type:'button', textContent:tr('Instalados') });
+ const marketplaceTab = node('button', { type:'button', textContent:tr('Marketplace') });
+ const tabs = node('div', { className:'plugins-tabs' }, installedTab, marketplaceTab);
+ tabs.setAttribute('role','tablist');
+ const selectTab = (market: boolean) => { body.hidden=market; marketplace.element.hidden=!market;
+  installedTab.setAttribute('aria-selected',String(!market)); marketplaceTab.setAttribute('aria-selected',String(market)); if(market)marketplace.show(); };
+ for(const b of [installedTab,marketplaceTab])b.setAttribute('role','tab');
+ installedTab.onclick=()=>selectTab(false); marketplaceTab.onclick=()=>selectTab(true); selectTab(false);
+
  const status = node('p', { className: 'plugins-feedback' }); status.setAttribute('role', 'status');
  const close = node('button', { type: 'button', className: 'plugins-close', textContent: '×', onclick: () => dialog.close() }); close.setAttribute('aria-label', tr('Fechar plugins'));
  const act = (run: () => Promise<unknown>) => async () => { feedback = ''; try { await run(); } catch (error: any) { feedback = String(error?.message ?? error); } await reload(); };
@@ -160,8 +180,9 @@ export function mountPluginManager(api: IdeApi) {
   node('div', { className: 'plugins-toolbar' },
    node('button', { type: 'button', textContent: tr('Instalar de pasta…'), onclick: install('folder') }),
    node('button', { type: 'button', textContent: tr('Instalar .zip…'), onclick: install('zip') }),
+   node('button', { type:'button', textContent:tr('Instalar pelo Git…'), onclick:()=>{selectTab(true);marketplace.git();} }),
    node('button', { type: 'button', textContent: tr('Recarregar'), onclick: act(async () => { feedback = tr('Plugins recarregados'); }) })),
-  status, body);
+  tabs, status, body, marketplace.element);
  document.body.append(dialog);
 
  function badge(p: InstalledPlugin): [string, string] {
@@ -190,11 +211,12 @@ export function mountPluginManager(api: IdeApi) {
    }) }) : null,
    m && m.permissions.length && p.enabled ? node('button', { type: 'button', textContent: tr('Revisar permissões'), onclick: act(async () => { asked.add(askKey(p)); await decide(p); }) }) : null,
    remove);
-  return node('article', { className: 'plugin-card' },
+  const element = node('article', { className: 'plugin-card' },
    node('header', {}, node('strong', { textContent: m?.name ?? p.key }), m ? node('span', { className: 'plugin-version', textContent: m.version }) : null,
     node('span', { className: 'plugin-scope', textContent: p.scope === 'project' ? tr('Projeto') : tr('Usuário') }), node('span', { className: `plugin-badge plugin-${kind}`, textContent: label })),
    node('p', { className: 'plugin-meta', textContent: [m?.id, m?.description].filter(Boolean).join(' · ') }),
    node('p', { className: 'plugin-dir', textContent: p.dir, title: p.dir }),
+   p.origin ? node('p',{className:'plugin-meta',textContent:tr('Origem: {0}',p.origin.repository)+(p.origin.revision?' · '+p.origin.revision.slice(0,12):'')}) : null,
    m ? (m.permissions.length ? node('ul', { className: 'plugin-permissions compact' }, ...m.permissions.map(perm => {
     const ok = p.granted.includes(perm);
     return node('li', { className: ok ? 'granted' : 'denied', title: permissionText(perm)[1] }, `${ok ? '✓' : '✗'} ${permissionText(perm)[0]}`);
@@ -203,6 +225,7 @@ export function mountPluginManager(api: IdeApi) {
    ...errors.map(e => node('pre', { className: 'plugin-error', textContent: e })),
    denied.length ? node('p', { className: 'plugin-warning', textContent: tr('Acesso negado: {0}', denied.join(', ')) }) : null,
    actions);
+  element.dataset.installedPlugin=m?.id??p.key;return element;
  }
  function webSupportCard(id:string,name:string,description:string,extensions:string){
   const card=node('article',{className:'plugin-card plugin-builtin'},
@@ -212,7 +235,7 @@ export function mountPluginManager(api: IdeApi) {
   card.dataset.builtinPlugin=id;return card;
  }
  async function render() {
-  status.textContent = feedback;
+  status.textContent = feedback; marketplace.refresh();
   if (!dialog.open) return;
   const external = new Set(listing?.plugins.map(p => p.manifest?.id).filter(Boolean));
   let internal: string[] = [];
@@ -222,8 +245,8 @@ export function mountPluginManager(api: IdeApi) {
    node('h3',{textContent:tr('Suporte de linguagem incluído')}),
    webSupportCard('vue','Vue.js','Vue 3: templates, componentes, props, autocomplete e diagnósticos.','.vue'),
    webSupportCard('react','React','JSX/TSX, props e hooks. Verificação de tipos em TypeScript/TSX.','.jsx · .tsx'),
-   node('h3', { textContent: tr('Plugins de terceiros') }),
-   ...(listing?.plugins.length ? listing.plugins.map(card) : [node('p', { className: 'plugin-meta', textContent: tr('Nenhum plugin de terceiros. Instale a partir de uma pasta ou .zip com plugin.json, ou coloque-o em .php-ide/plugins no projeto.') })]),
+   node('h3', { textContent: tr('Plugins instalados') }),
+   ...(listing?.plugins.length ? listing.plugins.map(card) : [node('p', { className: 'plugin-meta', textContent: tr('Nenhum plugin instalado. Procure no Marketplace ou instale pela URL Git, pasta ou ZIP.') })]),
    node('h3', { textContent: tr('Integrados ativos neste projeto') }),
    node('p', { className: 'plugin-meta', textContent: internal.join(' · ') || '—' }),
    listing ? node('p', { className: 'plugin-dir', textContent: tr('Pasta do usuário: {0} · Projeto: {1} · PHP IDE {2}', listing.userDir, listing.projectDir, listing.ideVersion) }) : null]));
@@ -232,7 +255,7 @@ export function mountPluginManager(api: IdeApi) {
 
  // Pontos de entrada: Aparência › Plugins… e a lista de plugins na barra de status.
  const appearance = document.getElementById('appearance-dialog');
- if (appearance) appearance.append(node('button', { type: 'button', className: 'plugins-open', textContent: tr('Plugins…'), onclick: () => { (appearance as HTMLDialogElement).close?.(); show(); } }));
+ if (appearance) appearance.append(node('button', { type: 'button', className: 'plugins-open', textContent: tr('Plugins…'), onclick: (event:Event) => { event.stopPropagation(); (appearance as HTMLDialogElement).close?.(); show(); } }));
  const bar = document.getElementById('plugins');
  if (bar) {
   bar.classList.add('plugins-status'); bar.tabIndex = 0; bar.setAttribute('role', 'button'); bar.title = tr('Plugins ativos neste projeto · clique para gerenciar');
@@ -249,6 +272,6 @@ export function mountPluginManager(api: IdeApi) {
  const project = document.getElementById('project');
  if (project) new MutationObserver(later).observe(project, { childList: true, characterData: true, subtree: true });
  window.addEventListener('ide-workspace-file-changed', event => { const path = String((event as CustomEvent).detail?.path ?? ''); if (path.includes('/.php-ide/plugins/')) later(); });
- void reload();
- return { reload, show };
+ const ready = reload();
+ return { reload, show, ready };
 }

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "laravel",
+    "repository": "https://github.com/phpforge-dev/plugin-laravel",
+    "revision": "bacd48e36811433bd559bed8bb8a4be3fa55e7b8",
+    "sha256": "97fbf0e6f3dd37e3c082756e9bf44ba63c40fd164dea3c289121e930fa8f1474"
+  },
+  {
+    "name": "dotenv",
+    "repository": "https://github.com/phpforge-dev/plugin-dotenv",
+    "revision": "d340824de5c5aa0eb79401915c8890f6d8d56b0d",
+    "sha256": "bcaa5817c5bf3fc113abe430d3f62d3d04685ba7d970dc846e53c573dd9d9c62"
+  },
+  {
+    "name": "docker",
+    "repository": "https://github.com/phpforge-dev/plugin-docker",
+    "revision": "6750bc55f045c9a190d6d5519be3a4289c216349",
+    "sha256": "64dbd99b92399b76d185a66b9a03e01af20c282c069727fbafa035b7b3eb4494"
+  },
+  {
+    "name": "bash",
+    "repository": "https://github.com/phpforge-dev/plugin-bash",
+    "revision": "bc23ea5f02512476d4caa0eea5843bfea8f39955",
+    "sha256": "c62a775a77838f0b91221400a85e25114d055a429606533e308dab03165f29a4"
+  }
+]

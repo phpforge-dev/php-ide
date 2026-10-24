@@ -14,6 +14,7 @@ Aqui você encontra como rodar a IDE, contribuir com o código e criar plugins. 
 | Gerar instaladores Windows e Linux | [Builds no GitHub Actions](development/windows-linux-builds.md) |
 | Publicar a página e disponibilizar downloads | [GitHub Pages e releases](development/github-pages.md) |
 | Instalar e gerenciar plugins | [Plugins](plugins/README.md) |
+| Pesquisar no Marketplace ou instalar pela URL Git | [Marketplace](plugins/marketplace.md) |
 | Criar o primeiro plugin | [Tutorial](plugins/getting-started.md) |
 | Consultar a API de plugins | [Referência da API](plugins/api.md) |
 | Empacotar e diagnosticar um plugin | [Distribuição e testes](plugins/distribution.md) |

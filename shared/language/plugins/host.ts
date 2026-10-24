@@ -1,7 +1,5 @@
 import { bladeCode, codeOnly, literalAt, position } from '../php-source';
 import type { IdePlugin, PluginCodeLens, PluginDiagnostic, PluginLocation, PluginStatus, ProjectFiles, StringSite } from './api';
-import { LaravelPlugin } from './laravel';
-import { DotenvPlugin } from './dotenv';
 import type { HoverPlugin, PluginHover } from './extensions';
 const servesPath = (plugin: IdePlugin, path: string) => plugin.documents ? plugin.documents(path) : path.endsWith('.php');
 /** Chamada que contém a string: nome normalizado e índice do argumento. */
@@ -32,7 +30,7 @@ export class PluginHost {
  private files: ProjectFiles;
  private active?: Promise<{ plugin: IdePlugin; version?: string }[]>;
  private seen = externalVersion;
- constructor(files: ProjectFiles, private plugins: IdePlugin[] = [new LaravelPlugin(), new DotenvPlugin()]) { this.files = files; }
+ constructor(files: ProjectFiles, private plugins: IdePlugin[] = []) { this.files = files; }
  private all() { const internal = new Set(this.plugins.map(p => p.id)); return [...this.plugins, ...external().filter(p => !internal.has(p.id))]; }
  private enabled() {
   if (this.seen !== externalVersion) { this.seen = externalVersion; this.active = undefined; }

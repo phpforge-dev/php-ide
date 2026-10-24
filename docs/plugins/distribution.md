@@ -37,7 +37,9 @@ PYZIP
 
 Instale o ZIP em **Aparência → Plugins… → Instalar .zip…**. O ZIP pode ter manifesto na raiz ou dentro de uma única pasta envoltória. O backend rejeita caminhos inseguros, symlinks, criptografia, Zip64 e CRC inválido; suporta entradas armazenadas ou deflate, limitado a 2.000 arquivos/20 MiB.
 
-Instalar uma versão com o mesmo id substitui a pasta anterior no escopo do usuário. Não há rollback automático, marketplace, atualização automática nem assinatura de pacotes. Distribua versão, requisito mínimo, licença, README e a relação de permissões; conserve a versão anterior se precisar de reversão manual.
+Instalar uma versão com o mesmo ID substitui o pacote do usuário. Se a validação ou a troca de pasta falhar, a instalação atual é preservada. Para voltar a uma versão anterior, instale seu ZIP ou informe a tag/commit no Git; ainda não há histórico de versões para reverter pela interface.
+
+O [Marketplace](marketplace.md) permite pesquisar e instalar a partir do catálogo estático. Para publicar nele, mantenha o plugin em um repositório próprio, com JavaScript pronto na raiz, e abra um PR no [catálogo da PHP Forge](https://github.com/phpforge-dev/plugins). Não há atualização automática nem assinatura de pacotes. Inclua versão, requisito mínimo, licença, README e permissões na publicação.
 
 ## Diagnóstico rápido
 

@@ -9,6 +9,7 @@ mod git;
 mod language;
 mod php_stubs;
 mod plugins;
+mod plugin_catalog;
 mod process;
 mod recent;
 mod rpc;
@@ -164,6 +165,10 @@ async fn ide(
         let path = PathBuf::from(std::env::var("PHP_IDE_NATIVE_SMOKE").map_err(err)?)
             .with_extension("progress");
         std::fs::write(path, git::s(arg(&args, 0))?).map_err(err)?;
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
         return Ok(Value::Null);
     }
     if method == "nativeSmokeReport" {
@@ -319,7 +324,9 @@ async fn ide(
         let config = std::env::var_os("PHP_IDE_STATE_DIR")
             .map(PathBuf::from)
             .unwrap_or(app.path().app_config_dir().map_err(err)?);
-        return plugins::dispatch(&plugins::Dirs::new(&config, root), &method, &args).await;
+        let dirs = plugins::Dirs::new(&config, root);
+        if method == "pluginList" { plugins::seed_bundled(&dirs)?; }
+        return plugins::dispatch(&dirs, &method, &args).await;
     }
     if method == "plugins" {
         return Err("Plugins são executados pela camada de linguagem da interface".into());

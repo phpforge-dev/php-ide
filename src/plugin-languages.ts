@@ -57,6 +57,7 @@ export function mountPluginLanguages(api: IdeApi, host: Host) {
  monaco.editor.getModels().forEach(watch); monaco.editor.onDidCreateModel(watch);
  /** Reavalia diagnósticos e CodeLens (ex.: depois de composer install/update alterar o lock). */
  const refresh = () => { for (const model of monaco.editor.getModels()) if (languages.includes(model.getLanguageId())) schedule(model, 50); lensChanged.fire(lenses); };
+ window.addEventListener('ide-plugins-changed',refresh);
  window.addEventListener('ide-workspace-file-changed', event => { const path = String((event as CustomEvent).detail?.path ?? ''); if (/(^|\/)composer\.(json|lock)$|\/vendor\/composer\/installed\.json$|\/(config|templates|src)\/|\/\.env/.test(path)) refresh(); });
  return { refresh };
 }

@@ -61,9 +61,11 @@ npm run test:native
 npm run test:packaged
 ```
 
-`check` verifica tipos, arquitetura, testes TypeScript e Rust, Clippy e traduções. `test:native` abre a janela Tauri e testa a integração com o backend. Ele usa projetos de exemplo, bancos em containers descartáveis e um agente de teste, sem consumir inferência. Requer Docker em execução e Phpactor preparado. Para rodar sem os bancos, use `npm run test:native -- --no-db`.
+`check` verifica tipos, arquitetura, testes TypeScript e Rust, Clippy e traduções. `test:native` compila a interface, abre a janela Tauri e testa a integração com o backend. Ele usa projetos de exemplo, bancos em containers descartáveis e um agente de teste, sem consumir inferência. Requer Docker em execução e Phpactor preparado. Para rodar sem os bancos, use `npm run test:native -- --no-db`.
 
 No macOS, `test:packaged` testa o `.app` já compilado. Os relatórios ficam em `.artifacts/`. Os requisitos e as limitações desses testes estão na [documentação de desenvolvimento](docs/development/contributing.md).
+
+Na versão 0.2.9, **Aparência → Plugins…** permite pesquisar no Marketplace ou instalar pela URL Git. Veja o [guia de plugins](docs/plugins/marketplace.md). Os pacotes de Laravel, .env, Docker e Bash têm repositórios próprios e já acompanham a distribuição.
 
 Para criar uma extensão, comece pelo [tutorial de plugins](docs/plugins/getting-started.md). A [API](docs/plugins/api.md) e o [guia de distribuição](docs/plugins/distribution.md) detalham o que os plugins podem fazer hoje.
 

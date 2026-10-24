@@ -1,0 +1,21 @@
+{
+  "id": "phpforge.laravel",
+  "name": "Laravel",
+  "description": "Rotas, views, Blade, configurações, traduções e Eloquent para Laravel.",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.9",
+  "main": "main.js",
+  "activation": {
+    "languages": [
+      "php",
+      "blade"
+    ],
+    "files": [
+      "composer.json"
+    ],
+    "documents": []
+  },
+  "permissions": [
+    "project.read"
+  ]
+}

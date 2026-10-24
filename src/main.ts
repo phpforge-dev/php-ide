@@ -340,7 +340,7 @@ const agentPanel = mountAgent(api, $('agent'), {
 });
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
 mountWorkbench(api);
-mountPluginManager(api);
+await mountPluginManager(api).ready;
 mountTreeGitStatus(api, $('tree'));
 mountWorkspaceSync(api, buffers, { tabs, status, editor, active: () => active });
 mountSearchEverywhere(api,editor,async(path,line,column)=>{await open(path);if(line){editor.setPosition({lineNumber:line,column:column??1});editor.revealLineInCenter(line);}});
@@ -385,10 +385,13 @@ const composerPanel = mountComposer(api, { status, open: async path => { const p
 monaco.editor.registerCommand('php-ide.composer', (_accessor, request) => { void composerPanel.run(request); });
 // Xdebug/DBGp: breakpoints na gutter, painel Depurar (Alt+5), F7/F8/Shift+F8/F9, Cmd+F8.
 const debugPanel = mountDebugger(api, { editor, status, open: async (path, line) => { await open(path, false); editor.setPosition({ lineNumber: line + 1, column: 1 }); editor.revealLineInCenterIfOutsideViewport(line + 1); } });
-monaco.languages.registerCodeLensProvider('php',{provideCodeLenses:async m=> {
+const pluginLensChanges=new monaco.Emitter<monaco.languages.CodeLensProvider>();
+const pluginLenses:monaco.languages.CodeLensProvider={onDidChange:pluginLensChanges.event,provideCodeLenses:async m=> {
  let v:any; try { v=await request('textDocument/codeLens',m,new monaco.Position(1,1)); } catch { return {lenses:[],dispose(){}}; }
  return {lenses:(v??[]).map((l:any)=>({range:{startLineNumber:l.line+1,startColumn:1,endLineNumber:l.line+1,endColumn:1},command:{id:l.command,title:l.title,tooltip:l.tooltip,arguments:l.arguments}})),dispose(){}};
-}});
+}};
+monaco.languages.registerCodeLensProvider('php',pluginLenses);
+window.addEventListener('ide-plugins-changed',()=>pluginLensChanges.fire(pluginLenses));
 window.addEventListener('beforeunload',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();event.returnValue='';}});
 const showPlugins = () => run(async () => { $('plugins').textContent = (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · '); });
 export const ready=(async()=>{$('project').textContent=(await api.workspace()).name;await tree();showPlugins();})();

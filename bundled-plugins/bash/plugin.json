@@ -1,0 +1,18 @@
+{
+  "id": "phpforge.bash",
+  "name": "Bash",
+  "description": "Sugestões e navegação em funções e variáveis Bash.",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.9",
+  "main": "main.js",
+  "activation": {
+    "languages": [],
+    "files": [],
+    "documents": [
+      "**/*"
+    ]
+  },
+  "permissions": [
+    "project.read"
+  ]
+}

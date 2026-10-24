@@ -96,3 +96,7 @@ THIS SOFTWARE.
 ## Windows path compatibility
 
 `dunce` (1.x), used to simplify Windows verbatim paths for external tools, is licensed under CC0-1.0 OR MIT-0 OR Apache-2.0. This distribution uses the MIT-0 option. Source and license: https://github.com/kornelski/dunce.
+
+## Pacotes de linguagem incluídos
+
+Laravel, DotEnv, Docker e Bash são pacotes MIT mantidos por Jeidison Farias na PHP Forge, distribuídos em `bundled-plugins/` com suas licenças. O pacote Docker também inclui o parser YAML e seu aviso ISC (`YAML-LICENSE`). Esses pacotes rodam no worker de plugins; os avisos permanecem incluídos mesmo quando o fonte tem repositório separado.

@@ -23,3 +23,12 @@ pre.plugin-error{white-space:pre-wrap;font-size:11px;max-height:120px;overflow:a
 .plugin-consent{width:min(540px,92vw);padding:22px 24px;border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);background:var(--ij-dialog);color:var(--ij-text);box-shadow:var(--ij-shadow);font:var(--ij-font-size)/1.4 var(--ij-font-ui)}.plugin-consent h2{font-size:15px;margin:0 0 8px}.plugin-consent p{font-size:var(--ij-font-size-small);line-height:1.5;overflow-wrap:anywhere;color:var(--ij-text)}.plugin-consent .primary{background:var(--ij-button-default);color:var(--ij-button-default-text);border-color:var(--ij-button-default)}
 .plugins-open{margin-top:12px;border:0;background:transparent;color:var(--ij-link);padding:4px 0;font-size:var(--ij-font-size-small);display:block;height:auto}
 .plugins-status{cursor:pointer;color:var(--ij-text-secondary)}.plugins-status:hover{text-decoration:underline;color:var(--ij-link)}
+.plugins-tabs{display:flex;gap:18px;margin:12px 16px 0;border-bottom:1px solid var(--ij-border)}
+.plugins-tabs button{border:0;border-bottom:2px solid transparent;background:none;color:var(--ij-text-secondary);padding:8px 2px;border-radius:0}
+.plugins-tabs button[aria-selected=true]{border-bottom-color:var(--ij-link);color:var(--ij-text)}
+.plugin-marketplace{padding:12px 16px 16px}.plugin-marketplace[hidden],.plugins-body[hidden],.plugin-git-form[hidden]{display:none}
+.marketplace-tools{display:flex;gap:8px;flex-wrap:wrap}.marketplace-tools input{flex:1;min-width:180px}
+.plugin-marketplace input{padding:7px 10px;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);background:var(--ij-island);color:var(--ij-text)}
+.marketplace-tools button,.plugin-git-form button{padding:5px 10px;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);background:var(--ij-button);color:var(--ij-text)}
+.plugin-git-form{display:grid;gap:8px;margin:14px 0;padding:14px;border:1px solid var(--ij-control-border);border-radius:var(--ij-popup-radius)}
+.plugin-git-form h3,.plugin-git-form p{margin:0}.plugin-git-form button{justify-self:end}.plugin-marketplace button:disabled{opacity:.55;cursor:default}

@@ -1,3 +1,4 @@
+import { setExternalPlugins } from '../shared/language/plugins/host';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DockerPlugin, dockerLines } from '../shared/language/plugins/docker';
@@ -61,7 +62,8 @@ test('Compose env completion shows names without secrets',async()=>{
  const result=await new DockerPlugin().completeCode(site('compose.yml','services:\n  app:\n    image: "${APP_'),f);
  assert(result?.items.some(i=>i.label==='APP_NAME'));assert(!JSON.stringify(result).includes('fixture-secret'));
 });
-test('NativeLanguage routes Docker documents without a PHP language process',async()=>{
+test('NativeLanguage routes Docker documents without a PHP language process',async t=>{
+ setExternalPlugins(()=>[new DockerPlugin()]);t.after(()=>setExternalPlugins(null));
  const data={'compose.yml':compose};const f=files(data);
  const native=new NativeLanguage(async(method,args=[])=>{if(method==='workspace')return{root:f.root,rootUri:'file:///fixture/'};if(method==='listFiles')return Object.keys(data);if(method==='read')return{text:await f.read(String(args[0])),uri:f.uri(String(args[0]))};if(method==='fileExists')throw Error('missing');throw Error('unexpected transport '+method);});
  assert((await native.plugins()).some(p=>p.id==='docker'));

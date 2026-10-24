@@ -115,3 +115,11 @@ A ativação por extensão só filtra quais documentos o host pode atender. É p
 - JS/TS/Vue têm seus serviços web próprios; não há integração genérica de todos os hooks externos nesses serviços. O mesmo vale para outras linguagens aceitas pelo manifesto sem um provedor conectado.
 
 Portanto, testar um hook no PluginHost comprova o contrato do host, não sua presença em toda linguagem na janela real. A API não registra gramáticas, novos painéis, hover, rename ou formatadores de terceiros. Não suporta binários de plugins JetBrains/VS Code.
+
+## Hover e correções (0.2.9)
+
+Plugins instaláveis podem fornecer `hover(site, files, stringSite)`, retornando `{ contents, range? }` ou `null`. `contents` é texto Markdown; não é HTML inserido na página. O host limita o tamanho da resposta.
+
+Diagnósticos podem incluir `fixes: [{ title, edits: [{ uri, range, newText }] }]`. Só edições com destinos dentro do projeto são aceitas. Elas aparecem como sugestões para o usuário aplicar; o plugin não escreve arquivos ao emitir um diagnóstico. A criação de arquivos e documentos virtuais continua fora desse contrato.
+
+Os plugins Laravel, DotEnv, Docker e Bash incluídos na IDE usam esse mesmo worker. Seu fonte é mantido em repositórios próprios, com versões fixadas em `bundled-plugins/lock.json`. Consulte o [Marketplace](marketplace.md) para instalar, atualizar e gerenciar esses pacotes.
