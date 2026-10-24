@@ -276,11 +276,11 @@
       "id": "phpforge.git",
       "name": "Git",
       "description": "git workbench integration with explicit host services.",
-      "version": "1.0.1",
-      "minIdeVersion": "0.2.13",
+      "version": "1.0.2",
+      "minIdeVersion": "0.2.14",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-git",
-      "revision": "7277252ab6ed9cf7f59aae54efd2acfafe38dca9"
+      "revision": "79894b5603bb6dbdb4dd5968999a5e1ba4969438"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [
@@ -294,11 +294,11 @@
       "id": "phpforge.agents",
       "name": "Agents",
       "description": "agents workbench integration with explicit host services.",
-      "version": "1.0.1",
-      "minIdeVersion": "0.2.13",
+      "version": "1.0.2",
+      "minIdeVersion": "0.2.14",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-agents",
-      "revision": "e6236905963b6341d4f6033862847a00a68843f6"
+      "revision": "a1f2dee3603f32abe7fd024ea2344c0871e38d61"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [

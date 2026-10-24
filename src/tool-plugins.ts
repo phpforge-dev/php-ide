@@ -1,4 +1,4 @@
-import {providePluginService} from './plugin-services';
+import {pluginService,providePluginService} from './plugin-services';
 import {fileIcon} from './file-icons';
 import {editorFont} from './editor-theme';
 import {activeLanguage} from './i18n';
@@ -46,7 +46,7 @@ export function mountToolPlugins(api:IdeApi,host:Host){
     const dockWindow=(panel:HTMLElement,button:HTMLElement,hide:()=>void)=>{const handler=(event:Event)=>{if((event as CustomEvent).detail!==panel.id)hide()};document.addEventListener('ide-dock-open',handler);own(()=>document.removeEventListener('ide-dock-open',handler));return()=>{document.dispatchEvent(new CustomEvent('ide-dock-open',{detail:panel.id}));panel.hidden=false;button.setAttribute('aria-pressed','true')};};
     const url=URL.createObjectURL(new Blob([source.code],{type:'text/javascript'}));own(()=>URL.revokeObjectURL(url));
     const module=await import(/* @vite-ignore */ url);if(epoch!==generation){await stop();return;}
-    controller=module.activate({provide:(name:string,value:unknown)=>{const off=providePluginService(entry.key,name,value);own(off);return off;},fileIcon,editorFont,activeLanguage,api:toolApi,host,monaco,tr,msg,html,keymap:scopedKeymap,listen:scopedListen,own,dockWindow,resizeToolWindow,toolIcon,editorPreviewLayout})??{};
+    controller=module.activate({service:pluginService,provide:(name:string,value:unknown)=>{const off=providePluginService(entry.key,name,value);own(off);return off;},fileIcon,editorFont,activeLanguage,api:toolApi,host,monaco,tr,msg,html,keymap:scopedKeymap,listen:scopedListen,own,dockWindow,resizeToolWindow,toolIcon,editorPreviewLayout})??{};
     for(const el of document.querySelectorAll('.code > *, .left-rail > *'))if(!before.has(el)&&!el.contains(host.editor.getDomNode()))own(()=>el.remove());
     if(epoch!==generation){await stop();return;}
     mounted.set(entry.key,{stop,controller,methods:entry.manifest.tool?.methods??[]});window.dispatchEvent(new CustomEvent('ide-tool-state',{detail:{key:entry.key,state:'active'}}));

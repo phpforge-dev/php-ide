@@ -13,6 +13,8 @@ export interface WorkbenchHost {
 export interface WorkbenchSdk {
  /** Only baseline read operations and manifest-declared services are exposed by the host. */
  api:Partial<IdeApi>;
+ /** Resolve an optional trusted contribution in the current plugin generation. */
+ service<T = unknown>(name:WorkbenchContributionName):T|undefined;
  host:WorkbenchHost;
  monaco:typeof Monaco;
  own<T extends Disposable>(item:T):T;

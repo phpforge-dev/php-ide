@@ -863,3 +863,15 @@ Validação da reorganização: typecheck aprovado; testes TypeScript 169 aprova
 ## SQL intelligence — SPEC-14
 
 Independent implementation: `dt-sql-parser` 4.5.1 in a local worker, eagerly prepared active-session metadata, explicit file bindings, schema/search-path resolution, aliases, CTE/projection/derived scopes, correlation and bounded completion. PostgreSQL 16, MySQL 8.4 and MariaDB 11.4 passed native Tauri checks for real suggestions, first-character popup, Enter/Tab/undo, DDL refresh, connection isolation, PHP/Blade and project close. Large synthetic catalogs were measured separately. SQLite, SQL Server 2022 and Oracle Free 23 now have independent active-session catalogs and bounded dialect rules, with native Tauri checks for real tables/views/columns, quoting, CTEs, derived scopes, popup/keyboard and DDL refresh. SQLite also checks attached/temp namespaces and generated columns. SQL Server checks TOP/APPLY, actual case-sensitive collation and USE context switching; Oracle checks uppercase/exact quoted names and metadata beyond 100 columns. These three use GenericSQL plus explicit rules, not full vendor grammars; SQL Server temp tables/TVFs/synonyms and Oracle synonyms/PLSQL declarations remain outside this slice. Redis is outside SQL. Dynamic PHP SQL, general expression type inference, total application memory and cross-platform validation remain limited. No family is promoted to compatible. [Implementation, results and limits](sql-intelligence.md); [prospective specification](../specs/14-sql-intelligence.md).
+
+## Mensagem de commit gerada por agente (requisito próprio, 24/10/2026)
+
+Fontes locais: ação Gerar com IA no plugin Git, usando o agente conectado e somente conteúdo preparado, prévia editável e proteção de rascunho/index. Builds, testes dos plugins e prévia WebKit sintética aprovados. Distribuição dos pacotes e validação Tauri/inferência real pendentes; sem promoção comparativa. [Fluxo, limites e evidências](git-agent-commit-message.md).
+
+## Merge orientado por agente (requisito próprio, 24/10/2026)
+
+Fontes locais: seção Resolver com IA no editor de conflitos, com orientação por arquivo, base/dois lados/resultado atual, sugestão editável, proteção contra alterações concorrentes e confirmação antes de gravar. Build/testes do plugin, check da IDE e fluxo WebKit + Monaco sintético aprovados. Pacotes instalados, Tauri e agente real ainda não validados; sem promoção comparativa. [Fluxo, limites e evidências](git-agent-merge.md).
+
+## Consulta ao agente sobre arquivos do commit (requisito próprio, 24/10/2026)
+
+Fontes locais: na lista de alterações da janela Commit, a seleção para o agente é independente das caixas que preparam o commit. A consulta aceita um texto livre ou os atalhos de revisão e impacto, e envia somente os snapshots dos arquivos escolhidos. Testes do plugin e prévia WebKit sintética cobrem a seleção e o diálogo. Pacotes instalados, janela Tauri e agente real ainda não validados; sem promoção comparativa. [Fluxo, limites e evidências](git-agent-file-query.md).
