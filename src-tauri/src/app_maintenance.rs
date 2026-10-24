@@ -213,6 +213,17 @@ fn dirs(app: &tauri::AppHandle) -> Res<plugins::Dirs> {
     fs::create_dir_all(&root).map_err(err)?;
     Ok(plugins::Dirs::new(&service.config, &root))
 }
+/// GitHub answers 404 for `/releases/latest` when every tag is a draft or prerelease.
+fn published_release(response: &str) -> Res<Option<Value>> {
+    let (body, status) = response.rsplit_once('\n').unwrap_or((response, ""));
+    match status.trim() {
+        "404" => Ok(None),
+        "200" => Ok(Some(serde_json::from_str(body).map_err(err)?)),
+        code => Err(format!(
+            "Não foi possível consultar as versões publicadas (HTTP {code})."
+        )),
+    }
+}
 fn newer(a: &str, b: &str) -> bool {
     matches!((plugins::version(a),plugins::version(b)),(Some(a),Some(b)) if a>b)
 }
@@ -270,7 +281,7 @@ async fn approve_first_install(
             "pluginSetState",
             &[
                 json!(entry.key),
-                json!({"enabled":true,"granted":permissions}),
+                json!({"consent":true,"enabled":true,"granted":permissions}),
             ],
         )
         .await?;
@@ -649,7 +660,8 @@ async fn check_release(
         "curl",
         &[
             "-q",
-            "-fsSL",
+            "-sS",
+            "-L",
             "--proto",
             "=https",
             "--proto-redir",
@@ -660,13 +672,17 @@ async fn check_release(
             "1048576",
             "-H",
             "Accept: application/vnd.github+json",
+            "-w",
+            "\n%{http_code}",
             RELEASES,
         ]
         .map(str::to_owned),
         None,
     )
     .await?;
-    let release: Value = serde_json::from_str(&text).map_err(err)?;
+    let Some(release) = published_release(&text)? else {
+        return Ok((None, None));
+    };
     let version = release["tag_name"]
         .as_str()
         .unwrap_or("")
@@ -947,6 +963,17 @@ mod tests {
         );
     }
     #[test]
+    fn missing_stable_release_is_not_an_update_error() {
+        let missing = "{\n  \"message\": \"Not Found\",\n  \"status\": \"404\"\n}\n404";
+        assert!(published_release(missing).unwrap().is_none());
+        let stable = "{\"tag_name\":\"v9.0.0\",\"draft\":false,\"prerelease\":false,\"body\":\"notes\"}\n200";
+        assert_eq!(
+            published_release(stable).unwrap().unwrap()["tag_name"],
+            "v9.0.0"
+        );
+        assert!(published_release("unavailable\n500").is_err());
+    }
+    #[test]
     fn updates_require_same_origin_and_newer_compatible_version() {
         let mut release = plugins::defaults().unwrap().remove(0).plugin;
         release.version = "1.2.0".into();
@@ -1004,7 +1031,10 @@ mod tests {
         approve_first_install(&dirs, &entry, &["process".into()])
             .await
             .unwrap();
-        assert_eq!(dirs.describe(&entry)["granted"], json!(["process"]));
+        let accepted = dirs.describe(&entry);
+        assert_eq!(accepted["granted"], json!(["process"]));
+        assert_eq!(accepted["consented"], true);
+        assert_eq!(accepted["needsConsent"], false);
         plugins::dispatch(
             &dirs,
             "pluginSetState",
