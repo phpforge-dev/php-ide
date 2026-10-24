@@ -4,13 +4,28 @@ Leia primeiro [AGENTS.md](../../AGENTS.md) e [estrutura do projeto](project-stru
 
 ## Ambiente e execução
 
-Requisitos e setup estão no [README](../../README.md). A base obrigatória é Rust + Tauri 2, com frontend sem Node. Preserve alterações de outras tarefas e use projetos sintéticos para verificações; bancos reais e credenciais pessoais não são fixtures.
+A aplicação usa Rust e Tauri 2, com TypeScript, Monaco e xterm.js na interface. Node e npm são usados nas ferramentas de desenvolvimento e na compilação; o frontend da aplicação não depende de um runtime Node.
+
+Instale Rust/Cargo estável, Node/npm, Git e as ferramentas nativas do Tauri para o seu sistema. O Phpactor precisa de PHP 8.2 ou superior, local ou via Docker.
+
+Preserve alterações de outras tarefas e use projetos sintéticos para verificações; bancos reais e credenciais pessoais não são fixtures. Na raiz do projeto, execute:
 
 ```sh
 npm ci
 npm run setup:php
 npm run dev
 ```
+
+O comando `dev` abre a IDE e atualiza a interface enquanto você edita o código. Se Cargo não estiver no PATH, os scripts também procuram em `~/.cargo/bin`.
+
+No macOS, para compilar e abrir o aplicativo:
+
+```sh
+npm run build
+npm start
+```
+
+O aplicativo fica em `src-tauri/target/release/bundle/macos/PHP IDE.app`. Para gerar instaladores, siga o [guia macOS](#build-e-instalador-macos) ou o [guia Windows e Linux](windows-linux-builds.md).
 
 ## Validação proporcional
 
@@ -30,7 +45,7 @@ Use `npm run check` para tipos (aplicação e testes), guarda de arquitetura, te
 
 ## Build e instalador macOS
 
-Execute os comandos na raiz do projeto. Para o primeiro build, prepare o ambiente conforme o README (`npm ci` e `npm run setup:php`). É necessário macOS com ferramentas de desenvolvimento Apple e Rust/Cargo. O alvo padrão segue a arquitetura do host: no Apple Silicon, o DMG é `aarch64`, não universal.
+Execute os comandos na raiz do projeto. Para o primeiro build, prepare o [ambiente de desenvolvimento](#ambiente-e-execução) (`npm ci` e `npm run setup:php`). É necessário macOS com ferramentas de desenvolvimento Apple e Rust/Cargo. O alvo padrão segue a arquitetura do host: no Apple Silicon, o DMG é `aarch64`, não universal.
 
 ### 1. Atualizar a versão
 

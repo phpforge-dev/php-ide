@@ -1,12 +1,13 @@
 # Documentação do PHP IDE
 
-Aqui você encontra como rodar a IDE, contribuir com o código e criar plugins. A seção de pesquisa guarda as decisões do projeto, os testes feitos e as limitações conhecidas.
+O PHP IDE é uma IDE para PHP e Laravel, construída com Rust e Tauri 2, com interface inspirada no PhpStorm. Está disponível em versão beta para macOS, Windows e Linux. Aqui você encontra os guias de instalação, plugins e contribuição. A seção de pesquisa guarda as decisões do projeto, os testes feitos e as limitações conhecidas.
 
 ## Começar
 
 | Objetivo | Guia |
 |---|---|
-| Executar ou compilar a IDE | [README do projeto](../README.md) |
+| Baixar e instalar a IDE | [Instalação](../README.md#instalação) |
+| Executar ou compilar a partir do código | [Ambiente de desenvolvimento](development/contributing.md#ambiente-e-execução) |
 | Se localizar no código | [Estrutura e arquitetura](development/project-structure.md) |
 | Ver o que mudou na limpeza do código | [Limpeza do fonte](development/source-cleanup.md) |
 | Contribuir, testar e preparar uma entrega | [Desenvolvimento](development/contributing.md) |
