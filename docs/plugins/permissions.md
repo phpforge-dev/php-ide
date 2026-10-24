@@ -26,3 +26,11 @@ Essas barreiras não são uma garantia de resistência a todo código hostil. A 
 Main: 8 MiB a partir da IDE 0.2.10; manifesto: 64 KiB; instalação: 2.000 arquivos / 20 MiB. Ponte limita texto de escrita/entrada de processo a aproximadamente 2 Mi de unidades JavaScript, com validação adicional de tamanho no backend. Processos têm limite de 30 segundos; requisições curl, 20 segundos e 3 redirecionamentos; saída/resposta textual limitada. Load/hook usam limites de 5/4 segundos por padrão.
 
 Nunca inclua credenciais reais em exemplos, pacotes, logs ou pedidos de teste. Não use permissões amplas como substituto de uma capacidade que a API ainda não oferece.
+
+## Native tool packages (0.2.11+)
+
+`native.tool` authorizes execution of a separately packaged executable with account privileges. `workbench` authorizes its UI module in the application window, including DOM and displayed content. These are explicit trust grants, not worker sandbox capabilities. Native/default packages are downloaded without automatically granting these permissions. The host requires both for a tool package and revalidates them before execution.
+
+Native code may access files, processes and network independently of the mediated language APIs; denying `project.read` is not an OS restriction on a native executable. Install only trusted native/UI packages. The language-plugin worker restrictions above continue to apply to ordinary language packages. [Tool architecture and limits](../research/native-tool-plugins.md).
+
+Standalone `workbench` packages (IDE 0.2.12) run reviewed code inside the IDE window and require explicit consent even when downloaded by default. They do not require `native.tool`. Disabling/removing them unloads their UI, providers and registered cleanup handlers. The permission represents trust in the entire UI module; this is not a security sandbox.

@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { SymfonyPlugin, defaultRouteName, parseRouteAttributes, parseServices, parseYamlRoutes, referenceAt } from '../shared/language/plugins/symfony';
+import { SymfonyPlugin, defaultRouteName, parseRouteAttributes, parseServices, parseYamlRoutes, referenceAt } from '../.tools/plugin-packages/symfony/src/shared/language/plugins/symfony';
 import { LaravelPlugin } from '../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 
-const root = join(import.meta.dirname, '../fixtures/symfony');
+const root = join(import.meta.dirname, './fixtures/projects/symfony');
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
 function project(dir: string, extra: Record<string, string> = {}): ProjectFiles {
  const walk = (sub: string): string[] => existsSync(join(dir, sub)) ? readdirSync(join(dir, sub)).flatMap(name => { const p = sub ? `${sub}/${name}` : name; return statSync(join(dir, p)).isDirectory() ? walk(p) : [p]; }) : [];
@@ -26,7 +26,7 @@ const line = (text: string, marker: string) => text.split('\n').findIndex(l => l
 
 test('detecção por symfony/framework-bundle com versão do lock', async () => {
  assert.deepEqual(await host().status(), [{ id: 'symfony', name: 'Symfony', version: '7.1' }]);
- assert.deepEqual(await new PluginHost(project(join(import.meta.dirname, '../fixtures/laravel-strings')), [new SymfonyPlugin()]).status(), []);
+ assert.deepEqual(await new PluginHost(project(join(import.meta.dirname, './fixtures/projects/laravel-strings')), [new SymfonyPlugin()]).status(), []);
 });
 
 test('rotas por atributo: prefixo da classe, métodos, FQCN e nome automático', () => {

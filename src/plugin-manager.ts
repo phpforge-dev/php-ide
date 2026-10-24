@@ -9,12 +9,13 @@ import { mountPluginMarketplace } from './plugin-marketplace';
 
 // Plugins de terceiros: descoberta pelo backend, consentimento na primeira ativação,
 // execução em Web Worker e tela Plugins (Aparência › Plugins ou clique na barra de status).
-type DefaultPackage = { id: string; name: string; repository: string; pending: boolean };
-type Listing = { defaults?: DefaultPackage[]; ideVersion: string; userDir: string; projectDir: string; permissions: PluginPermission[]; plugins: InstalledPlugin[] };
+type Listing = { ideVersion: string; userDir: string; projectDir: string; permissions: PluginPermission[]; plugins: InstalledPlugin[] };
 const permissionText = (p: PluginPermission): [string, string] => ({
  'project.read': [tr('Ler arquivos do projeto'), tr('Conteúdo de qualquer arquivo do projeto, inclusive .env e outros segredos.')],
  'project.write': [tr('Criar e alterar arquivos do projeto'), tr('Qualquer arquivo do projeto, exceto .git e .php-ide.')],
  process: [tr('Executar processos'), tr('Programas com os seus privilégios de usuário, na raiz do projeto. Equivale a acesso total à sua conta.')],
+ 'native.tool': ['Executar ferramenta nativa', 'Executável Rust do plugin com os seus privilégios. Pode acessar arquivos, rede e processos fora do projeto. Ative apenas pacotes de confiança.'],
+ workbench: ['Integrar a interface da IDE', 'Código do plugin na janela da IDE, com acesso à interface e aos dados exibidos. Não usa o isolamento dos plugins de linguagem.'],
  network: [tr('Acessar a rede'), tr('Requisições HTTP(S) a qualquer endereço, inclusive serviços locais.')],
 } as Record<PluginPermission, [string, string]>)[p];
 type Child = Node | string | null | false;
@@ -29,11 +30,11 @@ export function mountPluginManager(api: IdeApi) {
  const call = (method: string, ...args: unknown[]) => (api as any)[method](...args) as Promise<any>;
  let root = ''; let rootUri = 'file:///';
  let listing: Listing | null = null; let listError = ''; let feedback = '';
- let defaultBusy = false; let defaultProgress = '';
- const defaultErrors = new Map<string,string>();
  let generation = 0;
  const runtimes = new Map<string, SandboxedPlugin>();
  const startErrors = new Map<string, string>();
+ const toolErrors = new Map<string,string>();
+ window.addEventListener('ide-tool-state',event=>{const {key,state,error}=(event as CustomEvent).detail;if(state==='failed')toolErrors.set(key,error);else toolErrors.delete(key);changed();});
  const asked = new Set<string>();
  const files: ProjectFiles = {
   get root() { return root; },
@@ -68,7 +69,7 @@ export function mountPluginManager(api: IdeApi) {
   clearTimeout(statusTimer);
   statusTimer = setTimeout(async () => {
    const bar = document.getElementById('plugins'); if (!bar) return;
-   try { bar.textContent = defaultProgress || (defaultErrors.size ? tr('Plugins padrão pendentes · clique para tentar novamente') : (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · ')); } catch { /* barra de status é informativa */ }
+   try { bar.textContent = (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · '); } catch { /* barra de status é informativa */ }
   }, 150);
  };
  const changed = () => { render(); refreshStatus(); };
@@ -92,13 +93,12 @@ export function mountPluginManager(api: IdeApi) {
   try {
    const info = await call('workspace'); root = info.root; rootUri = info.rootUri;
    listing = await call('pluginList'); listError = '';
-   for(const p of listing?.defaults ?? []) if(!p.pending) defaultErrors.delete(p.id);
   } catch (error) { listing = null; listError = String(error); changed(); return; }
   if (current !== generation) return;
   const pending: InstalledPlugin[] = [];
   for (const p of listing!.plugins) {
    if (!p.manifest || p.error || !p.enabled) continue;
-   if (p.needsConsent) { if (!asked.has(askKey(p)) && await applies(p)) pending.push(p); continue; }
+   if (p.needsConsent) { if (!p.manifest.tool && !p.manifest.workbench && !asked.has(askKey(p)) && await applies(p)) pending.push(p); continue; }
    await start(p, current);
   }
   if (current !== generation) return;
@@ -112,18 +112,6 @@ export function mountPluginManager(api: IdeApi) {
    for(const p of pending){if(current!==generation)return;asked.add(askKey(p));await decide(p);}
    if(current===generation)await reload();
   })().catch(error=>{feedback=String(error);changed();});
- }
- async function installDefaults() {
-  if (defaultBusy) return;
-  defaultBusy = true;
-  try {
-   for (const p of listing?.defaults?.filter(p => p.pending) ?? []) {
-    defaultProgress = tr('Instalando {0} do GitHub…', p.name); changed();
-    try { await call('pluginInstallDefault', p.id); defaultErrors.delete(p.id); }
-    catch (error) { defaultErrors.set(p.id, String(error)); }
-    await reload();
-   }
-  } finally { defaultBusy = false; defaultProgress = ''; changed(); }
  }
  async function decide(p: InstalledPlugin) {
   const granted = await consent(p);
@@ -151,7 +139,7 @@ export function mountPluginManager(api: IdeApi) {
     node('h2', { textContent: tr('Ativar o plugin “{0}”?', m.name) }),
     node('p', { className: 'plugin-meta', textContent: `${m.id} · ${m.version}${m.description ? ' · ' + m.description : ''}` }),
     node('p', { textContent: p.scope === 'project' ? tr('Veio com o projeto, em {0}. Ative só se confiar na origem do repositório.', p.dir) : tr('Instalado na sua pasta de plugins: {0}.', p.dir) }),
-    m.permissions.length ? node('p', { textContent: tr('O código roda isolado e só alcança o que você permitir. Desmarque o que não quiser conceder; o plugin recebe um erro ao tentar usar.') }) : null,
+    m.permissions.length ? node('p', { textContent: m.permissions.includes('workbench') ? tr('Este plugin integra a janela da IDE e pode usar os serviços nativos declarados. Ative somente se confiar no repositório.') : tr('O código roda isolado e só alcança o que você permitir. Desmarque o que não quiser conceder; o plugin recebe um erro ao tentar usar.') }) : null,
     perms,
     risky ? node('p', { className: 'plugin-warning', textContent: tr('Atenção: com estas permissões o plugin pode enviar o conteúdo do projeto, inclusive segredos, para fora da máquina.') }) : null,
     node('div', { className: 'plugin-actions' }, deny, allow)]));
@@ -204,6 +192,7 @@ export function mountPluginManager(api: IdeApi) {
   if (p.error) return [tr('Erro no manifesto'), 'error'];
   if (!p.enabled) return [tr('Desativado'), 'off'];
   if (p.needsConsent) return [tr('Aguardando consentimento'), 'pending'];
+  if (toolErrors.has(p.key)) return [tr('Falhou ao carregar'), 'error'];
   if (startErrors.has(p.key)) return [tr('Falhou ao carregar'), 'error'];
   const state = runtimes.get(p.key)?.info.state;
   return state === 'active' ? [tr('Ativo'), 'on'] : state === 'loading' ? [tr('Carregando'), 'pending'] : state === 'failed' ? [tr('Interrompido'), 'error'] : [tr('Parado'), 'off'];
@@ -211,7 +200,7 @@ export function mountPluginManager(api: IdeApi) {
  function card(p: InstalledPlugin) {
   const m = p.manifest; const runtime = runtimes.get(p.key);
   const [label, kind] = badge(p);
-  const errors = [p.error, startErrors.get(p.key), ...(runtime?.info.errors ?? [])].filter((e): e is string => !!e);
+  const errors = [p.error, startErrors.get(p.key), toolErrors.get(p.key), ...(runtime?.info.errors ?? [])].filter((e): e is string => !!e);
   const denied = runtime?.info.denied ?? [];
   let confirmRemove = false;
   const remove = p.scope === 'user' ? node('button', { type: 'button', textContent: tr('Remover') }) : null;
@@ -242,32 +231,14 @@ export function mountPluginManager(api: IdeApi) {
    actions);
   element.dataset.installedPlugin=m?.id??p.key;return element;
  }
- function webSupportCard(id:string,name:string,description:string,extensions:string){
-  const card=node('article',{className:'plugin-card plugin-builtin'},
-   node('header',{},node('strong',{textContent:name}),node('span',{className:'plugin-scope',textContent:extensions}),node('span',{className:'plugin-badge plugin-on',textContent:tr('Incluído e habilitado')})),
-   node('p',{className:'plugin-meta',textContent:tr(description)}),
-   node('p',{className:'plugin-meta',textContent:tr('Ativação automática ao abrir um arquivo compatível. Não requer instalação separada.')}));
-  card.dataset.builtinPlugin=id;return card;
- }
  async function render() {
-  status.textContent = defaultProgress || feedback; marketplace.refresh();
+  status.textContent = feedback; marketplace.refresh();
   if (!dialog.open) return;
   const external = new Set(listing?.plugins.map(p => p.manifest?.id).filter(Boolean));
   let internal: string[] = [];
   try { internal = (await api.plugins()).filter(p => !external.has(p.id)).map(p => p.version ? `${p.name} ${p.version}` : p.name); } catch { /* lista informativa */ }
   body.replaceChildren(...parts([
    listError ? node('pre', { className: 'plugin-error', textContent: listError }) : null,
-   node('h3',{textContent:tr('Suporte de linguagem incluído')}),
-   webSupportCard('vue','Vue.js','Vue 3: templates, componentes, props, autocomplete e diagnósticos.','.vue'),
-   webSupportCard('react','React','JSX/TSX, props e hooks. Verificação de tipos em TypeScript/TSX.','.jsx · .tsx'),
-   ...(listing?.defaults?.some(p => p.pending) ? [
-    node('h3', {textContent:tr('Plugins padrão')}),
-    node('p',{className:'plugin-meta',textContent:tr('Instalados do GitHub com versão verificada. A primeira instalação precisa de internet e Git; depois funcionam offline.')}),
-    ...listing.defaults.filter(p => p.pending).map(p => node('article',{className:'plugin-card'},
-     node('strong',{textContent:p.name}), node('p',{className:'plugin-meta',textContent:p.repository}),
-     defaultErrors.has(p.id) ? node('pre',{className:'plugin-error',textContent:defaultErrors.get(p.id)}) : node('p',{textContent:tr('Aguardando instalação')}))),
-    node('button',{type:'button',disabled:defaultBusy,textContent:tr('Tentar novamente'),onclick:()=>void installDefaults()})
-   ] : []),
    node('h3', { textContent: tr('Plugins instalados') }),
    ...(listing?.plugins.length ? listing.plugins.map(card) : [node('p', { className: 'plugin-meta', textContent: tr('Nenhum plugin instalado. Procure no Marketplace ou instale pela URL Git, pasta ou ZIP.') })]),
    node('h3', { textContent: tr('Integrados ativos neste projeto') }),
@@ -285,6 +256,8 @@ export function mountPluginManager(api: IdeApi) {
   bar.onclick = show; bar.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show(); } };
  }
  monaco.editor.registerCommand('php-ide.pluginCommand', async (_accessor, key: string, name: string, args: unknown[]) => {
+  const provider = listing?.plugins.find(p => p.key === key);
+  if (provider?.manifest?.tool && provider.granted.includes('workbench') && provider.granted.includes('native.tool') && runtimes.has(key)) { window.dispatchEvent(new CustomEvent('ide-tool-command', {detail:{key,name,args}})); return; }
   const result = await runtimes.get(key)?.command(name, Array.isArray(args) ? args : []);
   const line = document.getElementById('status');
   if (line && typeof result === 'string') line.textContent = result.slice(0, 300);
@@ -295,7 +268,9 @@ export function mountPluginManager(api: IdeApi) {
  const project = document.getElementById('project');
  if (project) new MutationObserver(later).observe(project, { childList: true, characterData: true, subtree: true });
  window.addEventListener('ide-workspace-file-changed', event => { const path = String((event as CustomEvent).detail?.path ?? ''); if (path.includes('/.php-ide/plugins/')) later(); });
+ window.addEventListener('ide-user-plugins-changed',later);
+ window.addEventListener('ide-show-plugins',show);
  const ready = reload();
- void ready.then(() => installDefaults()).catch(error => { feedback = String(error); changed(); });
+ void ready.catch(error => { feedback = String(error); changed(); });
  return { reload, show, ready };
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isPhpDeclaration } from '../src/php-navigation';
+import { isPhpDeclaration } from '../.tools/plugin-packages/php-intelligence/src/php-navigation';
 
 test('declarações e usos de classes, interfaces, traits e enums têm destinos distintos', () => {
  const text = `<?php

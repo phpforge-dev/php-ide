@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { phpEditorAnalysis } from '../shared/php-editor-analysis';
+import { phpEditorAnalysis } from '../.tools/plugin-packages/php-intelligence/src/shared/php-editor-analysis';
 const text=`<?php
 // function fake() { $comment->fake(); }
 $text = 'function fakeString() {}';

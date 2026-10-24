@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { functionDocs, memberCalls, typeLabel, variableTypes } from '../shared/language/php-local-types';
+import { functionDocs, memberCalls, typeLabel, variableTypes } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-local-types';
 
-const probe = readFileSync('fixtures/php-intelligence/probe.php', 'utf8');
+const probe = readFileSync('tests/fixtures/projects/php-intelligence/probe.php', 'utf8');
 const at = (needle: string) => probe.indexOf(needle);
 
 test('C05: template identidade, união com null e new por alias', () => {

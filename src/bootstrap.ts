@@ -12,7 +12,14 @@ try {
  const api=window.ide;
  const native=await (await import('@tauri-apps/api/core')).invoke<any>('ide',{method:'nativeInfo',args:[]});
  async function workbench(){try{await (await import('./window-layout')).workbenchWindow();splash.style.display='grid';status.textContent=tr('Abrindo projeto…');const main=await import('./main');await main.ready;clearTimeout(slow);splash.remove();await reveal();}catch(error){failed(error);throw error;}}
+ const maintenance=await (await import('./app-maintenance')).mountAppMaintenance(api);
+ // Show the one-time setup before restoring a workspace; downloads are owned by Rust.
+ splash.style.display='none';clearTimeout(slow);await reveal();
+ const setupTask=maintenance.setup();
+ const firstRunChecks=native.smoke&&native.startupSmoke?await (await import('./startup-smoke')).firstRunSmoke():[];
+ await setupTask;
+ maintenance.start();
  const startup=await api.startupInfo();
  if(startup.project){await workbench();if(native.smoke)await (await import('./native-smoke')).nativeSmoke(native);}
- else {const welcome=await import('./welcome');await welcome.showWelcome(api,workbench);splash.style.display='none';clearTimeout(slow);await reveal();if(native.smoke&&native.startupSmoke)await (await import('./startup-smoke')).startupSmoke(native.startupSmoke);}
+ else {const welcome=await import('./welcome');await welcome.showWelcome(api,workbench);splash.style.display='none';clearTimeout(slow);await reveal();if(native.smoke&&native.startupSmoke)await (await import('./startup-smoke')).startupSmoke(native.startupSmoke,firstRunChecks);}
 } catch(error){failed(error);} finally{clearTimeout(slow);}

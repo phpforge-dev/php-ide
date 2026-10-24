@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { parseHierarchy, PhpHierarchy } from '../shared/language/php-hierarchy';
-import { methodFamily, methodImplementations } from '../shared/language/php-method-family';
+import { parseHierarchy, PhpHierarchy } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-hierarchy';
+import { methodFamily, methodImplementations } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-method-family';
 
-// Fixture v1 dos casos C03/C04/C06 (fixtures/php-intelligence/src).
-const dir = 'fixtures/php-intelligence/src';
+// Fixture v1 dos casos C03/C04/C06 (tests/fixtures/projects/php-intelligence/src).
+const dir = 'tests/fixtures/projects/php-intelligence/src';
 const index = new PhpHierarchy(readdirSync(dir).flatMap(name => parseHierarchy(readFileSync(`${dir}/${name}`, 'utf8'), `src/${name}`)));
 const names = (refs: { cls: { name: string } }[]) => refs.map(r => r.cls.name).sort();
 

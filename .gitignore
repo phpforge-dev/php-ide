@@ -11,7 +11,7 @@ src-tauri/target/
 .env
 .env.*
 !**/.env.example
-!fixtures/**/.env
-!fixtures/**/.env.*
+!tests/fixtures/projects/**/.env
+!tests/fixtures/projects/**/.env.*
 *.p12
 *.pfx

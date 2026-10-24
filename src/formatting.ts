@@ -1,20 +1,10 @@
 import * as monaco from 'monaco-editor';
-import PhpWorker from './php-format.worker.ts?worker';
 import {formatEdit} from '../shared/formatting/edits';
-import {readStyle,type Style} from '../shared/formatting/config';
 import type {IdeApi} from '../shared/contracts';
 import type {FormatRequest,FormatResult} from '../shared/language/plugins/api';
 import {keymap} from './keymap';
 import {t as tr} from './i18n';
 
-function php(request:FormatRequest,style:Style):Promise<FormatResult>{
- return new Promise((resolve,reject)=>{
-  const worker=new PhpWorker();const timer=setTimeout(()=>{worker.terminate();reject(Error(tr('PHP: formatação excedeu o limite de tempo.')));},4000);
-  const stop=()=>{clearTimeout(timer);worker.terminate();};
-  worker.onmessage=event=>{stop();if(event.data.error)reject(Error(event.data.error));else resolve({text:event.data.text});};
-  worker.onerror=event=>{event.preventDefault();stop();reject(Error(event.message));};worker.postMessage({...request,style});
- });
-}
 export function mountFormatting(editor:monaco.editor.IStandaloneCodeEditor,api:IdeApi,host:{path():string|undefined;status(text:string):void}){
  let busy=false;
  const run=async(whole=false)=>{
@@ -25,10 +15,7 @@ export function mountFormatting(editor:monaco.editor.IStandaloneCodeEditor,api:I
   busy=true;host.status(tr('Formatando código…'));
   try{
    let result:FormatResult|null;
-   if(request.language==='php'&&!path.endsWith('.blade.php')){
-    const style=await readStyle(path,async file=>{try{return(await api.read(file)).text;}catch{return null;}},request.options,text);
-    result=await php(request,style);
-   }else result=await api.formatDocument(request);
+   result=await api.formatDocument(request);
    if(model.isDisposed()||editor.getModel()!==model||model.getVersionId()!==version||host.path()!==path){host.status(tr('Formatação descartada: o documento foi alterado.'));return;}
    if(!result){host.status(tr('Nenhum formatador ativo para este arquivo. Instale ou ative um plugin em Aparência → Plugins.'));return;}
    const edit=formatEdit(text,result.text);

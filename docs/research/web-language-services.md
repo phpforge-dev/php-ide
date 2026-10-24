@@ -14,7 +14,7 @@ Autocomplete e diagnósticos funcionam no editor. F12, Cmd/Ctrl+B, Cmd/Ctrl+cliq
 
 ## Critérios e evidências
 
-Fixtures reproduzíveis em `fixtures/web-intelligence/`. `scripts/check-web-languages.mjs` executa os serviços reais em WebKit:
+Fixtures reproduzíveis em `tests/fixtures/projects/web-intelligence/`. `scripts/check-web-languages.mjs` executa os serviços reais em WebKit:
 
 1. JavaScript: completar propriedade tipada por JSDoc. TypeScript: completar propriedade importada de outro arquivo, navegar à declaração e apontar atribuição string → number.
 2. React: sugerir prop JSX tipada e apontar chamada incorreta ao setter inferido de useState.

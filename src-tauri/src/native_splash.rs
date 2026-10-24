@@ -88,6 +88,10 @@ fn reveal(app: &tauri::AppHandle) -> Result<(), String> {
     let window = app
         .get_webview_window("main")
         .ok_or("Missing main window")?;
+    // Window visibility and the embedded WebView visibility are independent.
+    // The startup window is created hidden; reveal both to resume rendering.
+    let webview: &tauri::Webview = window.as_ref();
+    webview.show().map_err(|e| e.to_string())?;
     window.show().map_err(|e| e.to_string())?;
     trace("main-visible");
     #[cfg(target_os = "macos")]

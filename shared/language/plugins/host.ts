@@ -88,8 +88,8 @@ export class PluginHost {
   for (const { plugin } of await this.serving(path)) {
    const result = await safe(() => plugin.completeCode?.(site, this.files));
    if (!result) continue;
-   const range = { start: position(text, result.from), end: position(text, offset) };
-   return { isIncomplete: false, items: result.items.map((item, index) => {
+   const range = { start: position(text, result.from), end: position(text, result.to ?? offset) };
+   return { isIncomplete: !!result.incomplete, items: result.items.map((item, index) => {
     const { insertText, ...rest } = item;
     return { ...rest, filterText: rest.label, sortText: String(index).padStart(5, '0'), textEdit: { newText: insertText ?? rest.label, range } };
    }) };

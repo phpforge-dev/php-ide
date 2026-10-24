@@ -8,7 +8,7 @@ import { join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { startPhpactor } from './php-lsp-client.mjs';
-import { parseHierarchy, PhpHierarchy, hierarchyMarkers, hoverClassName, adaptedMethod } from '../shared/language/php-hierarchy';
+import { parseHierarchy, PhpHierarchy, hierarchyMarkers, hoverClassName, adaptedMethod } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-hierarchy';
 import { analyze } from '../shared/language/php-source';
 
 type Expect = { def?: string[]; comp?: string; compAbsent?: string; hover?: string; impl?: string[] };

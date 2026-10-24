@@ -1,3 +1,9 @@
+Configuração inicial e atualizações (24/10/2026): [requisito próprio e implementação](../specs/first-run-and-updates.md). Seleção opcional na primeira abertura, fila em Rust e auto update desligado por padrão. Testes unitários e WebKit sintético são evidências próprias; janela Tauri e distribuição assinada seguem pendentes. Nenhuma promoção de compatibilidade.
+
+Extração paralela (24/10/2026): [12 repositórios próprios, contratos e limites de vinculação nativa](parallel-plugin-extraction.md). Contribuições de UI/semântica são opcionais; seis bibliotecas Rust externas são vinculadas estaticamente ao host. Aceitação Tauri completa em andamento; nenhuma família promovida por esta mudança arquitetural.
+
+Standalone PHP tools (23/10/2026): [Xdebug, Composer and PHPUnit/Pest extracted into separate plugin packages](native-tool-plugins.md). Native-tool lifecycle validation is separate from engine/version coverage; no compatibility family is promoted.
+
 # Catálogo inicial de funcionalidades — referência PhpStorm
 
 Plugins separados (23/10/2026): [instalação automática de pacotes fixados por commit/hash](../plugins/marketplace.md), sem cópias no fonte ou instalador da IDE. Cinco plugins padrão, download em segundo plano, erros recuperáveis e preservação de remoções/permissões. Requisito próprio; sem promoção comparativa.
@@ -19,6 +25,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-COMP-001 — Autocomplete contextual
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Completar membros alcançáveis no cursor.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
 - **Dependências:** Índice, tipos, visibilidade.
@@ -31,6 +39,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-DEF-001 — Go to Definition
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Localizar declaração do símbolo.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Resolver, ranges, aliases.
@@ -42,6 +52,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** equivalência não medida; a cobertura atual não satisfaz ainda o contrato completo desta família. Limitações da referência e plugins dependem de ensaio versionado.
 
 ## PHP-USE-001 — Find Usages
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Encontrar referências semânticas.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
@@ -58,6 +70,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-IMP-001 — Go to Implementation
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Navegar da abstração às implementações.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Hierarquia e dispatch.
@@ -72,6 +86,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-TYPE-001 — Inferência de tipos
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Propagar tipos por expressão e controle de fluxo.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
 - **Dependências:** AST, resolução, fluxo.
@@ -82,6 +98,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** `match` não é inferido (lacuna do Phpactor); equivalência não medida.
 
 ## PHP-IDX-001 — Indexação
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Descobrir e atualizar símbolos.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
@@ -97,6 +115,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-DOC-001 — PHPDoc
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Interpretar contratos documentados.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Parser PHPDoc, tipos.
@@ -107,6 +127,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** `@property` homônimo de método falha; conflito PHPDoc × tipo nativo não testado; equivalência não medida.
 
 ## PHP-GEN-001 — Generics
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Relacionar parâmetros de tipo e resultados.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
@@ -119,6 +141,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-TRAIT-001 — Traits
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Resolver métodos e adaptações.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Composição de símbolos.
@@ -129,6 +153,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** Mudança de visibilidade por `as` só parcial; equivalência não medida.
 
 ## PHP-INHERIT-001 — Herança
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Resolver membros herdados/sobrescritos.
 - **Prioridade / complexidade estimada:** P0 / Alta.
@@ -141,6 +167,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-IMPORT-001 — Autoimport
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Inserir imports válidos.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Resolver, edições e estilo.
@@ -151,6 +179,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** Sem autoimport ao colar e sem configuração de estilo; equivalência não medida.
 
 ## PHP-RENAME-001 — Rename Symbol
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Renomear símbolo e referências.
 - **Prioridade / complexidade estimada:** P0 / Muito alta.
@@ -163,6 +193,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## PHP-VENDOR-001 — Navegação em vendor
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Explorar dependências Composer.
 - **Prioridade / complexidade estimada:** P0 / Alta.
 - **Dependências:** Roots, autoload, índice.
@@ -173,6 +205,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** Exclusão configurável de vendor não implementada; equivalência não medida.
 
 ## PHP-NATIVE-001 — Funções/classes nativas
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Completar e documentar runtime PHP.
 - **Prioridade / complexidade estimada:** P0 / Alta.
@@ -289,6 +323,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## UI-TERM-001 — Terminal
 
+- **Extração arquitetural (24/10/2026):** Terminal; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Executar comandos no projeto.
 - **Prioridade / complexidade estimada:** P1 / Alta.
 - **Dependências:** PTY e processos.
@@ -361,6 +397,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** Sem outdated/audit/why e quick fixes; janela sem teste na janela Tauri real; equivalência não medida.
 
 ## TOOL-GIT-001 — Git
+
+- **Extração arquitetural (24/10/2026):** Git; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Revisar, selecionar e versionar mudanças com equivalência de fluxo ao PhpStorm: Commit, diff, changelists/staging, Log, branches, conflitos e remoto.
 - **Prioridade / complexidade estimada:** P1 / Alta; promovida por solicitação explícita do usuário, mantendo PHP como P0.
@@ -436,12 +474,14 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Prioridade / complexidade estimada:** P2 / Média.
 - **Dependências:** PLUGIN-API-001, UI-NAV-001.
 - **Comportamento observado:** layout padrão editor e prévia com três ícones na faixa das abas, destinos de links dobrados, ações e inspeções (OBS-MD-01…09, [recorte 14](implementation-slice-14.md)). Mermaid não é embutido: a referência oferece instalar o plugin JetBrains Mermaid. DOC: modos editor, dividido e prévia ([ajuda pública](https://www.jetbrains.com/help/phpstorm/markdown.html)).
-- **Evidência da implementação:** [recorte 14](implementation-slice-14.md), plugin `markdown`.
+- **Evidência da implementação:** [recorte 14](implementation-slice-14.md); [extração em plugin instalável](markdown-plugin.md), `phpforge.markdown` (IDE 0.2.12).
 - **Critérios de aceitação preliminares (REQ):** prévia ao vivo sem executar HTML do documento; links relativos e âncoras navegáveis; completion de caminhos/âncoras; imagens locais confinadas ao projeto.
 - **Estado de implementação:** Em desenvolvimento.
-- **Diferenças conhecidas:** âncoras no formato GitHub; Mermaid embutido e sempre ativo; destinos de links não dobrados no editor; sem HTML bruto, notas de rodapé, imagens remotas, destaque de código na prévia, exportação nem inspeções de formatação.
+- **Diferenças conhecidas:** âncoras no formato GitHub; Mermaid incluído no plugin opcional Markdown; destinos de links não dobrados no editor; sem HTML bruto, notas de rodapé, imagens remotas, destaque de código na prévia, exportação nem inspeções de formatação.
 
 ## PLUGIN-API-001 — Sistema de plugins
+
+- **Extração arquitetural (24/10/2026):** contratos de workers/workbench e contribuições opcionais; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Extensões que acrescentam navegação, completion e status por framework.
 - **Prioridade / complexidade estimada:** P1 / Alta.
@@ -454,6 +494,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## TOOL-SYMFONY-001 — Symfony
 
+- **Extração arquitetural (24/10/2026):** Symfony / Twig; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Assistência a serviços e templates.
 - **Prioridade / complexidade estimada:** P2 / Muito alta.
 - **Dependências:** Plugin/adapter, versão, PHP.
@@ -465,6 +507,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 
 ## TOOL-REFACTOR-001 — Refatorações adicionais
 
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição/propósito:** Transformar código preservando comportamento.
 - **Prioridade / complexidade estimada:** P2 / Muito alta.
 - **Dependências:** AST, tipos, edição transacional.
@@ -475,6 +519,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Diferenças conhecidas:** Sem detecção de duplicados, Inline Method e Change Signature; equivalência não medida.
 
 ## TOOL-INSPECT-001 — Inspeções
+
+- **Extração arquitetural (24/10/2026):** PHP intelligence; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição/propósito:** Detectar problemas e oferecer correções.
 - **Prioridade / complexidade estimada:** P2 / Muito alta.
@@ -494,6 +540,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 
 ## DB-PG-001 — PostgreSQL
 
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Integração PostgreSQL no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
 - **Evidências:** [recorte e fontes](implementation-slice-05.md).
@@ -506,6 +554,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Recorte 18:** diálogo de fontes de dados (abas, URL, SSL por modo, túnel SSH, schemas visíveis, somente leitura, script de inicialização) e fontes persistidas sem senha; integração real aprovada, sem comparação com a referência ([recorte 18](implementation-slice-18.md)).
 
 ## DB-MYSQL-001 — MySQL
+
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição:** Integração MySQL no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
@@ -520,6 +570,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 
 ## DB-MARIA-001 — MariaDB
 
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Integração MariaDB no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
 - **Evidências:** [recorte e fontes](implementation-slice-05.md).
@@ -532,6 +584,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 
 ## DB-ORACLE-001 — Oracle
 
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Integração Oracle no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
 - **Evidências:** [recorte e fontes](implementation-slice-01.md).
@@ -542,6 +596,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Diferenças conhecidas:** Sem TNS; TCPS não testado; sem somente leitura e cancelamento; `ALTER SESSION` não suportado pelo driver; erros podem chegar sem código ORA; sem oracle da referência.
 
 ## DB-MSSQL-001 — SQL Server
+
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição:** Integração SQL Server no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
@@ -554,6 +610,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 
 ## DB-REDIS-001 — Redis
 
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Integração Redis no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
 - **Evidências:** [recorte e fontes](implementation-slice-01.md).
@@ -564,6 +622,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Diferenças conhecidas:** Sem edição de stream, criação de chave pela prévia e valores binários; sem oracle da referência.
 
 ## DB-SQLITE-001 — SQLite
+
+- **Extração arquitetural (24/10/2026):** Database / SQL; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição:** Arquivo SQLite local como fonte de dados.
 - **Comportamento observado:** Sem oracle da referência.
@@ -576,6 +636,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 
 ## AI-CODEX-001 — Agente Codex
 
+- **Extração arquitetural (24/10/2026):** Agents; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Integração Agente Codex no painel de ferramentas.
 - **Comportamento observado:** Sem oracle completo da referência.
 - **Evidências:** [recorte e fontes](implementation-slice-01.md).
@@ -587,6 +649,8 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Recorte 17:** Codex passa a ser uma das opções do painel de agentes, em consulta somente leitura via app-server; CLI ausente nesta máquina, sem novo teste real ([recorte 17](implementation-slice-17.md)).
 
 ## AI-ACP-001 — Agentes de IA via ACP
+
+- **Extração arquitetural (24/10/2026):** Agents; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição:** Hospedar agentes externos (Claude, Gemini, Cursor…) pelo Agent Client Protocol, com a IDE atendendo arquivos e permissões.
 - **Comportamento observado:** AI Chat do PhpStorm lista agentes ACP (Claude Agent, Codex, Cursor, Gemini CLI, GitHub Copilot, Junie, registro ACP), contexto da IDE, anexos e alterações com Keep All/Discard All ([recorte 17](implementation-slice-17.md); sem enviar mensagens).
@@ -688,6 +752,8 @@ Estado: Implementada. Prioridade: alta. Complexidade: baixa/média; integração
 
 ## WEB-JSTS-001 — Inteligência JavaScript e TypeScript
 
+- **Extração arquitetural (24/10/2026):** Web Languages; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Autocomplete, diagnósticos e navegação entre arquivos JS/TS.
 - **Prioridade / complexidade:** P1 / Alta; React e Vue com a mesma prioridade por instrução explícita.
 - **Comportamento observado na referência:** não ensaiado neste recorte.
@@ -698,6 +764,8 @@ Estado: Implementada. Prioridade: alta. Complexidade: baixa/média; integração
 
 ## WEB-REACT-001 — React JSX/TSX
 
+- **Extração arquitetural (24/10/2026):** Web Languages; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Descrição:** Props JSX e inferência de hooks via declarações oficiais.
 - **Prioridade / complexidade:** P1 / Alta; React e Vue com a mesma prioridade por instrução explícita.
 - **Comportamento observado na referência:** não ensaiado neste recorte.
@@ -707,6 +775,8 @@ Estado: Implementada. Prioridade: alta. Complexidade: baixa/média; integração
 - **Diferenças conhecidas:** opções TS fixas, limites de snapshots/dependências; sem marketplace de plugins ou equivalência validada. Ver limites no documento vinculado.
 
 ## WEB-VUE-001 — Vue SFC
+
+- **Extração arquitetural (24/10/2026):** Web Languages; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
 
 - **Descrição:** Serviço Vue 3 para template HTML e script setup.
 - **Prioridade / complexidade:** P1 / Alta; React e Vue com a mesma prioridade por instrução explícita.
@@ -756,6 +826,8 @@ WEB-VUE-001 e WEB-REACT-001: serviços já incluídos/habilitados agora aparecem
 
 ## CODE-FORMAT-001 — Formatação (recorte 0.2.10)
 
+- **Extração arquitetural (24/10/2026):** PHP Formatter para PHP; Prettier mantém seu pacote separado; [propriedade, contratos e evidências](parallel-plugin-extraction.md). Estados e limitações comparativas desta família permanecem inalterados.
+
 - **Prioridade / complexidade:** P1 / Alta.
 - **Propósito:** reformatar buffer/seleção com undo, estilo por projeto e falhas recuperáveis.
 - **Estado:** Em desenvolvimento; recorte implementado, comparação pendente.
@@ -781,3 +853,13 @@ Validação aprovada: `npm run typecheck`, `npm run test:locales`, `npm test -- 
 
 
 Resultado nativo: build web e binário Rust compilados; o roteiro `node scripts/check-native.mjs --production-ui --no-db --image-only` passou na janela Tauri real, com PNG, tamanho original/zoom, fundo de transparência, recarga, erro de arquivo inválido e retorno ao texto editável. Relatório isolado: `.artifacts/image-preview-native.json`; o runner exige a presença do cenário `Imagem:` para evitar aprovação por relatório de outra suíte. `.artifacts/image-preview-webkit.json` registra os cenários isolados do frontend. Nenhuma chamada de inferência real ou banco real foi usada nesta validação. Os outros codecs têm transporte testado, sem validação visual nativa individual.
+
+## Organização das fixtures — 23/10/2026
+
+Os projetos sintéticos antes em `fixtures/` na raiz ficam em `tests/fixtures/projects/`. Scripts, testes e a origem dos recursos Tauri acompanham o novo caminho; o destino no pacote continua `fixtures/`. Caminhos antigos nos recortes históricos registram a localização da época. Esta reorganização não amplia evidência de compatibilidade.
+
+Validação da reorganização: typecheck aprovado; testes TypeScript 169 aprovados e 1 ignorado; Rust 66 aprovados e 3 ignorados. `npm run test:native -- --no-db` compilou e abriu a janela com as fixtures no novo caminho, mas o roteiro completo falhou em branches (commit/stash), navegação/referências (`getModel`) e CodeLens de testes ausente. Esses resultados não comprovam aprovação integral da UI nem compatibilidade comparativa.
+
+## SQL intelligence — SPEC-14
+
+Independent implementation: `dt-sql-parser` 4.5.1 in a local worker, eagerly prepared active-session metadata, explicit file bindings, schema/search-path resolution, aliases, CTE/projection/derived scopes, correlation and bounded completion. PostgreSQL 16, MySQL 8.4 and MariaDB 11.4 passed native Tauri checks for real suggestions, first-character popup, Enter/Tab/undo, DDL refresh, connection isolation, PHP/Blade and project close. Large synthetic catalogs were measured separately. SQLite, SQL Server 2022 and Oracle Free 23 now have independent active-session catalogs and bounded dialect rules, with native Tauri checks for real tables/views/columns, quoting, CTEs, derived scopes, popup/keyboard and DDL refresh. SQLite also checks attached/temp namespaces and generated columns. SQL Server checks TOP/APPLY, actual case-sensitive collation and USE context switching; Oracle checks uppercase/exact quoted names and metadata beyond 100 columns. These three use GenericSQL plus explicit rules, not full vendor grammars; SQL Server temp tables/TVFs/synonyms and Oracle synonyms/PLSQL declarations remain outside this slice. Redis is outside SQL. Dynamic PHP SQL, general expression type inference, total application memory and cross-platform validation remain limited. No family is promoted to compatible. [Implementation, results and limits](sql-intelligence.md); [prospective specification](../specs/14-sql-intelligence.md).

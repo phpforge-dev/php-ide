@@ -65,3 +65,6 @@ Continuação Git: [observações e contrato](phpstorm-git.md), [recorte 03 impl
 [Search Everywhere fechado cobria o editor (Cmd+clique): recorte 35](implementation-slice-35.md).
 [Referência visual PhpStorm 2026.1 (23/10/2026)](phpstorm-reference-2026-10-23.md).
 [Passagem de trabalho de 23/10/2026: estado e próximos passos](handoff-2026-10-23.md).
+[Connection-aware SQL intelligence — SPEC-14: implementation, native acceptance and limits](sql-intelligence.md).
+
+- [Markdown como plugin independente](markdown-plugin.md): extração e validação de implementação, sem promoção comparativa.

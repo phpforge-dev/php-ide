@@ -9,7 +9,7 @@ try {
  browser=process.argv.includes('--webkit')?await webkit.launch({headless:true}):await chromium.launch({headless:true,channel:'chrome'}); const page=await browser.newPage({viewport:{width:1440,height:940},deviceScaleFactor:1});
  await page.emulateMedia({colorScheme:'dark'});
  page.on('pageerror',e=>console.log('PAGE ERROR',String(e)));page.setDefaultTimeout(12000);
- const text=await readFile('fixtures/php-intelligence/probe.php','utf8');
+ const text=await readFile('tests/fixtures/projects/php-intelligence/probe.php','utf8');
  await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:`
  const file={path:'probe.php',uri:'file:///fixture/probe.php',text:${JSON.stringify(text.replace('$user->label();','$user->label(); // local change'))},etag:'preview'};
  window.ide = new Proxy({}, {get:(_,method)=> {

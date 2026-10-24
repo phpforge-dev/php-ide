@@ -1,12 +1,20 @@
 [package]
 name = "php-ide"
-version = "0.2.10"
+version = "0.2.13"
 edition = "2021"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 [dependencies]
+phpforge-database = { git = "https://github.com/phpforge-dev/plugin-database", rev = "b5e78bfb10144868be039e2b114ff514bc5d7b5b" }
+phpforge-agents = { git = "https://github.com/phpforge-dev/plugin-agents", rev = "1ccbf7c7018b236a47cb79a7c2f4fe6ef9e15826" }
+phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "7e55bfbc0ec9079a18a8ef89f3d8764ba0d36035" }
+phpforge-terminal = { git = "https://github.com/phpforge-dev/plugin-terminal", rev = "5eba8143d583efe66dd0a02cffce710413817c68" }
+phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "1a1f3bf3840f3ddc4160f035faf24dc19e1abb4a" }
+phpforge-php-intelligence = { git = "https://github.com/phpforge-dev/plugin-php-intelligence", rev = "eb922ddd4299b2ab52fe9877de9c93b7c3502c86" }
 dunce = "1"
+libc = "0.2"
 tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
@@ -14,19 +22,11 @@ sha2 = "0.10"
 uuid = { version = "1", features = ["v4"] }
 url = "2"
 regex = "1"
-portable-pty = "0.9"
 rfd = "0.15"
 walkdir = "2"
 notify = "8"
-futures-util = "0.3"
 chrono = "0.4"
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring-native-roots", "postgres", "mysql", "sqlite", "json", "chrono", "uuid"] }
-tiberius = { version = "0.12", default-features = false, features = ["tds73", "rustls", "chrono"] }
-tokio-util = { version = "0.7", features = ["compat"] }
 flate2 = "1"
-redis = { version = "0.27", default-features = false, features = ["tokio-comp", "tokio-rustls-comp", "tls-rustls-insecure"] }
-oracle-rs = "0.1.7"
-rustls = { version = "0.23", default-features = false, features = ["ring"] }
 tempfile = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]

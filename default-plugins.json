@@ -3,7 +3,7 @@
     "plugin": {
       "id": "phpforge.laravel",
       "name": "Laravel",
-      "description": "Rotas, views, Blade, configurações, traduções e Eloquent para Laravel.",
+      "description": "Rotas, views, Blade, configura\u00e7\u00f5es, tradu\u00e7\u00f5es e Eloquent para Laravel.",
       "author": "Jeidison Farias",
       "version": "1.0.0",
       "minIdeVersion": "0.2.9",
@@ -19,7 +19,7 @@
     "plugin": {
       "id": "phpforge.dotenv",
       "name": ".env",
-      "description": "Sugestões e navegação em variáveis de ambiente.",
+      "description": "Sugest\u00f5es e navega\u00e7\u00e3o em vari\u00e1veis de ambiente.",
       "author": "Jeidison Farias",
       "version": "1.0.0",
       "minIdeVersion": "0.2.9",
@@ -35,7 +35,7 @@
     "plugin": {
       "id": "phpforge.docker",
       "name": "Docker",
-      "description": "Sugestões, navegação e diagnósticos para Dockerfile e Compose.",
+      "description": "Sugest\u00f5es, navega\u00e7\u00e3o e diagn\u00f3sticos para Dockerfile e Compose.",
       "author": "Jeidison Farias",
       "version": "1.0.0",
       "minIdeVersion": "0.2.9",
@@ -51,7 +51,7 @@
     "plugin": {
       "id": "phpforge.bash",
       "name": "Bash",
-      "description": "Sugestões e navegação em funções e variáveis Bash.",
+      "description": "Sugest\u00f5es e navega\u00e7\u00e3o em fun\u00e7\u00f5es e vari\u00e1veis Bash.",
       "author": "Jeidison Farias",
       "version": "1.0.0",
       "minIdeVersion": "0.2.9",
@@ -67,7 +67,7 @@
     "plugin": {
       "id": "phpforge.prettier",
       "name": "Prettier",
-      "description": "Formatador Prettier offline para JavaScript, TypeScript, Vue, JSON, HTML, CSS, SCSS, Markdown e YAML. Lê configurações JSON/YAML do projeto; PHP usa o formatador próprio da IDE.",
+      "description": "Formatador Prettier offline para JavaScript, TypeScript, Vue, JSON, HTML, CSS, SCSS, Markdown e YAML. L\u00ea configura\u00e7\u00f5es JSON/YAML do projeto; PHP usa o formatador pr\u00f3prio da IDE.",
       "author": "Jeidison Farias",
       "version": "1.0.1",
       "minIdeVersion": "0.2.10",
@@ -77,6 +77,285 @@
     "sha256": "8718109b69e67e67629cdb190fe8537d46cacad14b9e7507784bb406b1e865bc",
     "permissions": [
       "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.php-debugger",
+      "name": "PHP Debugger / Xdebug",
+      "description": "PHP Debugger / Xdebug: separate Rust tool service and workbench integration.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.11",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-php-debugger",
+      "revision": "53b3c3361434b68821ddc4d247a9ebafc304d878"
+    },
+    "sha256": "2188fa7e25b77d32b4527b52073700eea0eca161e571d2688ca9d7518791936a",
+    "permissions": [
+      "project.read",
+      "native.tool",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.composer",
+      "name": "Composer",
+      "description": "Composer: separate Rust tool service and workbench integration.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.11",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-composer",
+      "revision": "08793150cc239a0f26b5646f681f3d0dfe0dfab1"
+    },
+    "sha256": "10893b3f8469a65e4290df8b723c7064cb1b8b91eedc03c9ff940312892e2b43",
+    "permissions": [
+      "project.read",
+      "native.tool",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.php-tests",
+      "name": "PHPUnit / Pest",
+      "description": "PHPUnit / Pest: separate Rust tool service and workbench integration.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.11",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-php-tests",
+      "revision": "9e36c458021bcbcc09a7d47b5cffb49fcbf838c2"
+    },
+    "sha256": "a4f701ecfcb35a774435b591688964992265a2e633bdb91343728006b8748347",
+    "permissions": [
+      "project.read",
+      "native.tool",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.markdown",
+      "name": "Markdown",
+      "description": "Markdown navigation, completion, diagnostics, outline and live preview with Mermaid diagrams.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.12",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-markdown",
+      "revision": "90f73aeef32e04bf95c11c62941370f2ded522d3"
+    },
+    "sha256": "ecd1d28b6c20f08fc9e37baa72e3d5b342c14c21ec0c66367cc3b6d70c814143",
+    "permissions": [
+      "project.read",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.symfony",
+      "name": "Symfony / Twig",
+      "description": "Symfony routes, Twig templates, services, parameters and environment references.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-symfony",
+      "revision": "e0ad443b104075bddc13621e91d707b394a99c7f"
+    },
+    "sha256": "4471acb223c98f299e6b6969bf947862454e97692b1d2e643b1e0a5d0c1a8e16",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.ignore",
+      "name": "Ignore files",
+      "description": "Project path and common pattern completion for ignore files.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-ignore",
+      "revision": "4fc9a2f77526db969c48e4e96754ea168428382e"
+    },
+    "sha256": "f0094c2440d46db0d062d149d69aa12331a727ddb7f2bb66a196e54aad3b66f1",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.svg-preview",
+      "name": "SVG Preview",
+      "description": "Live SVG source preview, zoom, backgrounds and recoverable XML errors.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-svg-preview",
+      "revision": "aaa5ac3d9576e9cbbc1ae914d0b23e1b5971b961"
+    },
+    "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
+    "permissions": [
+      "project.read",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.image-preview",
+      "name": "Image Preview",
+      "description": "Image viewing, zoom, transparency backgrounds and disk reload.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-image-preview",
+      "revision": "88a6cd698c0b8e25e53f0d9dbaa7cb39169b83d7"
+    },
+    "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
+    "permissions": [
+      "project.read",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.php-intelligence",
+      "name": "PHP Intelligence",
+      "description": "PHP semantic navigation, local types, hierarchy, inspections and refactorings.",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-php-intelligence",
+      "revision": "34075e092a76fdf4c6bed77dfae50c02a0ab8c7b"
+    },
+    "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
+    "permissions": [
+      "project.read",
+      "project.write",
+      "process",
+      "workbench"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.docker-services",
+      "name": "Docker Services",
+      "description": "docker-services workbench integration with explicit host services.",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-docker-services",
+      "revision": "0de570e1e61b980c9c67f718269ff25379982731"
+    },
+    "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
+    "permissions": [
+      "project.read",
+      "workbench",
+      "process"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.terminal",
+      "name": "Terminal",
+      "description": "terminal workbench integration with explicit host services.",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-terminal",
+      "revision": "bbdf64de5d3f1e9e31c17753a239555734841f1d"
+    },
+    "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
+    "permissions": [
+      "project.read",
+      "workbench",
+      "process"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.git",
+      "name": "Git",
+      "description": "git workbench integration with explicit host services.",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-git",
+      "revision": "7277252ab6ed9cf7f59aae54efd2acfafe38dca9"
+    },
+    "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
+    "permissions": [
+      "project.read",
+      "workbench",
+      "process"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.agents",
+      "name": "Agents",
+      "description": "agents workbench integration with explicit host services.",
+      "version": "1.0.1",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-agents",
+      "revision": "e6236905963b6341d4f6033862847a00a68843f6"
+    },
+    "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
+    "permissions": [
+      "project.read",
+      "workbench",
+      "process"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.php-formatter",
+      "name": "PHP Formatter",
+      "description": "Independent PHP whitespace formatter with EditorConfig, safe selection formatting and syntax preservation.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-php-formatter",
+      "revision": "a7c24002fe9e058fb0b12e6ee3182792ffd7ad5c"
+    },
+    "sha256": "4f1251c448e79ae81c764d8514f4456f3ca13dc78203e7e5dbcb895436bbfdc2",
+    "permissions": [
+      "project.read"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.database",
+      "name": "Database / SQL",
+      "description": "Database explorer, SQL console, SQL intelligence and database driver service.",
+      "version": "1.0.3",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-database",
+      "revision": "28b63bfad6537a9af2954232cb9a0e1883ed838a"
+    },
+    "sha256": "aa880c83c86e16690b823dcce098724874a4f14caa5ca606231abb133a6959af",
+    "permissions": [
+      "project.read",
+      "workbench",
+      "network"
+    ]
+  },
+  {
+    "plugin": {
+      "id": "phpforge.web-languages",
+      "name": "Web Languages",
+      "description": "JavaScript, TypeScript, React and Vue language intelligence with offline framework types.",
+      "version": "1.0.0",
+      "minIdeVersion": "0.2.13",
+      "author": "Jeidison Farias",
+      "repository": "https://github.com/phpforge-dev/plugin-web-languages",
+      "revision": "32a3fd83012da48d7a8f5def950a79b3f517cc79"
+    },
+    "sha256": "709f301533ef540b1b561f243cd4230b2a8dcefc2248946bbe29b0ba0ec2c8c8",
+    "permissions": [
+      "project.read",
+      "workbench"
     ]
   }
 ]

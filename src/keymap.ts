@@ -157,7 +157,7 @@ export class Keymap {
   return () => { if (this.specs.get(spec.id) === spec) { this.specs.delete(spec.id); this.emit(); } };
  }
  /** Contexto nomeado; o predicado recebe o elemento focado. Contextos específicos vencem 'global'. */
- defineContext(name: string, matches: (target: Element | null) => boolean) { this.contexts.set(name, matches); }
+ defineContext(name: string, matches: (target: Element | null) => boolean) { const previous=this.contexts.get(name);this.contexts.set(name, matches);return()=>{if(this.contexts.get(name)===matches){if(previous)this.contexts.set(name,previous);else this.contexts.delete(name);}}; }
  action(id: string) { return this.specs.get(id); }
  actions(): ActionSpec[] { return [...this.specs.values()]; }
  onChange(listener: () => void): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }

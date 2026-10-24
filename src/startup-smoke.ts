@@ -2,9 +2,22 @@ import * as monaco from 'monaco-editor';
 import {getCurrentWindow} from '@tauri-apps/api/window';
 import {invoke} from '@tauri-apps/api/core';
 import {showWelcome} from './welcome';
-export async function startupSmoke(parent:string){
+export async function firstRunSmoke():Promise<string[]>{
+ const root=document.getElementById('first-run-plugins');if(!root)return [];
+ for(const key of ['autoUpdatePlugins','autoUpdateIde'])if(root.querySelector<HTMLInputElement>(`input[data-preference="${key}"]`)!.checked)throw Error('First-run automation must default to off');
+ root.querySelector<HTMLButtonElement>('.maintenance-setup-tools button:first-of-type')!.click();
+ if(!root.querySelector('input[data-plugin]:checked'))throw Error('PHP essentials preset did not select any plugins');
+ root.querySelector<HTMLButtonElement>('.maintenance-setup-tools button:last-of-type')!.click();
+ document.getElementById('setup-continue')!.click();
+ const end=Date.now()+15000;while(document.getElementById('first-run-plugins')){if(Date.now()>end)throw Error('First-run continue did not finish');await new Promise(r=>setTimeout(r,40));}
+ const state=await invoke<any>('ide',{method:'appMaintenanceState',args:[]});
+ if(!state.preferences.setupComplete||state.jobs.length)throw Error('First-run did not persist or installed unselected plugins');
+ await invoke('ide',{method:'appMaintenancePreferences',args:[{checkUpdates:false}]});
+ return ['First run: automatic updates off, PHP essentials selection and clear','First run: continue without plugins persists completion without downloads'];
+}
+export async function startupSmoke(parent:string,initialChecks:string[]=[]){
  const previousLocale=localStorage.getItem('php-ide-language');
- const checks:string[]=[];const failures:string[]=[];const api=window.ide;let opened=0;
+ const checks:string[]=[...initialChecks];const failures:string[]=[];const api=window.ide;let opened=0;
  const assert=(value:unknown,message:string)=>{if(!value)throw Error(message);};
  const wait=async(test:()=>boolean)=>{const start=Date.now();while(!test()){if(Date.now()-start>15000)throw Error('Timeout na tela inicial');await new Promise(r=>setTimeout(r,50));}};
  const click=(selector:string)=>{const button=document.querySelector<HTMLButtonElement>(selector);assert(button,'Botão ausente: '+selector);button!.click();};

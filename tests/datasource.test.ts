@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildUrl, defaultName, newSource, normalizeSource, parseUrl, toInput, validateSource } from '../shared/datasource';
+import { buildUrl, defaultName, newSource, normalizeSource, parseUrl, toInput, validateSource } from '../.tools/plugin-packages/database/shared/datasource';
 
 test('nova fonte usa padrões do driver', () => {
   const pg = newSource('postgres', 'a');

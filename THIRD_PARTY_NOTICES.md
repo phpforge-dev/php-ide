@@ -1,6 +1,6 @@
 # Componentes de terceiros
 
-A base ativa usa Tauri 2/Rust, WebView do sistema, Monaco, xterm.js, portable-pty, SQLx, Tokio e demais crates do Cargo.lock. Cada dependência mantém sua própria licença e avisos; esses arquivos devem acompanhar a distribuição. O código próprio usa MIT. Os adaptadores/CLIs externos têm licenças e requisitos próprios.
+A base ativa usa Tauri 2/Rust, WebView do sistema, Monaco e Tokio. Os plugins externos incluem suas próprias dependências, como xterm.js, portable-pty e SQLx; os backends Rust vinculados à IDE continuam registrados no Cargo.lock. Cada dependência mantém sua própria licença e avisos; esses arquivos devem acompanhar a distribuição. O código próprio usa MIT. Os adaptadores/CLIs externos têm licenças e requisitos próprios.
 
 A implementação Electron e suas dependências exclusivas foram removidas do fonte ativo. Seu registro histórico permanece no Git. Os avisos abaixo descrevem componentes utilizados ou referências documentais identificadas explicitamente.
 
@@ -8,7 +8,7 @@ A implementação Electron e suas dependências exclusivas foram removidas do fo
 - Phpactor: MIT. PHAR baixado separadamente pelo setup, versão 2026.10.07.0; SHA-256 `b28bf6166e016d539fc2f2aec18ef918b12590e436a6f1ccbdf30b5bbdbdb16b`. O artefato distribuído recebe a correção local MIT `function-query-missing-record-v1` para verificar registro nulo antes de consultar referências. `scripts/patch-phpactor.php` valida a origem e registra o hash final em `phpactor.phar.patch.json`, incluído no pacote. Dependências internas do PHAR mantêm seus avisos.
 - @xterm/xterm e @xterm/addon-fit: MIT; avisos e licenças dos pacotes devem acompanhar a distribuição.
 - Codex CLI: executável externo instalado/autenticado pelo usuário; não redistribuído por este projeto. Uso do serviço depende da conta do usuário.
-- Mermaid 11.17.2: MIT; carregado sob demanda pela prévia Markdown. Traz dependências próprias (DOMPurify, d3, dagre, KaTeX, entre outras) com licenças MIT/BSD/Apache/MPL listadas em package-lock.json. `npm audit` em 22/10/2026 aponta aviso de severidade baixa no KaTeX (GHSA-238p-pmpm-9mq7), corrigido só na série 12.
+- Mermaid 11.17.2 and its bundled dependency notices now belong to the separately installed [Markdown plugin](https://github.com/phpforge-dev/plugin-markdown/tree/main/licenses); Mermaid is no longer a core dependency.
 - Plugin Pest para IntelliJ/PhpStorm (`JetBrains/pest-intellij`, antes `pestphp/pest-intellij`): MIT, copyright Oliver Nybroe. Usado só como referência de escopo pelo README/CHANGELOG públicos ([recorte 15](docs/research/implementation-slice-15.md)); nenhum código ou asset foi copiado ou distribuído, então não há aviso de licença a reproduzir. PHPUnit e Pest não são distribuídos: a IDE executa os binários instalados pelo Composer no projeto do usuário.
 - Imagens Docker: ferramentas externas de desenvolvimento/teste, não incorporadas ao código da IDE.
 
@@ -17,7 +17,7 @@ PhpStorm é produto/marca JetBrains. Nenhum componente proprietário, asset visu
 
 ## jsdiff / diff 9.0.0
 
-https://github.com/kpdecker/jsdiff — usado no diff de linhas do editor.
+https://github.com/kpdecker/jsdiff — usado pelo plugin Git no diff de linhas do editor; o pacote preserva a licença BSD-3-Clause abaixo.
 
 ```text
 BSD 3-Clause License
@@ -66,7 +66,7 @@ Os badges PHP de classe, interface, trait e enum em src/assets/original-icons/ph
 
 ## Browser language services
 
-The JavaScript/TypeScript and Vue workers bundle TypeScript 5.9.3 (Apache-2.0), Volar 2.4.28 (MIT), Vue language tools 3.3.13 (MIT), Vue 3.5.44 declarations (MIT), and React 19.2.2 declarations from DefinitelyTyped (MIT). They use actual published open-source packages, independent of JetBrains products. Dependency licenses, notices and version manifest are retained under `licenses/web-language-services/` and shipped in the application resources. The collection also preserves licenses from the installed dependency closure; inclusion of a notice does not mean that dependency executes in the renderer.
+The separately installed [Web Languages plugin](https://github.com/phpforge-dev/plugin-web-languages) owns the JavaScript/TypeScript and Vue workers. They bundle TypeScript 5.9.3 (Apache-2.0), Volar 2.4.28 (MIT), Vue language tools 3.3.13 (MIT), Vue 3.5.44 declarations (MIT), and React 19.2.2 declarations from DefinitelyTyped (MIT). They use actual published open-source packages, independent of JetBrains products. Dependency licenses, notices and version manifest are retained under `licenses/web-language-services/` and shipped in the application resources. The collection also preserves licenses from the installed dependency closure; inclusion of a notice does not mean that dependency executes in the renderer.
 
 ## Fontes Inter 4 e JetBrains Mono (SIL OFL 1.1)
 
@@ -103,4 +103,11 @@ Laravel, DotEnv, Docker, Bash e Prettier são pacotes mantidos em repositórios 
 
 ## Formatting
 
-The independent PHP whitespace printer uses php-parser 3.7.0 (Glayzzle, BSD-3-Clause) for syntax/token validation, not for formatting rules. Its license is retained in licenses/formatting and shipped in application resources. The separately installable Prettier plugin bundles the versions recorded in the plugin repository’s versions.json; Prettier, YAML and ignore licenses accompany that package. No JetBrains PHP formatter implementation is included.
+The separately installed [PHP Formatter plugin](https://github.com/phpforge-dev/plugin-php-formatter) owns the independent PHP whitespace printer. It uses php-parser 3.7.0 (Glayzzle, BSD-3-Clause) for syntax/token validation, not for formatting rules. Its license is retained in licenses/formatting and shipped in application resources. The separately installable Prettier plugin bundles the versions recorded in the plugin repository’s versions.json; Prettier, YAML and ignore licenses accompany that package. No JetBrains PHP formatter implementation is included.
+# SQL intelligence
+
+The separately installed [Database plugin](https://github.com/phpforge-dev/plugin-database) owns SQL parsing, cursor suggestions and metadata resolution. It uses dt-sql-parser 4.5.1 (MIT), with antlr4-c3 3.3.7 (MIT) and antlr4ng 2.0.11 (BSD-3-Clause). Copyright/license texts are retained in `licenses/sql-intelligence/` and included in the application. SQL semantic resolution and database metadata integration are original plugin code. No proprietary SQL engine or completion component is included.
+
+## External feature packages (IDE 0.2.13)
+
+The twelve extracted packages retain their own source licenses and bundled dependency notices in their public repositories, listed in [the extraction record](docs/research/parallel-plugin-extraction.md). Older license collections retained in this host are supplementary notices. Git, terminal, Docker Services, agents, database and PHP intelligence supply pinned Rust libraries linked into the host build; their transitive dependency licenses still apply to the distributed binary. JavaScript UI/worker packages are downloaded separately with their licenses.

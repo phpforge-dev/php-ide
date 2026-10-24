@@ -31,13 +31,14 @@ O [repositório de catálogo](https://github.com/phpforge-dev/plugins) contém `
 - [Dockerfile e Compose](https://github.com/phpforge-dev/plugin-docker)
 - [Bash](https://github.com/phpforge-dev/plugin-bash)
 - [Prettier](https://github.com/phpforge-dev/plugin-prettier)
+- [Markdown e Mermaid](https://github.com/phpforge-dev/plugin-markdown)
 - [TODO Hints](https://github.com/phpforge-dev/plugin-todo-hints)
 
-Laravel, .env, Docker, Bash e Prettier são baixados automaticamente dos seus repositórios na primeira abertura de um projeto. A IDE mantém apenas metadados em `default-plugins.json`: commit, versão, SHA-256 do JavaScript e permissões de leitura autorizadas. Os downloads acontecem em segundo plano, sem bloquear a abertura. A barra de plugins mostra o pacote em instalação; em Aparência → Plugins aparecem falhas e **Tentar novamente**. A primeira instalação precisa de internet e Git; após instalada, funciona offline.
+Na primeira abertura de um perfil novo, a tela inicial permite escolher os plugins e revisar suas permissões. Apenas os selecionados entram na fila Rust de instalação em segundo plano. É possível continuar para a IDE sem esperar, acompanhar progresso e repetir falhas. A escolha fica concluída por perfil e não é repetida a cada projeto. Perfis existentes preservam as instalações e decisões anteriores.
 
-É possível revogar permissões, desativar ou remover esses pacotes; a instalação automática respeita essas decisões. Instalações antigas preservam também as remoções dos quatro pacotes anteriores. Pacotes já instalados não são sobrescritos automaticamente; atualizações continuam pelo Marketplace. Uma falha deixa o pacote pendente para tentar novamente.
+As atualizações automáticas de plugins e da IDE são independentes e desativadas por padrão. A IDE verifica versões e mostra avisos; só baixa atualizações automaticamente após opção explícita. Atualizações de plugins ficam preparadas para a próxima abertura, e novas permissões exigem revisão. A IDE só instala pacotes assinados e respeita arquivos não salvos antes de reiniciar. Veja [fluxo e distribuição](../specs/first-run-and-updates.md).
 
-A sintaxe e a detecção dos tipos de arquivo continuam na IDE, assim como os serviços nativos de bancos, terminal e Docker. Vue/React, Composer, Symfony, Markdown, ignore e o executor de testes ainda têm integrações internas. Esta migração separa os quatro pacotes acima; não transforma todos os serviços da aplicação em extensões.
+A sintaxe e a detecção dos tipos de arquivo continuam na IDE, assim como os serviços nativos de bancos, terminal e Docker. Symfony/Twig, ignore, prévias SVG/imagens, formatação PHP, linguagens web, inteligência PHP, Git, terminal, Docker Services, agentes e bancos/SQL têm pacotes próprios a partir de 0.2.13. Em 0.2.12+, Markdown e Mermaid estão no pacote `phpforge.markdown`, incluindo a prévia; sua ativação pede `project.read` e `workbench`, sem ferramenta nativa. Em 0.2.11+, Composer, PHP/Xdebug e PHPUnit/Pest passam a pacotes nativos separados, com consentimento próprio para executar ferramenta e interface. Essas extrações não transformam todos os serviços da aplicação em extensões.
 
 ## Manter o catálogo
 
@@ -57,7 +58,7 @@ Na validação local em macOS, os dois caminhos de instalação do TODO Hints pa
 
 ## Build e testes dos pacotes separados
 
-O build da aplicação não incorpora código desses plugins nem precisa baixá-los. `npm run setup:plugins` usa `default-plugins.json` e `test-plugins.json` para preparar dependências de teste em `.tools/plugin-packages/` (ignorado pelo Git), conferindo commit, ID, versão e hash. Typecheck e testes unitários fazem essa preparação automaticamente; o cache permite repeti-los offline. Para alterar um plugin, use seu próprio repositório, publique o pacote pronto e atualize o catálogo e os metadados fixados da IDE. Não execute builds de plugins como parte da instalação.
+O build web não incorpora os bundles de interface desses plugins. O build Rust de 0.2.13 busca e compila seis bibliotecas nativas dos repositórios de plugins, com revisões fixadas em Cargo.toml/Cargo.lock; atualizar essas bibliotecas exige recompilar a IDE. Os bundles instaláveis de interface continuam separados. `npm run setup:plugins` usa `default-plugins.json` e `test-plugins.json` para preparar dependências de teste em `.tools/plugin-packages/` (ignorado pelo Git), conferindo commit, ID, versão e hash. Typecheck e testes unitários fazem essa preparação automaticamente; o cache permite repeti-los offline. Para alterar um plugin, use seu próprio repositório, publique o pacote pronto e atualize o catálogo e os metadados fixados da IDE. Não execute builds de plugins como parte da instalação.
 
 O teste `npm run test:plugins:native` usa um perfil descartável e exercita a instalação automática pelos repositórios reais; a primeira instalação requer rede. O teste de formatação também pode usar o pacote fixado no cache, instalado pela IPC real. A validação da integração não promove equivalência com PhpStorm.
 
@@ -68,3 +69,11 @@ Para executar testes nativos em paralelo, use `PHP_IDE_NATIVE_PORT` (somente deb
 Validação própria em macOS: `--plugins-only` confirmou os cinco pacotes baixados, origem fixada, permissões e workers ativos; `--format-only` confirmou PHP, Prettier, configuração, seleção, undo e erros recuperáveis na janela Tauri. `test:plugins:ui` confirmou primeira pintura independente do download, progresso, falha de conexão e recuperação pelo botão de repetição. Essas evidências não validam Windows/Linux nem equivalência com PhpStorm.
 
 Verificação final do recorte: typecheck, 143 testes TypeScript (1 ignorado), 78 testes Rust (5 ignorados), Clippy com warnings como erros, arquitetura e traduções aprovados. O build web e os roteiros Tauri de instalação dos cinco padrões e formatação passaram.
+
+## Native PHP tools (0.2.11+)
+
+The catalog also lists [PHP/Xdebug](https://github.com/phpforge-dev/plugin-php-debugger), [Composer](https://github.com/phpforge-dev/plugin-composer) and [PHPUnit/Pest](https://github.com/phpforge-dev/plugin-php-tests). Their prebuilt Rust executables are selected by OS/architecture and verified against the package manifest. No build commands run during installation. Default download does not grant native/UI permissions. These packages require the new IDE host; older releases must be updated first.
+
+## Extrações da IDE 0.2.13
+
+As doze novas extrações e seus repositórios estão em [parallel-plugin-extraction](../research/parallel-plugin-extraction.md). A instalação padrão passa a ter 21 pacotes, incluindo os nove anteriores. Todos os pacotes são opcionais na seleção inicial; a escolha apresenta as permissões antes de instalar e ativar. Desativar um plugin remove suas contribuições e bloqueia operações nativas. As seis bibliotecas Rust extraídas são vinculadas estaticamente; não são executáveis intercambiáveis pelo Marketplace.

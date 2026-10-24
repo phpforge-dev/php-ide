@@ -1,18 +1,19 @@
 import { t as tr, activeLanguage } from './i18n';
 import { resolvedTheme, themePreference } from './theme';
-import { generateDdl, shortType } from '../shared/sql-ddl';
+import {pluginService} from './plugin-services';
 import { NativeLanguage } from './native-language';
+import {protectClose} from '../shared/app-close';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { statements } from '../shared/sql';
 import type { IdeApi, Event as IdeEvent, TerminalEvent } from '../shared/contracts';
 export async function installNativeApi() {
  const syncWindowTheme=()=>{void getCurrentWindow().setTheme(themePreference()==='system'?null:resolvedTheme()).catch(error=>console.warn(tr('Tema da janela indisponível'),error));};
  window.addEventListener('ide-theme-changed',syncWindowTheme);syncWindowTheme();
  const transport=(method:string,args:unknown[]=[])=>invoke<any>('ide',{method,args:['openProject','pickProjectParent'].includes(method)?[...args,activeLanguage]:args});
+
+ await listen('app-maintenance',()=>window.dispatchEvent(new Event('ide-app-maintenance')));
  const language=new NativeLanguage(transport);
- const redis=new Set<string>();
  const dockerProgress=new Set<(event:{id:string;text:string})=>void>();
  await listen<{id:string;text:string}>('docker-progress',event=>dockerProgress.forEach(fn=>fn(event.payload)));
  const composerProgress=new Set<(event:{id:string;text:string})=>void>();
@@ -34,20 +35,25 @@ export async function installNativeApi() {
   if(key==='phpMethodUsages')return (input:any,scope:'current'|'base')=>language.methodUsages(input,scope);
   if(key==='phpMethodRename')return (input:any,name:string,options:any)=>language.methodRename(input,name,options);
   return async (...args:unknown[])=>{
-   if(key==='databaseDdl'){
-    const data=await transport('databaseDdlData',args);
-    if(typeof data==='string')return data;
-    return generateDdl(data.name,data.columns,data.keys,data.primaryKeys,data.current,data.owner);
+   if(String(key).startsWith('database')){
+    const feature=pluginService('database');if(!feature?.transport)throw Error('Database plugin is not active. Enable it in Plugins.');
+    return feature.transport(String(key),args,transport);
    }
-   if(key==='databaseExecute'){const text=String(args[1]);args[1]=redis.has(String(args[0]))?text.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('#')):statements(text).map(s=>s.text.trim()).filter(Boolean);language.databaseChanged();}
    const result=await transport(String(key),args);
-   if((['openProject','openRecentProject','createProject','cloneProject','closeProject'].includes(String(key)))&&result)language.reset();
+   if(key==='closeProject'||(['openProject','openRecentProject','createProject','cloneProject'].includes(String(key))&&result)){language.reset();window.dispatchEvent(new Event('ide-native-project-changed'));}
    if(key==='save')language.changed(String(args[0]));
-   if(key==='databaseModel')for(const schema of result.schemas)for(const table of schema.tables)for(const column of table.columns)column.type=shortType(column.type,column.udt??column.type);
-   if(key==='databaseConnect'){if(result.driver==='redis')redis.add(result.id);else language.databases.add(result.id);}
-   if(key==='databaseDisconnect'){redis.delete(String(args[0]));language.databases.delete(String(args[0]));language.databaseChanged();}
    return result;
   };
  }});
- await getCurrentWindow().onCloseRequested(event=>{const before=new Event('beforeunload',{cancelable:true});if(!window.dispatchEvent(before))event.preventDefault();});
+ const closeStatus=document.createElement('div');closeStatus.className='app-close-progress';closeStatus.setAttribute('role','status');closeStatus.textContent=tr('Fechando a IDE…');
+ let previousInert=false;
+ const close=protectClose({
+  beforeClose:()=>window.dispatchEvent(new Event('beforeunload',{cancelable:true})),
+  applyUpdate:()=>transport('appApplyIdeOnExit'),close:()=>transport('appCloseWindow'),
+  closeWithoutUpdate:error=>window.confirm(tr('Não foi possível aplicar a atualização. Fechar sem atualizar?')+'\n'+String(error)),
+  pending:value=>{if(value){previousInert=document.body.inert;document.body.inert=true;document.body.append(closeStatus);}else{document.body.inert=previousInert;closeStatus.remove();}},
+  error:console.error,
+ });
+ // Rust performs final destruction after approval; no window-destroy IPC grant is exposed.
+ await getCurrentWindow().onCloseRequested(event=>{event.preventDefault();return close(event);});
 }

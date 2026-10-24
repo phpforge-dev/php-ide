@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze, literalAt, codeOnly } from '../shared/language/php-source';
-import { classContext, classInsertion, signature } from '../shared/language/php-completion';
+import { classContext, classInsertion, signature } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-completion';
 
 test('literal sob o cursor ignora comentários, heredoc e interpolação', () => {
  const text = "<?php\n// 'comentario'\n$a = 'src/User.php'; $b = \"x{$y}\"; $c = <<<EOT\n'dentro'\nEOT;\n$d = 'it\\'s';";

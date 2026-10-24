@@ -1,3 +1,0 @@
-/* Foreground only: selection and file-type icons keep their existing contrast. */
-#tree :is(button,summary)[data-vcs="ignored"]>.resource-name{color:var(--ij-vcs-ignored)}
-#tree :is(button,summary)[data-vcs="ignored"]:focus-visible{outline-color:var(--ij-focus)}

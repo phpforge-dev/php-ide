@@ -1,7 +1,9 @@
-import { mountImagePreview, isImagePath } from './image-preview';
+import {mountToolPlugins} from './tool-plugins';
+import {isImagePath,isSvgPath} from '../shared/preview-documents';
+import {pluginService,optionalPluginService} from './plugin-services';
 import {mountFormatting} from './formatting';
-import { mountSvgPreview, isSvgPath } from './svg-preview';
-import { mountTreeGitStatus } from './tree-git-status';
+
+
 import { isBashDocument } from '../shared/bash-document';
 import { isDockerfilePath, isComposeDocument } from '../shared/docker-document';
 import { registerDotenvLanguage } from './dotenv-language';
@@ -9,57 +11,52 @@ import { isEnvPath } from '../shared/env-document';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
 import { showTabMenu } from './tab-menu';
-import { mountDocker } from './docker-panel';
+
 import { mountRecentProjects } from './recent-projects';
-import { isPhpDeclaration } from './php-navigation';
+const isPhpDeclaration=(text:string,offset:number)=>pluginService('phpIntelligence')?.isPhpDeclaration(text,offset)??false;
 import { mountUsages, askBaseMethod, chooseTarget } from './editor-usages';
-import { mountPhpInsights } from './php-editor-insights';
+
 import { mountMulticursor } from './editor-multicursor';
 import { mountSearchEverywhere } from './search-everywhere';
-import { mountEditorChanges } from './editor-changes';
+
 import { editorColors, editorFont, editorRules } from './editor-theme';
-import { mountTerminal } from './terminal-panel';
+
 import { mountProjectActions } from './project-actions';
-import { mountRefactorings } from './refactor-ui';
-import { mountTests } from './test-panel';
-import { mountComposer } from './composer-panel';
+
 import { mountPluginLanguages } from './plugin-languages';
-import { mountDebugger } from './debug-panel';
 import * as monaco from 'monaco-editor';
 import { installEditorWorkers } from './editor-workers';
-import { installWebLanguages,webLanguage } from './web-languages';
-import { WebProject } from './web-project';
-import {frameworkTypes} from './framework-types';
+const webLanguage=(language:string)=>['javascript','typescript','vue'].includes(language);
+
+const frameworkTypes=new Proxy({} as Record<string,string>,{get:(_target,key)=>pluginService('webLanguages')?.frameworkTypes[key]});
 import type { IdeApi, FileBuffer, LanguageMethod } from '../shared/contracts';
 import './style.css';
 import './workbench.css';
 import './theme-surfaces.css';
 import './tool-windows.css';
-import './markdown-preview.css';
-import { mountGit } from './git-panel';
-import { mountDatabase } from './database-panel';
-import { sqlConsole } from './sql-console';
-import { mountAgent } from './agent-panel';
+
+
+
+
 import { mountAppearance } from './appearance';
 import { mountWorkbench } from './workbench';
 import { mountPluginManager } from './plugin-manager';
 import { mountWorkspaceSync } from './workspace-sync';
-import { mountMarkdown } from './markdown-preview';
-import { isMarkdownPath } from '../shared/markdown';
-import { isIgnorePath } from '../shared/language/plugins/gitignore';
+import { isMarkdownPath } from '../shared/markdown-document';
+import { isIgnorePath } from '../shared/plugin-document-associations';
 import { keymap } from './keymap';
 declare global { interface Window { ide: IdeApi; } }
 installEditorWorkers();
-const webLanguages=installWebLanguages();
+const webLanguages=optionalPluginService('webLanguages',p=>p.installWebLanguages(),{locations:async()=>[]});
 const api = window.ide;
-document.querySelector('#app')!.innerHTML = html`<header><strong>PHP IDE</strong><span id="project"></span><button id="open">Abrir projeto</button><button id="appearance">Aparência</button><span class="muted">PHP IDE · prévia</span></header><main><aside><h3>Projeto</h3><nav id="tree"></nav></aside><section class="code"><div id="tabs"></div><div id="breadcrumbs" aria-label="Caminho do arquivo"></div><div id="navigation" role="toolbar" aria-label="Navegação de código"><button id="nav-back" disabled title="Voltar · Alt+←">←</button><button id="nav-forward" disabled title="Avançar · Alt+→">→</button><button id="definition" disabled>Declaração · F12</button><button id="references" disabled>Encontrar usos</button><button id="implementations" disabled>Implementações</button></div><div id="editor"></div></section><aside class="tools"><div class="switch"><button id="show-agent">Agente</button><button id="show-db">Bancos</button></div><div id="agent"></div><form id="db" hidden><h3>Conexão de banco</h3><label>Driver<select name="driver"><option value="postgres">PostgreSQL</option><option value="mysql">MySQL / MariaDB</option></select></label><label>Host<input name="host" value="localhost" required></label><label>Porta<input name="port" type="number" value="5432" required></label><label>Banco<input name="database" required></label><label>Usuário<input name="user" required></label><label>Senha<input name="password" type="password"></label><label><input name="tls" type="checkbox"> TLS com certificado válido</label><button>Testar e listar schemas</button><pre id="db-result"></pre><p>Oracle, SQL Server e Redis: planejados. Esta versão consulta metadados; não executa SQL livre.</p></form></aside></main><footer><span id="status">Abra um arquivo PHP para iniciar a análise.</span><span id="plugins" title="Plugins ativos neste projeto"></span><span id="cursor-position"></span></footer>`;
+document.querySelector('#app')!.innerHTML = html`<header><strong>PHP IDE</strong><span id="project"></span><button id="open">Abrir projeto</button><button id="appearance">Aparência</button><span class="muted">PHP IDE · prévia</span></header><main><aside><h3>Projeto</h3><nav id="tree"></nav></aside><section class="code"><div id="tabs"></div><div id="breadcrumbs" aria-label="Caminho do arquivo"></div><div id="navigation" role="toolbar" aria-label="Navegação de código"><button id="nav-back" disabled title="Voltar · Alt+←">←</button><button id="nav-forward" disabled title="Avançar · Alt+→">→</button><button id="definition" disabled>Declaração · F12</button><button id="references" disabled>Encontrar usos</button><button id="implementations" disabled>Implementações</button></div><div id="editor"></div></section><aside class="tools"><div class="switch"><button id="show-agent">Agente</button><button id="show-db">Bancos</button></div><div id="agent"></div><section id="db" hidden aria-label="Database"></section></aside></main><footer><span id="status">Abra um arquivo PHP para iniciar a análise.</span><span id="plugins" title="Plugins ativos neste projeto"></span><span id="cursor-position"></span></footer>`;
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let statusAt = 0;
 const status = (text: string) => { statusAt = Date.now(); $('status').textContent = text; };
 // Progresso do servidor de linguagem não apaga logo a resposta de uma ação do usuário.
 const backgroundStatus = (text: string) => { if (Date.now() - statusAt > 4000) $('status').textContent = text; };
 const run = (fn: () => Promise<unknown>) => { void fn().catch(error => status(String(error.message ?? error))); };
-const webProject=new WebProject(api,status);
+const webProject=optionalPluginService('webLanguages',p=>new p.WebProject(api,status),{retain:()=>false,prepare:async()=>{},claim:()=>{},reset:()=>{},invalidate:()=>{}});
 window.addEventListener('ide-workspace-file-changed',event=>{if(/\.(?:[cm]?[jt]sx?|vue)$/.test((event as CustomEvent).detail.path))webProject.invalidate();});
 monaco.editor.defineTheme('independent-dark', { base: 'vs-dark', inherit: true, rules: editorRules(false), colors: editorColors(false) });
 const editor = monaco.editor.create($('editor'), { theme: 'independent-dark', automaticLayout: true, fontSize: editorFont.size, lineHeight: editorFont.lineHeight(editorFont.size), fontFamily: editorFont.family, codeLensFontFamily: editorFont.codeLensFamily, codeLensFontSize: editorFont.codeLensSize, bracketPairColorization: {enabled: false}, quickSuggestions: {other: true, comments: false, strings: true}, suggestOnTriggerCharacters: true, wordBasedSuggestions: 'off', minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 } });
@@ -108,7 +105,7 @@ window.addEventListener('ide-autosave-changed', () => {
 });
 const dirty = (b: Buffer) => !b.virtual && b.model.getValue() !== b.saved;
 let active: string | undefined;
-const gitPanel = mountGit(api, () => [...buffers.values()].some(dirty), async () => { editor.setModel(null); buffers.forEach(b => b.model.dispose()); buffers.clear(); active = undefined; opened.clear(); views.clear(); backStack.length=0;forwardStack.length=0;navigationButtons(); tabs(); await tree(); });
+const gitPanel = optionalPluginService('git',p=>p.mount(api, () => [...buffers.values()].some(dirty), async () => { editor.setModel(null); buffers.forEach(b => b.model.dispose()); buffers.clear(); active = undefined; opened.clear(); views.clear(); backStack.length=0;forwardStack.length=0;navigationButtons(); tabs(); await tree(); }));
 type Place = { path: string; line: number; column: number };
 const backStack: Place[] = []; const forwardStack: Place[] = [];
 const views = new Map<string, monaco.editor.ICodeEditorViewState>();
@@ -159,6 +156,7 @@ function activate(path: string, track = true) {
 async function open(path: string, track = true) {
  if(frameworkTypes[path]){const key='library:'+path;virtual(key,frameworkTypes[path],'typescript','library',monaco.Uri.file(path));activate(key,track);return;}
  if (isImagePath(path)) {
+  if(!pluginService('imagePreview')){status(tr('Instale ou ative o plugin de imagens em Plugins.'));$('plugins').click();return;}
   if (!buffers.has(path)) virtual(path, '', 'plaintext', 'image', monaco.Uri.from({ scheme: 'php-ide-image', path: '/' + path }));
   activate(path, track); return;
  }
@@ -168,10 +166,11 @@ async function open(path: string, track = true) {
  activate(file.path, track);
  if(webLanguage(editor.getModel()!.getLanguageId()))run(()=>webProject.prepare());
  if (phpLike.includes(languageFor(file.path,file.text) ?? '')) {
+  if(!pluginService('phpIntelligence')){status('Inteligência PHP desativada · ative PHP Intelligence em Plugins.');return;}
   status(tr('Preparando análise PHP…'));
   const model = buffers.get(file.path)!.model;
   void request('textDocument/hover', model, new monaco.Position(1,1)).then(() => { if(editor.getModel()===model) status(tr('Análise PHP pronta · ⌘/Ctrl+clique: declaração · Ctrl+Espaço: autocomplete')); }).catch(error => status(String(error)));
- } else if (languageFor(file.path,file.text) === 'markdown') status(tr('Markdown · ⌘/Ctrl+Shift+V: editor/dividido/prévia · ⌘/Ctrl+clique: abrir link · ⌘/Ctrl+Shift+O: títulos'));
+ }
 }
 monaco.editor.registerEditorOpener({openCodeEditor: async (_source,resource,selection) => {
  if(resource.scheme === 'php-ide-ddl' || resource.scheme === 'php-ide-console' || resource.scheme === 'phar') {
@@ -232,16 +231,11 @@ document.addEventListener('mouseup',event=>{
 },true);
 window.addEventListener('blur',()=>{navigationPress=undefined;});
 $('editor').addEventListener('contextmenu', event => { if(event.ctrlKey || event.metaKey) event.preventDefault(); }, true);
-const consoleUi = sqlConsole(api, editor, { virtual, open: path => open(path), status });
-mountMarkdown(api, editor, { path: () => active, status, open: async (path, line) => {
- const previous = place(); await open(path, false);
- if (line !== undefined) { editor.setPosition({ lineNumber: line + 1, column: 1 }); editor.revealLineNearTop(line + 1); }
- remember(previous);
-} });
-const databasePanel = mountDatabase(api, { openConsole: session => run(() => consoleUi.open(session)), disconnected: id => consoleUi.forget(id) });
+const consoleUi=optionalPluginService('database',p=>p.sqlConsole(api,editor,{virtual,open:(path:string)=>open(path),status,path:()=>active}));
+const databasePanel=optionalPluginService('database',p=>p.mountDatabase(api,{openConsole:(session:any)=>run(()=>consoleUi.open(session)),disconnected:(id:string)=>consoleUi.forget(id)}));
 mountAppearance(editor);
-mountSvgPreview(editor,{path:()=>active});
-const imagePreview = mountImagePreview(editor, api, { path: () => active });
+
+const imagePreview={reload:()=>pluginService('imagePreview')?.reload()};
 // `expanded`: diretórios reabertos ao recarregar a árvore depois de ações de arquivo.
 async function tree(path = '', parent: HTMLElement = $('tree'), expanded?: Set<string>) {
  const entries = await api.tree(path);
@@ -342,22 +336,22 @@ async function phpImplementations(model: monaco.editor.ITextModel, position: mon
  const chosen = await chooseTarget(editor, msg`Escolher implementação de ${family.owner}::${family.name} (${targets.length} encontradas)`, targets.map(t => ({ ...t, label: t.name + (t.isAbstract ? ' (abstrato)' : ''), detail: t.path })));
  if (chosen) await go(chosen); return true;
 }
-const editorChanges = mountEditorChanges(api, editor, {path: () => active && !buffers.get(active)?.virtual ? active : undefined, status});
-const phpInsights=mountPhpInsights(editor,{
- references:(model,position)=>request('textDocument/references',model,position),
+const editorChanges=optionalPluginService('git',p=>p.mountEditorChanges(api,editor,{path:()=>active&&!buffers.get(active)?.virtual?active:undefined,status}));
+const phpInsights=optionalPluginService('phpIntelligence',p=>p.mountPhpInsights(editor,{
+ references:(model:monaco.editor.ITextModel,position:monaco.Position)=>request('textDocument/references',model,position),
  clean:()=>![...buffers.values()].some(b=>b.model.getLanguageId()==='php'&&dirty(b)),
- show:position=>{void usages.show(position,{lens:true});},
- request:(method,model,position)=>request(method,model,position),
- open:async target=>{const previous=place();await open(target.uri.fsPath,false);editor.setSelection(target.range);editor.revealRangeInCenter(target.range);remember(previous);},
+ show:(position:monaco.Position)=>{void usages.show(position,{lens:true});},
+ request:(method:LanguageMethod,model:monaco.editor.ITextModel,position:monaco.Position)=>request(method,model,position),
+ open:async (target:{uri:monaco.Uri;range:monaco.IRange})=>{const previous=place();await open(target.uri.fsPath,false);editor.setSelection(target.range);editor.revealRangeInCenter(target.range);remember(previous);},
  files:api,
-});
+}),{refresh:()=>{},refineDefinition:async(_model:any,_position:any,result:any)=>result});
 monaco.languages.registerDefinitionProvider([...phpLike,'markdown'],{provideDefinition:(m,p)=>locations('textDocument/definition',m,p)});
 monaco.languages.registerImplementationProvider(phpLike,{provideImplementation:(m,p)=>locations('textDocument/implementation',m,p)});
 monaco.languages.registerReferenceProvider(phpLike,{provideReferences:(m,p)=>locations('textDocument/references',m,p)});
 monaco.languages.registerHoverProvider(phpLike,{provideHover:async(m,p)=> { const v=await request('textDocument/hover',m,p); if(!v) return null; const contents=Array.isArray(v.contents)?v.contents:[v.contents]; return {contents:contents.map((x:any)=>({value:typeof x==='string'?x:x.value})),range:v.range?range(v.range):undefined}; }});
 const lspKinds = ['Text','Method','Function','Constructor','Field','Variable','Class','Interface','Module','Property','Unit','Value','Enum','Keyword','Snippet','Color','File','Reference','Folder','EnumMember','Constant','Struct','Event','Operator','TypeParameter'] as const;
 const completionKind = (kind: number) => monaco.languages.CompletionItemKind[lspKinds[kind - 1] ?? 'Text'] ?? monaco.languages.CompletionItemKind.Text;
-monaco.languages.registerCompletionItemProvider(phpLike,{triggerCharacters:['>','$',':','\\',"'",'"','.'],resolveCompletionItem:async(item)=> { const source = (item as any).__source; if(!source) return item; try { const v:any = await api.language({...source.input, method:'completionItem/resolve', completionItem:source.item}); return {...item, detail:v?.detail ?? item.detail, documentation:v?.documentation?.value ? {value:v.documentation.value} : v?.documentation ?? item.documentation}; } catch { return item; } }, provideCompletionItems:async(m,p)=> { let v:any; try { v=await request('textDocument/completion',m,p); } catch(error) { status(msg`Autocomplete PHP indisponível: ${String(error)}`); return {suggestions:[]}; } const word=m.getWordUntilPosition(p); const items=Array.isArray(v)?v:v?.items??[];
+monaco.languages.registerCompletionItemProvider(phpLike,{triggerCharacters:['>','$',':','\\',"'",'"','.'],resolveCompletionItem:async(item)=> { const source = (item as any).__source; if(!source) return item; try { const v:any = await api.language({...source.input, method:'completionItem/resolve', completionItem:source.item}); return {...item, detail:v?.detail ?? item.detail, documentation:v?.documentation?.value ? {value:v.documentation.value} : v?.documentation ?? item.documentation}; } catch { return item; } }, provideCompletionItems:async(m,p)=> { const version=m.getVersionId();const context=editor.getModel();let v:any; try { v=await request('textDocument/completion',m,p); } catch(error) { status(msg`Autocomplete PHP indisponível: ${String(error)}`); return {suggestions:[]}; } if(m.isDisposed()||m.getVersionId()!==version||editor.getModel()!==context)return {suggestions:[]};const word=m.getWordUntilPosition(p); const items=Array.isArray(v)?v:v?.items??[];
  return {incomplete:!Array.isArray(v)&&!!v?.isIncomplete,suggestions:items.map((i:any)=>({__source:{item:i,input:{path:[...buffers.values()].find(b=>b.model===m)?.file.path,text:m.getValue(),version:m.getVersionId(),position:{line:p.lineNumber-1,character:p.column-1}}},label:{label:i.label,detail:i.labelDetails?.detail,description:i.labelDetails?.description},kind:i.phpDeclarationKind==='trait'?monaco.languages.CompletionItemKind.Struct:completionKind(i.kind),detail:i.detail,documentation:i.documentation?.value?{value:i.documentation.value}:i.documentation,filterText:i.filterText,sortText:i.sortText,insertText:i.textEdit?.newText??i.insertText??i.label,insertTextRules:i.insertTextFormat===2?monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet:undefined,range:i.textEdit?.insert?{insert:range(i.textEdit.insert),replace:range(i.textEdit.replace)}:i.textEdit?range(i.textEdit.range):{startLineNumber:p.lineNumber,endLineNumber:p.lineNumber,startColumn:word.startColumn,endColumn:word.endColumn},additionalTextEdits:i.additionalTextEdits?.map((e:any)=>({range:range(e.range),text:e.newText}))}))}; }});
 // Markdown: caminhos relativos após `](` e âncoras após `#`, respondidos pelo plugin.
 monaco.languages.registerCompletionItemProvider('markdown',{triggerCharacters:['(','/','#'],provideCompletionItems:async(m,p)=> {
@@ -376,31 +370,33 @@ keymap.registerAction({id:'file.save',label:'Salvar arquivo',category:'Arquivo',
 $('references').onclick=()=>run(()=>usages.show());
 // ⌘B em PHP: Declaration or Usages (declaração leva aos usos; uso único navega direto).
 for(const [id,action] of [['definition','editor.action.revealDefinition'],['implementations','editor.action.goToImplementation']]) $(id).onclick=()=>run(async()=>{editor.focus();const model=editor.getModel(),position=editor.getPosition();if(id==='definition'&&model&&position&&phpLike.includes(model.getLanguageId())){await navigateDefinition(position);return;}if(id==='implementations'&&model&&position&&model.getLanguageId()==='php'&&await phpImplementations(model,position))return;editor.trigger('navigation-toolbar',action,{});});
-async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();testPanel.reset();composerPanel.reset();debugPanel.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=info.name;await tree();showPlugins();return true;} return false; }
-$('show-agent').onclick=()=>{$('agent').hidden=false;$('db').hidden=true;};
-$('show-db').onclick=()=>{$('agent').hidden=true;$('db').hidden=false;};
-const agentPanel = mountAgent(api, $('agent'), {
+async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=info.name;await tree();showPlugins();return true;} return false; }
+$('show-agent').onclick=()=>{if(!pluginService('agents')){status('Ative o plugin Agents em Plugins.');$('plugins').click();return;}$('agent').hidden=false;$('db').hidden=true;};
+$('show-db').onclick=()=>{if(!pluginService('database')){status('Ative o plugin Database em Plugins.');$('plugins').click();return;}$('agent').hidden=true;$('db').hidden=false;};
+const agentPanel = optionalPluginService('agents',p=>p.mount(api,$('agent'),{
  context: () => { const b = active ? buffers.get(active) : undefined; if (!b || b.virtual) return undefined; const selection = editor.getSelection(); const selected = selection && !selection.isEmpty() ? b.model.getValueInRange(selection) : undefined; return { path: b.file.path, text: b.model.getValue(), ...(selected ? { selection: selected } : {}) }; },
- reload: async paths => { webProject.invalidate();for (const path of paths) { const b = buffers.get(path); if (!b || dirty(b)) continue; if (b.virtual === 'image') { imagePreview.reload(); continue; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); } tabs(); },
+ reload: async (paths:string[]) => { webProject.invalidate();for (const path of paths) { const b = buffers.get(path); if (!b || dirty(b)) continue; if (b.virtual === 'image') { imagePreview.reload(); continue; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); } tabs(); },
  status, language: languageFor,
-});
+}));
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
 mountWorkbench(api);
 await mountPluginManager(api).ready;
-mountTreeGitStatus(api, $('tree'));
+const toolPlugins=mountToolPlugins(api,{path:()=>active,editor,status,changed:()=>{window.dispatchEvent(new Event('ide-plugin-languages-refresh'))},open:async(path,line)=>{const previous=place();await open(path,false);if(line!==undefined){editor.setPosition({lineNumber:line+1,column:1});editor.revealLineInCenter(line+1);}editor.focus();remember(previous);}});
+await toolPlugins.ready();
+optionalPluginService('git',p=>p.mountTreeGitStatus(api,$('tree')));
 mountWorkspaceSync(api, buffers, { tabs, status, editor, active: () => active });
 mountSearchEverywhere(api,editor,async(path,line,column)=>{await open(path);if(line){editor.setPosition({lineNumber:line,column:column??1});editor.revealLineInCenter(line);}});
 mountRecentProjects(api, chooseProject);
-const terminalPanel=mountTerminal(api);
+const terminalPanel=optionalPluginService('terminal',p=>p.mount(api));
 const affected = (prefix: string) => [...buffers.keys()].filter(path => (!buffers.get(path)!.virtual || buffers.get(path)!.virtual === 'image') && (!prefix || path === prefix || path.startsWith(prefix + '/')));
 // Rename Symbol, quick fixes/autoimport, inspeções e Extract/Inline (recorte 19).
-const refactorings = mountRefactorings(api, editor, {
+const refactorings = optionalPluginService('phpIntelligence',p=>p.mountRefactorings(api, editor, {
  status,
- pathOf: model => [...buffers].find(([, b]) => b.model === model && !b.virtual)?.[0],
- buffer: path => { const b = buffers.get(path); return b && !b.virtual ? { model: b.model, dirty: dirty(b) } : undefined; },
- saved: (path, text, etag) => { const b = buffers.get(path); if (b) { b.saved = text; b.file.etag = etag; tabs(); } },
- relocateFile: (path, target) => projectActions.relocateFile(path, target),
-});
+ pathOf: (model:monaco.editor.ITextModel) => [...buffers].find(([, b]) => b.model === model && !b.virtual)?.[0],
+ buffer: (path:string) => { const b = buffers.get(path); return b && !b.virtual ? { model: b.model, dirty: dirty(b) } : undefined; },
+ saved: (path:string,text:string,etag:string) => { const b = buffers.get(path); if (b) { b.saved = text; b.file.etag = etag; tabs(); } },
+ relocateFile: (path:string,target:{name?:string;directory?:string}) => projectActions.relocateFile(path, target),
+}),{classIn:async()=>undefined,renameClass:async()=>{throw Error('Enable PHP Intelligence in Plugins')},moveClassFile:async()=>{throw Error('Enable PHP Intelligence in Plugins')}});
 const projectActions = mountProjectActions(api, {
  status, language: languageFor, refactor: refactorings,
  refresh: async () => { const expanded = new Set([...document.querySelectorAll<HTMLElement>('#tree details[open]')].map(d => d.dataset.path!)); await tree('', $('tree'), expanded); tabs(); },
@@ -421,16 +417,9 @@ const projectActions = mountProjectActions(api, {
  findUsages: async (path, line, column) => { await open(path); const position = new monaco.Position(line, column); editor.setPosition(position); editor.revealPositionInCenter(position); await usages.show(position); },
  terminal: cwd => terminalPanel.open(cwd),
 });
-const dockerPanel=mountDocker(api,terminalPanel);
-// Pest/PHPUnit: ▶ acima de arquivo, classe, describe e teste (plugin php-tests); resultados no painel Testes.
-const testPanel = mountTests(api, { status, open: async (path, line) => { const previous = place(); await open(path, false); editor.setPosition({ lineNumber: line + 1, column: 1 }); editor.revealLineInCenter(line + 1); editor.focus(); remember(previous); } });
-monaco.editor.registerCommand('php-ide.runTests', (_accessor, request) => { void testPanel.run(request); });
-// Composer (composer.json) e Symfony (Twig/YAML de config): providers dos plugins e janela Composer.
-const pluginLanguages = mountPluginLanguages(api, { status, path: m => [...buffers.values()].find(b => b.model === m)?.file.path });
-const composerPanel = mountComposer(api, { status, open: async path => { const previous = place(); await open(path, false); remember(previous); }, changed: () => pluginLanguages.refresh() });
-monaco.editor.registerCommand('php-ide.composer', (_accessor, request) => { void composerPanel.run(request); });
-// Xdebug/DBGp: breakpoints na gutter, painel Depurar (Alt+5), F7/F8/Shift+F8/F9, Cmd+F8.
-const debugPanel = mountDebugger(api, { editor, status, open: async (path, line) => { await open(path, false); editor.setPosition({ lineNumber: line + 1, column: 1 }); editor.revealLineInCenterIfOutsideViewport(line + 1); } });
+const dockerPanel=optionalPluginService('docker',p=>p.mount(api,terminalPanel));
+mountPluginLanguages(api, { status, path: m => [...buffers.values()].find(b => b.model === m)?.file.path });
+
 const pluginLensChanges=new monaco.Emitter<monaco.languages.CodeLensProvider>();
 const pluginLenses:monaco.languages.CodeLensProvider={onDidChange:pluginLensChanges.event,provideCodeLenses:async m=> {
  let v:any; try { v=await request('textDocument/codeLens',m,new monaco.Position(1,1)); } catch { return {lenses:[],dispose(){}}; }

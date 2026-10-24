@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GitignorePlugin, isIgnorePath } from '../shared/language/plugins/gitignore';
+import { GitignorePlugin, isIgnorePath } from '../.tools/plugin-packages/ignore/src/shared/language/plugins/gitignore';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 

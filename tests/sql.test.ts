@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { looksLikeSql, oracleStatements, sqlComplete, sqlReferenceAt, statementAt, statements } from '../shared/sql';
+import { looksLikeSql, oracleStatements, sqlComplete, sqlReferenceAt, statementAt, statements } from '../.tools/plugin-packages/database/shared/sql';
 import { model } from './fixtures/sql-model';
-import { generateDdl, shortType } from '../shared/sql-ddl';
+import { generateDdl, shortType } from '../.tools/plugin-packages/database/shared/sql-ddl';
 
 const at = (text: string) => ({ text: text.replace('|', ''), offset: text.indexOf('|') });
 const labels = (text: string, kinds = ['column', 'table', 'view', 'schema', 'columns']) => { const { text: t, offset } = at(text); return sqlComplete(model, t, offset).items.filter(i => kinds.includes(i.kind)).map(i => `${i.label}${i.detail ?? ''}${i.description ? ' ' + i.description : ''}`); };

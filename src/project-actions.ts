@@ -1,7 +1,12 @@
 import { t as tr, msg, html } from './i18n';
 import * as monaco from 'monaco-editor';
 import type { IdeApi, LocalRevision } from '../shared/contracts';
-import type { Refactorings } from './refactor-ui';
+/** Optional language contribution used by the generic project tree. */
+type Refactorings={
+ classIn(path:string):Promise<{fqn:string;name:string}|undefined>;
+ renameClass(fqn:string,options?:{name?:string;file?:string;fromTree?:boolean;strings?:boolean}):Promise<void>;
+ moveClassFile(path:string,directory:string,namespace:string):Promise<void>;
+};
 import { keymap } from './keymap';
 // Menu de contexto da árvore do projeto: Novo, Recortar/Copiar/Colar, Copiar caminho, Encontrar
 // usos, Refatorar (renomear/mover/copiar/excluir), Abrir em e Histórico local. Estrutura de menu

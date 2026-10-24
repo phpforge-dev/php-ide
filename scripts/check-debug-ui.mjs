@@ -1,4 +1,4 @@
-// Interface do depurador (src/debug-panel.ts) no Monaco real com IPC simulado.
+// Separate debugger plugin UI on real Monaco with simulated native tool IPC.
 // O protocolo DBGp e o Xdebug real são verificados por scripts/check-xdebug.mjs.
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
@@ -12,11 +12,14 @@ try {
  await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes(String(port)))resolve();});server.once('exit',reject);});
  browser=await chromium.launch({headless:true,channel:'chrome'});const page=await browser.newPage({viewport:{width:1440,height:940}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- const text=await readFile('fixtures/php-intelligence/probe.php','utf8');
+ const text=await readFile('tests/fixtures/projects/php-intelligence/probe.php','utf8');
+ const pluginDir='.tools/plugin-packages/php-debugger';
+ const manifest=JSON.parse(await readFile(pluginDir+'/plugin.json','utf8'));
+ const source={key:'user:'+manifest.id,manifest,code:await readFile(pluginDir+'/workbench.js','utf8'),style:await readFile(pluginDir+'/workbench.css','utf8')};
  await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:`
- window.__calls=[];window.__cbs={};window.__listeners={};let next=1;
+ window.__calls=[];window.__cbs={};window.__listeners={};window.__TAURI_EVENT_PLUGIN_INTERNALS__={unregisterListener(){}};let next=1;
  window.__TAURI_INTERNALS__={transformCallback(cb){const id=next++;window.__cbs[id]=cb;return id;},invoke:async(cmd,args)=>{if(cmd==='plugin:event|listen'){window.__listeners[args.event]=args.handler;return 1;}return null;}};
- window.__emit=payload=>window.__cbs[window.__listeners['debug-event']]({event:'debug-event',id:1,payload});
+ window.__emit=payload=>window.__cbs[window.__listeners['plugin-tool-event']]({event:'plugin-tool-event',id:1,payload:{key:'user:phpforge.php-debugger',root:'/fixture',channel:'debug-event',payload}});
  const file={path:'probe.php',uri:'file:///fixture/probe.php',text:${JSON.stringify(text)},etag:'preview'};
  const prop=(name,type,value,extra={})=>({name,fullname:name,type,value,children:false,numchildren:0,page:0,items:[],...extra});
  const numbers=n=>Array.from({length:n},(_,i)=>prop('$numbers['+i+']','int',String(i+1)));
@@ -34,7 +37,10 @@ try {
    if(method==='debugProperty')return prop('$numbers','array','',{children:true,numchildren:250,page:args[4],pagesize:100,items:numbers(250).slice(args[4]*100,args[4]*100+100)});
    if(method==='debugEval')return prop('','int','2');
    if(method==='debugStack')return [{level:0,where:'{main}',type:'file',line:3,local:'probe.php',server:'/var/www/html/probe.php'},{level:1,where:'vendor',type:'file',line:9,local:'vendor/x.php',server:'/var/www/vendor/x.php'}];
-   if(method==='pluginList')return {plugins:[]};
+   if(method==='pluginToolSource')return ${JSON.stringify(source)};
+   if(method==='pluginToolCall')return window.ide[args[1]](...args[2]);
+   if(method==='pluginSource')return {manifest:${JSON.stringify(manifest)},code:'ide.register({detect:async()=>({})});',rootUri:'file:///fixture/'};
+   if(method==='pluginList')return {defaults:[],permissions:${JSON.stringify(manifest.permissions)},ideVersion:'0.2.11',userDir:'/fixture-plugins',projectDir:'/fixture/.php-ide/plugins',plugins:[{key:'user:phpforge.php-debugger',scope:'user',dir:'/fixture-plugins',manifest:${JSON.stringify(manifest)},enabled:true,needsConsent:false,consented:true,granted:${JSON.stringify(manifest.permissions)}}]};
    if(method==='language'||method==='gitStatus')return null;
    return [];
   };

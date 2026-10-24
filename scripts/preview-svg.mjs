@@ -28,9 +28,12 @@ try{
   if(method==='debugStatus')return{listening:null,sessions:[]};
   if(method==='pluginList')return{plugins:[],directories:[]};
   return [];
- }} });await(await import('/src/main.ts')).ready;document.getElementById('startup-splash')?.remove();` }));
+ }} });await(await import('/src/main.ts')).ready;
+ const monaco=await import('/node_modules/.vite/deps/monaco-editor.js');const editor=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'));
+ const {editorPreviewLayout}=await import('/src/editor-preview-layout.ts');const {activate}=await import('/.tools/plugin-packages/svg-preview/workbench.js');await import('/.tools/plugin-packages/svg-preview/workbench.css');
+ activate({host:{editor,path:()=>editor.getModel()?.uri.path.endsWith('/preview.svg')?'preview.svg':undefined},tr:s=>s,editorPreviewLayout,own(){},provide(){}});Object.assign(window,{svgFixtureEditor:editor,svgFixtureSource:source});document.getElementById('startup-splash')?.remove();` }));
  await page.goto('http://127.0.0.1:1423');await page.locator('#tree button[aria-label="preview.svg"]').click();await page.locator('#svg-toolbar [data-mode=split]').click();await page.waitForFunction(()=>document.getElementById('svg-preview')?.dataset.state==='ready');
- const validations=await page.evaluate(async()=>{const {svgImageSource}=await import('/src/svg-preview.ts');for(const source of ['<html/>','<svg><broken></svg>','<!DOCTYPE svg [<!ENTITY x "test">]><svg/>','<svg xmlns="urn:wrong"/>']){let rejected=false;try{svgImageSource(source);}catch{rejected=true;}if(!rejected)return false;}return svgImageSource('<svg width="10" height="10"/>').startsWith('data:image/svg+xml');});if(!validations)throw Error('SVG XML validation failed');
+ const validations=await page.evaluate(async()=>{const wait=async(state)=>{const end=Date.now()+3000;while(document.getElementById('svg-preview')?.dataset.state!==state){if(Date.now()>end)throw Error('SVG validation failed: '+state);await new Promise(r=>setTimeout(r,20));}};for(const source of ['<html/>','<svg><broken></svg>','<!DOCTYPE svg [<!ENTITY x "test">]><svg/>','<svg xmlns="urn:wrong"/>']){svgFixtureEditor.getModel().setValue(source);await wait('error');}svgFixtureEditor.getModel().setValue(svgFixtureSource);await wait('ready');return true;});if(!validations)throw Error('SVG XML validation failed');
  await page.locator('#svg-preview img').evaluate(img=>img.decode());
  const pixel=await page.locator('#svg-preview img').evaluate(img=>{const c=document.createElement('canvas');c.width=360;c.height=240;const x=c.getContext('2d');x.drawImage(img,0,0);return [...x.getImageData(50,50,1,1).data];});if(pixel.slice(0,3).join(',')!=='56,113,225')throw Error('SVG image pixels missing');
 

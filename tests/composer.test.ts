@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { ComposerPlugin, constraints, contentHash, jsonContext, md5, parseJson, JsonError, phpJsonEncode, scriptNames } from '../shared/language/plugins/composer';
+import { ComposerPlugin, constraints, contentHash, jsonContext, md5, parseJson, JsonError, phpJsonEncode, scriptNames } from '../.tools/plugin-packages/composer/src/shared/language/plugins/composer';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 
-const fixtures = join(import.meta.dirname, '../fixtures');
+const fixtures = join(import.meta.dirname, './fixtures/projects');
 function project(root: string, extra: Record<string, string | null> = {}): ProjectFiles {
  const walk = (dir: string): string[] => existsSync(join(root, dir)) ? readdirSync(join(root, dir)).flatMap(name => { const p = dir ? `${dir}/${name}` : name; return statSync(join(root, p)).isDirectory() ? walk(p) : [p]; }) : [];
  return {

@@ -1,14 +1,14 @@
-mod agents;
-mod composer;
-mod database;
-mod laravel_database;
-mod debug;
-mod docker;
+mod app_maintenance;
+use phpforge_agents as agents;
+use phpforge_database as database;
+use phpforge_database::laravel_database;
+use phpforge_docker_services as docker;
 mod files;
-mod git;
-mod language;
-mod php_stubs;
+use phpforge_git as git;
+use phpforge_php_intelligence as language;
+use phpforge_php_intelligence::php_stubs;
 mod plugins;
+mod tool_plugins;
 mod plugin_catalog;
 mod process;
 mod recent;
@@ -16,14 +16,16 @@ mod rpc;
 mod startup;
 mod native_splash;
 mod shell;
-mod terminal;
-mod tests;
+use phpforge_terminal as terminal;
 mod workspace;
 use notify::Watcher;
 use serde_json::{json, Value};
 use std::{path::PathBuf, sync::Mutex};
 use tauri::{Emitter, Manager};
 use workspace::{err, Res};
+impl phpforge_php_intelligence::SnapshotHistory for files::History {
+ fn snapshot(&self,root:&std::path::Path,path:&std::path::Path,label:&str)->Result<usize,String>{files::History::snapshot(self,root,path,label)}
+}
 struct Project {
     root: PathBuf,
     git: tokio::sync::Mutex<()>,
@@ -98,13 +100,22 @@ struct Backend {
     cache: PathBuf,
     recent: recent::Store,
     docker: docker::Docker,
-    tests: tests::Tests,
-    composer: composer::Composer,
-    debug: debug::Debugger,
+    tool_plugins: tool_plugins::Host,
     active: std::sync::atomic::AtomicBool,
 }
 fn arg(args: &[Value], i: usize) -> &Value {
     args.get(i).unwrap_or(&Value::Null)
+}
+async fn release_plugin(state:&Backend,id:&str)->Res<()> {
+ let project=state.project.read().await;
+ match id {
+  "phpforge.terminal"=>{*project.terminals.lock().map_err(err)?=terminal::Terminals::default();},
+  "phpforge.agents"=>project.agents.stop(),
+  "phpforge.database"=>project.database.shutdown().await,
+  "phpforge.docker-services"=>state.docker.shutdown(),
+  "phpforge.php-intelligence"=>{*project.language.lock().await=language::Language::default();},
+  _=>{},
+ }Ok(())
 }
 #[tauri::command]
 async fn ide(
@@ -113,6 +124,21 @@ async fn ide(
     state: tauri::State<'_, Backend>,
     app: tauri::AppHandle,
 ) -> Res<Value> {
+    if method.starts_with("app") { return app_maintenance::dispatch(&app,&method,&args).await; }
+    if method == "nativeSmokeDiagnostic" {
+        let report=std::env::var("PHP_IDE_NATIVE_SMOKE").map_err(err)?;
+        let path=PathBuf::from(report).with_extension("diagnostic.json");
+        let mut sample=arg(&args,0).clone();
+        if let Some(window)=app.get_webview_window("main") {
+            sample["nativeWindow"]=json!({"visible":window.is_visible().ok(),"focused":window.is_focused().ok(),"minimized":window.is_minimized().ok(),"size":window.inner_size().ok().map(|size|json!({"width":size.width,"height":size.height}))});
+        }
+        static DIAGNOSTIC_LOCK:Mutex<()>=Mutex::new(());
+        let _guard=DIAGNOSTIC_LOCK.lock().map_err(err)?;
+        let mut samples=std::fs::read(&path).ok().and_then(|bytes|serde_json::from_slice::<Vec<Value>>(&bytes).ok()).unwrap_or_default();
+        samples.push(sample);
+        std::fs::write(path,serde_json::to_vec_pretty(&samples).map_err(err)?).map_err(err)?;
+        return Ok(Value::Null);
+    }
     if method == "startupInfo" {
         return Ok(json!({"project":state.active.load(std::sync::atomic::Ordering::Acquire)}));
     }
@@ -129,10 +155,13 @@ async fn ide(
             .unwrap_or(Value::Null));
     }
     if method == "closeProject" {
+        state.docker.shutdown();
+        state.tool_plugins.stop_all();
         let empty = state.cache.join("empty-workspace");
         std::fs::create_dir_all(&empty).map_err(err)?;
         state.recent.session(None)?;
         *state.project.write().await = Project::new(empty, app);
+        state.tool_plugins.stop_all();
         state
             .active
             .store(false, std::sync::atomic::Ordering::Release);
@@ -149,9 +178,12 @@ async fn ide(
             },
         )
         .await?;
+        state.tool_plugins.stop_all();
         state.recent.remember(&root)?;
         state.recent.session(Some(&root))?;
+        state.docker.shutdown();
         *state.project.write().await = Project::new(root.clone(), app);
+        state.tool_plugins.stop_all();
         state
             .active
             .store(true, std::sync::atomic::Ordering::Release);
@@ -217,49 +249,68 @@ async fn ide(
                 .store(true, std::sync::atomic::Ordering::Release);
             let mut project = state.project.write().await;
             if project.root != root {
+                state.docker.shutdown();
+                state.tool_plugins.stop_all();
                 *project = Project::new(root, app);
             }
             return Ok(info);
         }
         return Ok(Value::Null);
     }
+    if let Some(feature)=tool_plugins::feature(&method) {
+        let config=std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
+        let root=state.project.read().await.root.clone();
+        tool_plugins::require_feature(&plugins::Dirs::new(&config,&root),feature)?;
+        if feature=="phpforge.docker-services"{state.docker.resume();}
+    }
+    if method=="pluginReleaseResources" {
+        let config=std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
+        let root=state.project.read().await.root.clone();
+        if arg(&args,1).as_str()!=root.to_str(){return Ok(Value::Null)}
+        let dirs=plugins::Dirs::new(&config,&root);
+        if let Some(entry)=dirs.discover(env!("CARGO_PKG_VERSION")).into_iter().find(|e|Some(e.key.as_str())==arg(&args,0).as_str()) {
+            if let Ok(manifest)=entry.manifest{release_plugin(&state,&manifest.id).await?;}
+        }
+        return Ok(Value::Null);
+    }
     if method == "dockerCancel" {
         return state.docker.cancel(git::s(arg(&args, 0))?);
     }
-    if method.starts_with("composer") {
+    if method == "pluginAuthorizeService" || method == "pluginWorkbenchSource" || method == "pluginToolSource" || method == "pluginToolCall" || method == "pluginToolStop" {
+        let config = std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
         let root = state.project.read().await.root.clone();
-        return state
-            .composer
-            .dispatch(&root, &app, state.docker.executable(), &method, &args)
-            .await;
-    }
-    if method.starts_with("test") {
-        // A raiz é copiada para não segurar o projeto durante a execução (troca de projeto continua livre).
-        let root = state.project.read().await.root.clone();
-        return state.tests.dispatch(&root, &method, &args).await;
-    }
-    if method.starts_with("debug") {
-        // Xdebug/DBGp: sessões vivem fora do projeto; eventos chegam ao renderer como `debug-event`.
-        let root = state.project.read().await.root.clone();
-        let events = app.clone();
-        let emit: debug::Emit = std::sync::Arc::new(move |event| {
-            let _ = events.emit("debug-event", event);
-        });
-        return state.debug.dispatch(&root, &method, &args, emit).await;
+        let dirs = plugins::Dirs::new(&config, &root);
+        let key = git::s(arg(&args, 0))?;
+        return match method.as_str() {
+            "pluginToolSource" => tool_plugins::source(&dirs, key),
+            "pluginWorkbenchSource" => tool_plugins::workbench_source(&dirs,key),
+            "pluginAuthorizeService"=>tool_plugins::authorize_service(&dirs,key,git::s(arg(&args,1))?),
+            "pluginToolStop" => { state.tool_plugins.stop(key); Ok(Value::Null) },
+            _ => state.tool_plugins.call(&dirs, key, git::s(arg(&args, 1))?, arg(&args, 2).as_array().ok_or("Invalid tool arguments")?, &app, state.docker.executable()).await,
+        };
     }
     // Plugin downloads must not hold the workspace guard while waiting for the network.
     if method.starts_with("plugin") && method != "plugins" {
+        if ["pluginSetState", "pluginRemove"].contains(&method.as_str()) { if let Some(key)=arg(&args,0).as_str(){state.tool_plugins.stop(key);} }
+        if method=="pluginConfirmInstall" {state.tool_plugins.stop_all();}
         let config = std::env::var_os("PHP_IDE_STATE_DIR")
             .map(PathBuf::from)
             .unwrap_or(app.path().app_config_dir().map_err(err)?);
         let root = state.project.read().await.root.clone();
         let dirs = plugins::Dirs::new(&config, &root);
+        if ["pluginSetState","pluginRemove"].contains(&method.as_str()) {
+            if let Some(entry)=dirs.discover(env!("CARGO_PKG_VERSION")).into_iter().find(|e|Some(e.key.as_str())==arg(&args,0).as_str()) {
+                if let Ok(manifest)=entry.manifest{release_plugin(&state,&manifest.id).await?;}
+            }
+        }
         return plugins::dispatch(&dirs, &method, &args).await;
     }
     let project = state.project.read().await;
     let root = &project.root;
     let s = |i| git::s(arg(&args, i));
     if method == "dockerTerminal" {
+        let config=std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
+        tool_plugins::require_feature(&plugins::Dirs::new(&config,root),"phpforge.docker-services")?;state.docker.resume();
         let context = s(1)?;
         let container = s(2)?;
         state.docker.validate_context(root, context).await?;
@@ -425,7 +476,16 @@ async fn ide(
             let result = workspace::save(root, s(0)?, s(1)?, s(2)?)?;
             Ok(result)
         }
-        _ => Err(format!("Comando desconhecido: {}", method)),
+        _ => {
+            let root=project.root.clone();
+            drop(project);
+            let config=std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
+            let dirs=plugins::Dirs::new(&config,&root);
+            match tool_plugins::provider(&dirs,&method)? {
+                Some(key)=>state.tool_plugins.call(&dirs,&key,&method,&args,&app,state.docker.executable()).await,
+                None=>Err(format!("Comando desconhecido: {method}. Instale ou ative o plugin correspondente em Plugins.")),
+            }
+        },
     }
 }
 fn configure_path() {
@@ -476,6 +536,7 @@ fn main() {
         window.create = false;
     }
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             native_splash::show();
             let resources = app.path().resource_dir()?;
@@ -488,6 +549,7 @@ fn main() {
             let config = std::env::var_os("PHP_IDE_STATE_DIR")
                 .map(PathBuf::from)
                 .unwrap_or(app.path().app_config_dir()?);
+            app.manage(app_maintenance::Maintenance::new(config.clone())?);
             let recent = recent::Store::new(config);
             let requested = std::env::var_os("PHP_IDE_PROJECT")
                 .map(PathBuf::from)
@@ -514,9 +576,7 @@ fn main() {
                 cache,
                 recent,
                 docker: docker::Docker::default(),
-                tests: tests::Tests::default(),
-                composer: composer::Composer::default(),
-                debug: debug::Debugger::default(),
+                tool_plugins: tool_plugins::Host::default(),
                 active: std::sync::atomic::AtomicBool::new(active),
             });
             #[cfg(target_os = "macos")]
@@ -538,6 +598,7 @@ fn main() {
         .on_window_event(|window, event| {
             if matches!(event, tauri::WindowEvent::Destroyed) {
                 if let Some(state) = window.try_state::<Backend>() {
+                    state.tool_plugins.stop_all();
                     if let Ok(project) = state.project.try_read() {
                         if let Ok(mut terminals) = project.terminals.lock() {
                             drop(std::mem::take(&mut *terminals));

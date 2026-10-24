@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { findHeading, markdownHeadings, markdownLinkAt, renderMarkdown, resolveMarkdownTarget, safeHref, slugify } from '../shared/markdown';
-import { MarkdownPlugin } from '../shared/language/plugins/markdown';
+import { findHeading, markdownHeadings, markdownLinkAt, renderMarkdown, resolveMarkdownTarget, safeHref, slugify } from '../.tools/plugin-packages/markdown/src/shared/markdown';
+import { MarkdownPlugin } from '../.tools/plugin-packages/markdown/src/shared/language/plugins/markdown';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 
-const root = resolve('fixtures/markdown');
+const root = resolve('tests/fixtures/projects/markdown');
 async function walk(dir: string): Promise<string[]> {
  const out: string[] = [];
  for (const name of await readdir(dir)) { const full = join(dir, name); if ((await stat(full)).isDirectory()) out.push(...await walk(full)); else out.push(relative(root, full)); }

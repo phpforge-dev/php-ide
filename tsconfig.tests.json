@@ -4,5 +4,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["tests", "src", "shared"]
+  "include": ["tests", "src", "shared"],
+  "exclude": ["tests/fixtures/projects"]
 }

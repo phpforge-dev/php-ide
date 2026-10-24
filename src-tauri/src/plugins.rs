@@ -13,7 +13,7 @@ use std::{
     sync::Mutex,
 };
 
-pub const PERMISSIONS: [&str; 4] = ["project.read", "project.write", "process", "network"];
+pub const PERMISSIONS: [&str; 6] = ["project.read", "project.write", "process", "network", "native.tool", "workbench"];
 /// Linguagens aceitas em `activation.languages`; o mapeamento para arquivos fica na interface.
 pub const LANGUAGES: [&str; 17] = [
     "php",
@@ -53,12 +53,32 @@ pub struct Activation {
 }
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct ToolBinary { pub path: String, pub sha256: String }
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolManifest {
+ pub protocol_version: u32,
+ pub methods: Vec<String>,
+ pub event: String,
+ pub workbench: String,
+ pub style: String,
+ pub binaries: BTreeMap<String, ToolBinary>,
+}
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkbenchManifest { pub api_version:u32, pub main:String, pub style:String, #[serde(default)] pub services:Vec<String> }
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub id: String,
     pub name: String,
     pub version: String,
     pub min_ide_version: String,
     pub main: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool: Option<ToolManifest>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workbench: Option<WorkbenchManifest>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default)]
@@ -164,6 +184,18 @@ pub fn validate(m: &Manifest, dir: &Path, ide: &str) -> Res<()> {
     if !relative_ok(&m.main) || !m.main.ends_with(".js") {
         return Err("main deve ser um arquivo .js relativo à pasta do plugin".into());
     }
+    if m.tool.is_some() && m.workbench.is_some(){return Err("Declare tool or workbench, not both".into())}
+    if let Some(workbench)=&m.workbench {
+        crate::tool_plugins::validate_workbench(workbench,dir)?;
+        for method in &workbench.services {let permission=crate::tool_plugins::service_permission(method).ok_or("Unknown workbench service")?;if !m.permissions.iter().any(|p|p==permission){return Err(format!("Workbench service {method} requires {permission}"))}}
+        if !m.permissions.iter().any(|p|p=="workbench"){return Err("Workbench entry requires workbench permission".into())}
+    }
+    if let Some(tool) = &m.tool {
+        crate::tool_plugins::validate(tool, dir)?;
+        if !m.permissions.iter().any(|p| p == "native.tool") || !m.permissions.iter().any(|p| p == "workbench") {
+            return Err("Tool packages must declare native.tool and workbench".into());
+        }
+    }
     entry_file(dir, &m.main).map(|_| ())
 }
 /// Ponto de entrada canônico dentro da pasta do plugin (links não escapam).
@@ -260,7 +292,7 @@ impl Dirs {
         }
         out
     }
-    fn find(&self, key: &str) -> Res<Entry> {
+    pub(crate) fn find(&self, key: &str) -> Res<Entry> {
         self.discover(env!("CARGO_PKG_VERSION"))
             .into_iter()
             .find(|e| e.key == key)
@@ -372,8 +404,11 @@ async fn install_default(dirs: &Dirs, id: &str) -> Res<Value> {
     let installed = crate::plugin_catalog::install_default(dirs, &p).await?;
     if installed.is_null() { finish_default(dirs, id)?; return Ok(Value::Null); }
     let e = dirs.find(installed["key"].as_str().ok_or("Invalid installed plugin")?)?;
+    let native = e.manifest.as_ref().is_ok_and(|m| m.tool.is_some() || m.workbench.is_some());
     dirs.store(&e.state_key, Some(State {
-        enabled: true, consented: true, reviewed: p.permissions.clone(), granted: p.permissions,
+        enabled: true, consented: !native,
+        reviewed: if native { vec![] } else { p.permissions.clone() },
+        granted: if native { vec![] } else { p.permissions },
     }))?;
     finish_default(dirs, id)?;
     Ok(dirs.describe(&e))
@@ -877,21 +912,23 @@ mod tests {
         fs::write(tmp.path().join("bundled-plugins-v1.json"), "{}" ).unwrap();
         install_default(&dirs, "phpforge.docker").await.unwrap();
         let status = default_status(&dirs).unwrap();
-        assert_eq!(status.as_array().unwrap().iter().filter(|p| p["pending"] == true).count(), 1);
+        assert_eq!(status.as_array().unwrap().iter().filter(|p| p["pending"] == true).count(), defaults().unwrap().len()-4);
         assert_eq!(status[4]["id"], "phpforge.prettier");
         assert!(!dirs.user.exists());
     }
     #[test]
     fn default_repositories_are_pinned_and_permissions_are_read_only() {
         let packages = defaults().unwrap();
-        assert_eq!(packages.len(), 5);
+        assert!(packages.len()>=9);
         for p in packages {
             assert_eq!(p.plugin.repository, format!("https://github.com/phpforge-dev/plugin-{}", p.plugin.id.strip_prefix("phpforge.").unwrap()));
             assert_eq!(p.plugin.revision.len(), 40);
             assert!(p.plugin.revision.bytes().all(|b| b.is_ascii_hexdigit()));
             assert_eq!(p.sha256.len(), 64);
             assert!(p.sha256.bytes().all(|b| b.is_ascii_hexdigit()));
-            assert!(p.permissions.iter().all(|p| p == "project.read"));
+            if ["phpforge.php-debugger","phpforge.composer","phpforge.php-tests"].contains(&p.plugin.id.as_str()) {
+                assert_eq!(p.permissions,vec!["project.read","native.tool","workbench"]);
+            } else if p.permissions.iter().any(|p|p=="workbench") {assert!(p.permissions.iter().all(|p|PERMISSIONS.contains(&p.as_str())));} else { assert!(p.permissions.iter().all(|p| p=="project.read")); }
         }
     }
 

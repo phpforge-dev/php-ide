@@ -1,6 +1,6 @@
 {
   "name": "php-ide",
-  "version": "0.2.10",
+  "version": "0.2.13",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,7 +22,7 @@
     "test:php-semantics": "node --import tsx --test tests/php-hierarchy.test.ts && tsx scripts/check-php-semantics.ts",
     "test:web-languages": "node scripts/check-web-languages.mjs",
     "test:web-native": "node scripts/check-native.mjs --packaged --no-db --web-only",
-    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "test:unit": "node --import tsx --test tests/*.test.ts tests/*.test.mjs",
     "check": "npm run typecheck && npm run test:architecture && npm run test:unit && npm test && npm run lint:rust && npm run test:locales",
     "lint:rust": "node scripts/cargo.mjs clippy --all-targets -- -D warnings",
     "test:architecture": "node scripts/check-architecture.mjs",
@@ -36,34 +36,26 @@
     "pretest:ui": "npm run setup:plugins",
     "test:plugins:ui": "node scripts/check-default-plugins.mjs",
     "test:images": "node scripts/check-image-preview.mjs",
-    "test:plugins:native": "npm run test:native -- --no-db --plugins-only"
+    "test:plugins:native": "npm run test:native -- --no-db --plugins-only",
+    "test:maintenance:ui": "node scripts/check-app-maintenance.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
-    "@types/react": "19.2.2",
-    "@volar/monaco": "2.4.28",
-    "@vue/language-service": "3.3.13",
-    "@vue/typescript-plugin": "3.3.13",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
-    "diff": "^9.0.0",
-    "dt-sql-parser": "4.5.1",
-    "ignore": "7.0.14",
-    "mermaid": "11.17.2",
-    "monaco-editor": "^0.57.0",
-    "php-parser": "3.7.0",
-    "vue": "3.5.44",
-    "yaml": "^2.9.1"
+    "monaco-editor": "^0.57.0"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "0.14.1",
     "@playwright/test": "^1.64.1",
     "@tauri-apps/cli": "^2.12.4",
     "@types/node": "^26.6.5",
+    "dt-sql-parser": "4.5.1",
+    "ignore": "7.0.14",
+    "php-parser": "3.7.0",
     "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "yaml": "^2.9.1"
   },
   "overrides": {
     "dompurify": "3.4.17"

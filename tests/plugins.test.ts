@@ -11,7 +11,7 @@ import { DotenvPlugin, parseEnv } from '../.tools/plugin-packages/dotenv/src/sha
 
 async function project() {
  const root = await realpath(await mkdtemp(join(tmpdir(), 'php-ide-plugins-')));
- await cp(resolve('fixtures/laravel-strings'), root, { recursive: true });
+ await cp(resolve('tests/fixtures/projects/laravel-strings'), root, { recursive: true });
  return { root, host: new PluginHost(projectFiles(root), [new LaravelPlugin(), new DotenvPlugin()]), probe: await readFile(join(root, 'app/probe.php'), 'utf8') };
 }
 const inside = (text: string, needle: string, delta = 1) => { const i = text.indexOf(needle); assert.ok(i >= 0, needle); return i + delta; };
@@ -143,7 +143,7 @@ test('traduções __(), trans() e @lang em PHP, JSON e locais (DOC Laravel)', as
 });
 
 test('SQL em strings PHP: completion e navegação para DDL (plugin database)', async () => {
- const { DatabasePlugin } = await import('../shared/language/plugins/database');
+ const { DatabasePlugin } = await import('../.tools/plugin-packages/database/shared/language/plugins/database');
  const { LaravelPlugin } = await import('../.tools/plugin-packages/laravel/src/shared/language/plugins/laravel');
  const { DotenvPlugin } = await import('../.tools/plugin-packages/dotenv/src/shared/language/plugins/dotenv');
  const { model } = await import('./fixtures/sql-model');

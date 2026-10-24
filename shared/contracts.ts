@@ -38,7 +38,7 @@ export type DatabaseSession = { id: string; label: string; driver: DatabaseDrive
 export type DatabaseTable = { name: string; kind: string };
 export type DatabaseColumn = { name: string; type: string; nullable: boolean; primary: boolean };
 export type SqlResult = { statement: string; ms: number; kind: 'rows' | 'update' | 'error'; columns?: string[]; rows?: (string | null)[][]; truncated?: boolean; affected?: number; error?: string };
-export type { SqlModel } from './sql';
+export type { SqlModel } from './sql-types';
 export type DatabasePage = { columns: DatabaseColumn[]; rows: (string | null)[][]; offset: number; hasMore: boolean; ordered: boolean; cellLimit: number; meta?: string;
   /** Redis: token da próxima página (HSCAN/SSCAN ou último id do stream), tipo, TTL e tamanho. */
   cursor?: string | null; kind?: string; ttl?: number; size?: number };
@@ -149,7 +149,7 @@ export interface IdeApi {
   testRun(id: string, framework: 'pest' | 'phpunit', path: string, filter: string): Promise<TestRunOutput>;
   testCancel(id: string): Promise<void>;
   /** Composer: ação validada no backend; saída parcial chega por `onComposerProgress`. */
-  composerRun(id: string, runner: ComposerRunner, request: import('./language/plugins/composer').ComposerRequest & { lock?: boolean }): Promise<ComposerRunOutput>;
+  composerRun(id: string, runner: ComposerRunner, request: {action:string; packages?:string[]; dev?:boolean; optimize?:boolean; script?:string} & { lock?: boolean }): Promise<ComposerRunOutput>;
   composerCancel(id: string): Promise<void>;
   composerProbe(runner: ComposerRunner): Promise<{ command: string; version: string }>;
   composerSearch(query: string): Promise<{ name: string; description: string; downloads: number; favers: number; abandoned: boolean }[]>;
@@ -161,7 +161,9 @@ export interface IdeApi {
   databaseTables(id: string, schema: string): Promise<DatabaseTable[]>;
   databasePage(id: string, schema: string, table: string, offset: number, cursor?: string | null): Promise<DatabasePage>;
   databaseRedisEdit(id: string, schema: string, edit: RedisEdit): Promise<{ value?: string; result?: string | null }>;
-  databaseModel(id: string): Promise<import('./sql').SqlModel>;
+  databaseModel(id: string): Promise<import('./sql-types').SqlModel>;
+  databaseCompletionContext(id: string): Promise<{ database: string; defaultSchema: string; searchPath: string[]; caseSensitiveTables?: boolean; schemas?: string[]; schemasComplete?: boolean; fallback: boolean }>;
+  databaseCompletionPage(id: string, schema: string, offset: number, columns: boolean): Promise<{ rows: (string | null)[][]; hasMore: boolean; nextOffset?: number }>;
   databaseExecute(id: string, sql: string): Promise<SqlResult[]>;
   databaseCancel(id: string): Promise<void>;
   databaseDdl(id: string, schema: string, table: string): Promise<string>;

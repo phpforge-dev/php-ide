@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyEdits, classIndex, moveClass, importFixes, completionImport, extractMethod, extractVariable, inlineVariable, inspect, suppressed, suppressEdit, model, classAt, type FileText } from '../src/refactor-php';
+import { applyEdits, classIndex, moveClass, importFixes, completionImport, extractMethod, extractVariable, inlineVariable, inspect, suppressed, suppressEdit, model, classAt, type FileText } from '../.tools/plugin-packages/php-intelligence/src/refactor-php';
 
 const user = `<?php
 

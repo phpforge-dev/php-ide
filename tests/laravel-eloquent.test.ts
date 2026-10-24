@@ -8,8 +8,8 @@ import { LaravelPlugin } from '../.tools/plugin-packages/laravel/src/shared/lang
 import { applyMigration, eloquentIndex, plural, tableName, type Column } from '../shared/language/plugins/eloquent';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 
-// Recorte 25: Eloquent e inspeções sobre fixtures/laravel-eloquent (sem vendor, nada executado).
-const root = resolve('fixtures/laravel-eloquent');
+// Recorte 25: Eloquent e inspeções sobre tests/fixtures/projects/laravel-eloquent (sem vendor, nada executado).
+const root = resolve('tests/fixtures/projects/laravel-eloquent');
 async function walk(dir: string): Promise<string[]> {
  const out: string[] = [];
  for (const name of await readdir(dir).catch(() => [])) { const full = join(dir, name); if ((await stat(full)).isDirectory()) out.push(...await walk(full)); else out.push(relative(root, full)); }

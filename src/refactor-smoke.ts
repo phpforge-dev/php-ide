@@ -51,8 +51,8 @@ export async function refactorSmoke({ check, assert, wait }: Tools) {
   m.applyEdits([{ range: m.getFullModelRange(), text: invoice.replace('return $sum;', "return 'x';") }]);
   await wait(() => monaco.editor.getModelMarkers({ resource: m.uri, owner: 'php-inspections' }).some(k => k.code === 'PhpIncompatibleReturnTypeInspection'), 15000, 'inspeção de tipo ausente');
   const x = m.getValue().indexOf("'x'"); const p = m.getPositionAt(x + 1);
-  const { codeActions } = await import('./refactor-ui');
-  const actions = await codeActions(m, new monaco.Range(p.lineNumber, p.column, p.lineNumber, p.column));
+  const { pluginService } = await import('./plugin-services');const codeActions=pluginService('phpIntelligence')?.codeActions;if(!codeActions)throw Error('PHP intelligence plugin is inactive');
+  const actions:monaco.languages.CodeAction[] = await codeActions(m, new monaco.Range(p.lineNumber, p.column, p.lineNumber, p.column));
   const titles = actions.map(a => a.title);
   assert(titles.includes('Suprimir PhpIncompatibleReturnTypeInspection nesta instrução'), 'supressão ausente: ' + titles.join(' | '));
   const fix = actions.find(a => a.title === 'Alterar tipo de retorno para string'); assert(fix?.edit, 'quick fix ausente: ' + titles.join(' | '));

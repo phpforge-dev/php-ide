@@ -130,3 +130,55 @@ Os plugins padrão Laravel, DotEnv, Docker, Bash e Prettier usam esse mesmo work
 `format(request, files)` recebe `{path, text, language, options: {tabSize, insertSpaces}, range?: {start, end}}`. Range usa offsets UTF-16 no texto completo; o plugin retorna `{text: string}` com o documento completo, não salva arquivos. `null` permite consultar o próximo provedor. Erros são exibidos e registrados; não há fallback silencioso para outro estilo quando um formatador falha. Limite de resultado: 2 Mi unidades UTF-16, com o mesmo timeout de 4 segundos dos hooks.
 
 A ação Reformatar código consulta o hook para documentos não PHP em qualquer linguagem do editor, independentemente dos provedores antigos de completion/diagnóstico. PHP puro usa o formatador próprio por padrão. A aplicação verifica modelo/versão antes de aplicar, usa uma edição mínima e cria uma unidade de undo. Formatar não salva.
+
+## Native tool extension contract (0.2.11+)
+
+A tool package adds optional `tool` metadata to the existing manifest:
+
+```json
+{
+  "protocolVersion": 1,
+  "methods": ["exampleStatus", "exampleRun", "exampleCancel"],
+  "event": "example-progress",
+  "workbench": "workbench.js",
+  "style": "workbench.css",
+  "binaries": {
+    "aarch64-macos": { "path": "bin/aarch64-macos/example", "sha256": "<64 hexadecimal characters>" }
+  }
+}
+```
+
+Declare `native.tool` and `workbench` permissions explicitly; `project.read` is needed for mediated reads. Ordinary language hooks stay in `main.js` and a worker. The workbench entry is an ES module exporting `activate(sdk)`; it is trusted window code after consent. It returns optional `run`, `reset` and `dispose` methods. Register disposables through `sdk.own`; use the scoped keymap/listen/API and host navigation services. The host removes owned top-level panels/rail buttons and styles on unload.
+
+The native service receives canonical project root and Docker executable as argv values. It exchanges bounded newline-delimited JSON requests `{id,method,params:{args}}`, responses `{id,result}` or `{id,error:{message}}`, and events `{method:"tool/event",params:payload}`. `initialize` must return `{protocolVersion:1}`. Requests may run concurrently so cancellation can interrupt a long task. Only manifest-declared methods are routed; the host validates platform and binary checksum before launch. No native library is loaded into the IDE process.
+
+`pluginToolSource`, `pluginToolCall` and `pluginToolStop` are host-side operations, not capabilities delivered to ordinary workers. Installed provider commands from CodeLens are routed only to the matching active trusted tool UI. State/permission changes revoke the native process and event generation.
+
+The packaged native service and window module are not sandboxed. This contract must not be described as arbitrary-panel isolation. [Reference packages and evidence](../research/native-tool-plugins.md).
+
+
+## Standalone workbench modules (IDE 0.2.12)
+
+A package that needs UI but no native process may declare:
+
+```json
+{
+  "id": "phpforge.markdown",
+  "name": "Markdown",
+  "version": "1.0.0",
+  "minIdeVersion": "0.2.12",
+  "main": "main.js",
+  "permissions": ["project.read", "workbench"],
+  "workbench": {"apiVersion": 1, "main": "workbench.js", "style": "workbench.css"}
+}
+```
+
+`tool` and `workbench` are mutually exclusive. Standalone workbench modules do not require `native.tool` or an executable. The language entry still executes in the isolated worker. The workbench entry exports `activate(sdk)` and executes as trusted code inside the IDE window after explicit permission review. Default installation never grants workbench consent automatically.
+
+The SDK exposes the editor, active path/open/status hooks, localized strings, shared editor/preview layout, keymaps, and a read-only API (`read`, `readImage`, `language`, `workspace`). Project reads require `project.read`. Call `sdk.own(disposableOrCleanup)` for every provider, listener and layout registration; the host invokes these cleanups on reload, project changes, disable and removal. A returned controller can also implement `dispose()`. Bundled modules must be self-contained, with no runtime npm resolution. Assets are confined to the installed package and validated before loading (8 MiB module, 512 KiB stylesheet, API version 1).
+
+## Optional feature contributions (IDE 0.2.13)
+
+See [shared contracts](extraction-contracts.md), the [typed workbench subset](../../shared/language/plugins/workbench-api.ts), and [extraction evidence](../research/parallel-plugin-extraction.md). A standalone workbench manifest may declare `services: string[]`. Rust validates method names against an explicit allowlist and verifies declared permissions; the SDK authorizes calls again and rejects late results after the owner generation stops. Native feature dispatch also verifies that its owning plugin is enabled and reviewed. `process` is required for Git, terminal, Docker and agent operations; database services require `network`, and refactoring transactions require `project.write`.
+
+`sdk.provide(name, implementation)` publishes an optional feature. Core factories follow registration/removal, with a recoverable absent state and no hidden semantic fallback. `sdk.own` owns providers, keymaps, listeners, workers and layout cleanup. Shared editor containers belong to the host and survive plugin disposal. Resource release is a host operation independent of revoked UI permissions; reload waits for cleanup before replacing contributions. Document symbols, completion and diagnostics should disappear when the provider is disabled.

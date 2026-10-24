@@ -27,7 +27,7 @@ pub struct Rpc {
     lsp: bool,
     jsonrpc: bool,
     child: std::sync::Mutex<Child>,
-    stderr: Arc<std::sync::Mutex<String>>,
+    owned_group: bool,
 }
 /// Trecho de stderr que explica falhas: a linha "Error:" do processo e as seguintes,
 /// ou as últimas linhas quando não houver uma.
@@ -60,7 +60,25 @@ async fn send(writer: &Mutex<ChildStdin>, mut value: Value, lsp: bool, jsonrpc: 
     input.flush().await.map_err(err)
 }
 impl Rpc {
-    pub fn spawn(
+    pub fn spawn_tool(
+        program: &str,
+        args: &[String],
+        root: &Path,
+        notify: Arc<dyn Fn(Value) + Send + Sync>,
+    ) -> Res<Arc<Self>> {
+        Self::spawn_config(
+            program,
+            args,
+            root,
+            false,
+            false,
+            notify,
+            default_handler(),
+            true,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn spawn_config(
         program: &str,
         args: &[String],
         root: &Path,
@@ -68,16 +86,21 @@ impl Rpc {
         jsonrpc: bool,
         notify: Arc<dyn Fn(Value) + Send + Sync>,
         request: Handler,
+        owned_group: bool,
     ) -> Res<Arc<Self>> {
-        let mut child = Command::new(program)
+        let mut command = Command::new(program);
+        command
             .args(args)
             .current_dir(root)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .kill_on_drop(true)
-            .spawn()
-            .map_err(err)?;
+            .kill_on_drop(true);
+        #[cfg(unix)]
+        if owned_group {
+            command.process_group(0);
+        }
+        let mut child = command.spawn().map_err(err)?;
         let writer = Arc::new(Mutex::new(child.stdin.take().ok_or("stdin ausente")?));
         let stdout = child.stdout.take().ok_or("stdout ausente")?;
         let mut stderr = child.stderr.take().ok_or("stderr ausente")?;
@@ -111,7 +134,13 @@ impl Rpc {
             let result: Res<()> = async {
                 loop {
                     let mut line = String::new();
-                    if reader.read_line(&mut line).await.map_err(err)? == 0 {
+                    if (&mut reader)
+                        .take(16_777_217)
+                        .read_line(&mut line)
+                        .await
+                        .map_err(err)?
+                        == 0
+                    {
                         break;
                     }
                     let payload = if lsp {
@@ -195,7 +224,7 @@ impl Rpc {
             lsp,
             jsonrpc,
             child: std::sync::Mutex::new(child),
-            stderr: tail,
+            owned_group,
         }))
     }
     pub async fn request(&self, method: &str, params: Value, seconds: u64) -> Res<Value> {
@@ -215,19 +244,25 @@ impl Rpc {
             .map_err(|_| format!("Tempo esgotado: {}", method))?
             .map_err(err)?
     }
-    pub async fn notify(&self, method: &str, params: Value) -> Res<()> {
-        self.notify_value(json!({"method":method,"params":params}))
-            .await
-    }
     async fn notify_value(&self, value: Value) -> Res<()> {
         send(&self.writer, value, self.lsp, self.jsonrpc).await
     }
-    /// Resumo do stderr recente do processo (vazio se não houve saída de erro).
-    pub fn stderr_tail(&self) -> String {
-        self.stderr.lock().map(|t| summary(&t)).unwrap_or_default()
-    }
     pub fn stop(&self) {
         if let Ok(mut child) = self.child.lock() {
+            if self.owned_group && child.try_wait().ok().flatten().is_none() {
+                if let Some(pid) = child.id() {
+                    #[cfg(unix)]
+                    unsafe {
+                        libc::kill(-(pid as i32), libc::SIGKILL);
+                    }
+                    #[cfg(windows)]
+                    {
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/PID", &pid.to_string(), "/T", "/F"])
+                            .spawn();
+                    }
+                }
+            }
             let _ = child.start_kill();
         }
     }

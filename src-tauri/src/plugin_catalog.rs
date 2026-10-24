@@ -248,9 +248,13 @@ async fn inspect(
     fs::rename(temp.path(), preview_path(dirs, &token)?).map_err(err)?;
     Ok(json!({"token":token,"manifest":m,"origin":origin}))
 }
-fn verify_default(package: &plugins::DefaultPlugin, m: &plugins::Manifest, digest: Option<&str>) -> Res<()> {
+pub(crate) fn verify_default(package: &plugins::DefaultPlugin, m: &plugins::Manifest, digest: Option<&str>) -> Res<()> {
     if digest != Some(package.sha256.as_str()) || m.permissions != package.permissions
-        || package.permissions.iter().any(|p| p != "project.read") {
+        || (if m.tool.is_some() {
+            !package.permissions.iter().any(|p|p=="native.tool") || !package.permissions.iter().any(|p|p=="workbench") || package.permissions.iter().any(|p|!["project.read","native.tool","workbench"].contains(&p.as_str()))
+        } else if m.workbench.is_some() {
+            !package.permissions.iter().any(|p|p=="workbench") || package.permissions.iter().any(|p|!crate::plugins::PERMISSIONS.contains(&p.as_str()))
+        } else { package.permissions.iter().any(|p| p != "project.read") }) {
         return Err("Default plugin integrity or permissions mismatch".into());
     }
     Ok(())
@@ -271,6 +275,10 @@ pub async fn install_default(dirs: &Dirs, package: &plugins::DefaultPlugin) -> R
         return Ok(Value::Null);
     }
     dispatch(dirs, "pluginConfirmInstall", &[json!(token)]).await
+}
+/// Application maintenance uses a catalog entry already checked against the installed origin.
+pub async fn inspect_package(dirs:&Dirs, package:&CatalogPlugin)->Res<Value> {
+    inspect(dirs,&package.repository,&package.revision,Some(package)).await
 }
 pub async fn dispatch(dirs: &Dirs, method: &str, args: &[Value]) -> Res<Value> {
     let arg = |i: usize| {

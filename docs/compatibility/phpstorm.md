@@ -1,3 +1,9 @@
+Configuração inicial e atualizações (24/10/2026): [requisito próprio e implementação](../specs/first-run-and-updates.md). Seleção opcional na primeira abertura, fila em Rust e auto update desligado por padrão. Testes unitários e WebKit sintético são evidências próprias; janela Tauri e distribuição assinada seguem pendentes. Nenhuma promoção de compatibilidade.
+
+Extração paralela (24/10/2026): [12 plugins independentes e seis bibliotecas Rust externas vinculadas ao host](../research/parallel-plugin-extraction.md). As cópias internas foram removidas após autorização do usuário e testes focados. A extração é evidência arquitetural; a aceitação Tauri completa aguarda desbloqueio da sessão macOS e nenhuma família recebe promoção comparativa.
+
+Standalone PHP tools (23/10/2026): [Xdebug, Composer and PHPUnit/Pest extracted into separate plugin packages](../research/native-tool-plugins.md). Native-tool lifecycle validation is separate from engine/version coverage; no compatibility family is promoted.
+
 > Backend ativo migrado para Rust/Tauri em 22/10/2026. [Validação nativa e lacunas](../research/tauri-migration.md). Resultados Electron históricos não são automaticamente atribuídos ao novo backend.
 
 Splash nativa macOS (23/10/2026): [imagem AppKit embutida antes do WebView e handoff de prontidão](../research/startup-welcome.md). Requisito próprio; Windows/Linux permanecem com splash HTML, sem nova evidência comparativa.
@@ -16,20 +22,20 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 
 | ID | Funcionalidade | Prioridade | Estado | macOS | Windows | Evidência de comparação |
 |---|---|---|---|---|---|---|
-| PHP-COMP-001 | Autocomplete contextual | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| PHP-DEF-001 | Go to Definition | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| PHP-USE-001 | Find Usages | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| PHP-IMP-001 | Go to Implementation | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| PHP-TYPE-001 | Inferência de tipos | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação |
-| PHP-IDX-001 | Indexação | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
-| PHP-DOC-001 | PHPDoc | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação |
-| PHP-GEN-001 | Generics | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação |
-| PHP-TRAIT-001 | Traits | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação |
-| PHP-INHERIT-001 | Herança | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria e marcadores na margem; sem comparação |
-| PHP-IMPORT-001 | Autoimport | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios; sem comparação |
-| PHP-RENAME-001 | Rename Symbol | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação |
-| PHP-VENDOR-001 | Navegação em vendor | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria; sem comparação |
-| PHP-NATIVE-001 | Funções/classes nativas | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); stubs do Phpactor; sem comparação |
+| PHP-COMP-001 | Autocomplete contextual | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-DEF-001 | Go to Definition | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-USE-001 | Find Usages | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-IMP-001 | Go to Implementation | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-TYPE-001 | Inferência de tipos | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-IDX-001 | Indexação | P0 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-DOC-001 | PHPDoc | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-GEN-001 | Generics | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-TRAIT-001 | Traits | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria contra Phpactor; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-INHERIT-001 | Herança | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria e marcadores na margem; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-IMPORT-001 | Autoimport | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-RENAME-001 | Rename Symbol | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-VENDOR-001 | Navegação em vendor | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); fixture própria; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| PHP-NATIVE-001 | Funções/classes nativas | P0 | Em desenvolvimento | Não validada | Não executada | [recorte 20](../research/implementation-slice-20.md); stubs do Phpactor; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
 | UI-PROJECT-001 | Gerenciamento de projetos | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-EDITOR-001 | Editor de código | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-LAYOUT-001 | Layout da IDE | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
@@ -38,23 +44,23 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 | UI-TREE-001 | Explorador de projetos | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-NAV-001 | Navegação | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-SEARCH-001 | Search Everywhere | P1 | Implementada | Não validada | Testes próprios: search-everywhere.md; CSS Islands [31](../research/implementation-slice-31.md); `display` fechado [35](../research/implementation-slice-35.md) | Arquivos, símbolos PHP, ações e texto; casca visual aproximada; equivalência com referência pendente |
-| UI-TERM-001 | Terminal | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
+| UI-TERM-001 | Terminal | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE; [extração em plugins](../research/parallel-plugin-extraction.md) |
 | UI-THEME-001 | Temas | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-SETTINGS-001 | Configurações | P1 | Em desenvolvimento | Não validada | Não executada | Sem comparação referência × IDE |
 | UI-KEYMAP-001 | Atalhos | P1 | Em desenvolvimento | Não validada | Não executada | [recorte 23](../research/implementation-slice-23.md); testes próprios; sem comparação |
 | UI-CONTEXT-001 | Menus contextuais | P1 | Em desenvolvimento | Não validada | Não executada | [Árvore do projeto](../research/implementation-slice-16.md); sem comparação referência × IDE |
 | TOOL-COMPOSER-001 | Composer | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 22](../research/implementation-slice-22.md); testes próprios; sem comparação |
-| TOOL-GIT-001 | Git | P1 | Em desenvolvimento | Não validada | Não executada | [Fluxos locais](../research/implementation-slice-04.md), [recorte 27](../research/implementation-slice-27.md); [conflitos comparados em parte](../research/implementation-slice-12.md) |
+| TOOL-GIT-001 | Git | P1 | Em desenvolvimento | Não validada | Não executada | [Fluxos locais](../research/implementation-slice-04.md), [recorte 27](../research/implementation-slice-27.md); [conflitos comparados em parte](../research/implementation-slice-12.md); [extração em plugins](../research/parallel-plugin-extraction.md) |
 | TOOL-PHPUNIT-001 | PHPUnit | P2 | Em desenvolvimento | Não validada | Não executada | [Descobrir/executar/resultados](../research/implementation-slice-15.md); sem comparação referência × IDE |
 | TOOL-PEST-001 | Pest | P2 | Em desenvolvimento | Não validada | Não executada | [Descobrir/executar/resultados](../research/implementation-slice-15.md); sem comparação referência × IDE |
 | TOOL-XDEBUG-001 | Xdebug | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 21](../research/implementation-slice-21.md); Xdebug 3.4.5 real e UI headless; sem comparação |
 | TOOL-LARAVEL-001 | Laravel | P2 | Em desenvolvimento | Não validada | Não executada | [Strings](../research/implementation-slice-10.md), [Blade](../research/implementation-slice-11.md) e [recorte 25](../research/implementation-slice-25.md); comparação parcial só de strings, 1 execução |
 | TOOL-DOTENV-001 | Arquivos .env | P2 | Em desenvolvimento | Não validada | Não executada | [env()](../research/implementation-slice-10.md); comparação parcial, 1 execução |
-| TOOL-MARKDOWN-001 | Markdown | P2 | Em desenvolvimento | Não validada | Não executada | [Prévia, Mermaid, links e inspeções](../research/implementation-slice-14.md); referência observada só por acessibilidade |
-| PLUGIN-API-001 | Sistema de plugins | P1 | Em desenvolvimento | Não validada | Não executada | Plugins internos e de terceiros com permissões ([recorte 24](../research/implementation-slice-24.md)); sem comparação |
-| TOOL-SYMFONY-001 | Symfony | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 22](../research/implementation-slice-22.md); testes próprios; sem comparação |
-| TOOL-REFACTOR-001 | Refatorações adicionais | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação |
-| TOOL-INSPECT-001 | Inspeções | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação |
+| TOOL-MARKDOWN-001 | Markdown | P2 | Em desenvolvimento | Não validada | Não executada | [Prévia, Mermaid, links e inspeções](../research/implementation-slice-14.md); [plugin externo](../research/markdown-plugin.md); referência observada só por acessibilidade |
+| PLUGIN-API-001 | Sistema de plugins | P1 | Em desenvolvimento | Não validada | Não executada | Plugins internos e de terceiros com permissões ([recorte 24](../research/implementation-slice-24.md)); sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| TOOL-SYMFONY-001 | Symfony | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 22](../research/implementation-slice-22.md); testes próprios; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| TOOL-REFACTOR-001 | Refatorações adicionais | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| TOOL-INSPECT-001 | Inspeções | P2 | Em desenvolvimento | Não validada | Não executada | [recorte 19](../research/implementation-slice-19.md); testes próprios e smoke nativo; sem comparação; [extração em plugins](../research/parallel-plugin-extraction.md) |
 
 ## Regras para atualizar
 
@@ -103,12 +109,12 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 | OBS-SQL-COMP-01…04 / NAV-01…02: SQL em strings PHP | Testes, banco real e UI aprovados | Itens e caudas iguais; ordem própria; schemas além de public ([recorte 13](../research/implementation-slice-13.md)) |
 | OBS-SQL-CON-01…02: console SQL | Testes, banco real e UI aprovados | Execução e grade equivalentes; resultados no painel do editor em vez de Services |
 | DDL gerado (PostgreSQL) | Idêntico ao da referência para `orders` | Comparado caractere a caractere |
-| DB-MARIA-001 | MariaDB 11.4: exploração e prévia aprovadas em integração | Pendente |
-| DB-MSSQL-001 | SQL Server 2022 (emulado): conexão, navegação, prévia, console e DDL aprovados em integração ([recorte 18](../research/implementation-slice-18.md)) | Pendente |
-| DB-REDIS-001 | Redis 7: SCAN, tipo, TTL, prévia, console, edição pela prévia, CA em TLS e paginação por cursor aprovados em integração ([recorte 26](../research/implementation-slice-26.md)) | Pendente |
-| DB-SQLITE-001 | Teste Rust ponta a ponta aprovado | Pendente |
+| DB-MARIA-001 | MariaDB 11.4: exploração e prévia aprovadas em integração | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| DB-MSSQL-001 | SQL Server 2022 (emulado): conexão, navegação, prévia, console e DDL aprovados em integração ([recorte 18](../research/implementation-slice-18.md)) | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| DB-REDIS-001 | Redis 7: SCAN, tipo, TTL, prévia, console, edição pela prévia, CA em TLS e paginação por cursor aprovados em integração ([recorte 26](../research/implementation-slice-26.md)) | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| DB-SQLITE-001 | Teste Rust ponta a ponta aprovado | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
 | Diálogo de fontes de dados (abas, URL, SSL, SSH, schemas, sem senha em disco) | Fluxo na janela Tauri real aprovado com PostgreSQL | Não observado; layout a partir da documentação pública |
-| DB-ORACLE-001 | Oracle Free 23: conexão, metadados, prévia, console PL/SQL e DDL aprovados em integração ([recorte 26](../research/implementation-slice-26.md)) | Pendente |
+| DB-ORACLE-001 | Oracle Free 23: conexão, metadados, prévia, console PL/SQL e DDL aprovados em integração ([recorte 26](../research/implementation-slice-26.md)) | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
 | AI-CODEX-001: handshake/autenticação | Aprovado; streaming/conclusão também aprovados; interrupção pendente | Não mede equivalência de agente |
 | AI-ACP-001: sessão, permissão, pendências, manter/descartar, escrita externa recusada | Teste nativo com agente ACP falso: RESULTADO_NATIVO | Referência observada só na interface, sem conversa ([recorte 17](../research/implementation-slice-17.md)) |
 | AI-ACP-001: motivo de falha na inicialização (stderr do agente) | Teste Rust aprovado | Sem comparação |
@@ -248,9 +254,9 @@ As três famílias abaixo acrescentam recortes ao catálogo original. [Escopo, v
 
 | ID | Recorte | Estado | Evidência própria | Comparação PhpStorm |
 |---|---|---|---|---|
-| WEB-JSTS-001 | Autocomplete, tipos, navegação JS/TS | Em desenvolvimento | Worker real TypeScript; fixture multiarquivo | Pendente |
-| WEB-REACT-001 | JSX/TSX, props e useState | Em desenvolvimento | Declarações React e serviço TS reais | Pendente |
-| WEB-VUE-001 | Template, script setup e props importadas | Em desenvolvimento | Volar real em WebKit | Pendente |
+| WEB-JSTS-001 | Autocomplete, tipos, navegação JS/TS | Em desenvolvimento | Worker real TypeScript; fixture multiarquivo | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| WEB-REACT-001 | JSX/TSX, props e useState | Em desenvolvimento | Declarações React e serviço TS reais | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| WEB-VUE-001 | Template, script setup e props importadas | Em desenvolvimento | Volar real em WebKit | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
 
 ## Organização e guias de plugins — 23/10/2026
 
@@ -307,3 +313,13 @@ Requisito próprio implementado: arquivos raster abrem em abas de visualização
 
 
 Evidência deste recorte de imagens: typecheck, idiomas, teste Rust `preview_images`, nove cenários WebKit do visualizador e cenário PNG em Tauri real aprovados. Relatórios `.artifacts/image-preview-webkit.json` e `.artifacts/image-preview-native.json`. A suíte Rust geral teve falha/interrupção em cenários Git; não foi declarada aprovada. Demais codecs e equivalência com PhpStorm seguem sem validação individual.
+
+## SPEC-14 — connection-aware SQL completion
+
+| Capability | Independent implementation evidence | PhpStorm comparison |
+|---|---|---|
+| Active-session metadata, aliases/schemas, CTE/derived projections and scoped columns | PostgreSQL 16, MySQL 8.4 and MariaDB 11.4 passed production-worker/native Tauri acceptance; real Monaco popup, Enter/Tab/undo, PHP connection switch, DDL refresh and lifecycle checked | No new reference observation; equivalence not established |
+| Large SQL catalogs | Separate synthetic worker measurements at 10k relations/100k columns and 50k/500k; serialized payload measured, actual heap unavailable | Not compared |
+| SQLite, SQL Server and Oracle SQL intelligence | Active-session metadata and bounded dialect rules passed native Tauri popup/keyboard, aliases/CTEs/derived scopes and DDL tests; SQLite attachments/temp/generated columns, SQL Server TOP/APPLY and real case-sensitive collation/USE switching, and Oracle metadata past 100 columns checked; full vendor grammars remain unsupported | Not compared |
+
+[Evidence and limitations](../research/sql-intelligence.md). This record does not promote the database or SQL families as a whole. Existing DDL navigation remains separately scoped.

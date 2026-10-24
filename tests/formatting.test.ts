@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Worker} from 'node:worker_threads';
-import {formatPhp} from '../shared/formatting/php';
+import {formatPhp} from '../.tools/plugin-packages/php-formatter/src/php';
 import {formatEdit} from '../shared/formatting/edits';
-import {readStyle,type Style} from '../shared/formatting/config';
+import {readStyle,type Style} from '../.tools/plugin-packages/php-formatter/src/config';
 import {format as prettier} from '../.tools/plugin-packages/prettier/src/format';
 import {SandboxedPlugin,WORKER_SOURCE,type Channel} from '../shared/language/plugins/sandbox';
 import {PluginHost,setExternalPlugins} from '../shared/language/plugins/host';
@@ -72,4 +72,11 @@ test('Malformed formatting results and plugin errors are visible and never silen
   const plugin=new SandboxedPlugin('user:test.formatter',manifest,`ide.register({format(){${body}}})`,[],{files:files(),write:async()=>null,exec:async()=>'',fetch:async()=>({status:0,body:''})},channel,{rootUri:'file:///proj/'});
   try{assert.ok(await plugin.ready);await assert.rejects(()=>plugin.format(request('const x=1')));assert.ok(plugin.info.errors.some(e=>e.startsWith('format:')));}finally{plugin.stop();}
  }
+});
+
+test('PHP formatter package executes safely inside the language sandbox',async()=>{
+ const manifest=JSON.parse(await readFile('.tools/plugin-packages/php-formatter/plugin.json','utf8')) as PluginManifest;
+ const plugin=new SandboxedPlugin('user:phpforge.php-formatter',manifest,await readFile('.tools/plugin-packages/php-formatter/main.js','utf8'),['project.read'],{files:files({'.editorconfig':'[*]\nindent_size=2'}),write:async()=>null,exec:async()=>'',fetch:async()=>({status:0,body:''})},channel,{rootUri:'file:///proj/'});
+ setExternalPlugins(()=>[plugin]);
+ try{assert.ok(await plugin.ready,plugin.info.errors.join('\n'));const host=new PluginHost(files());const result=await host.format(request('<?php $x=1;','php','a.php'));assert.equal(result!.text,'<?php\n$x = 1;\n');assert.equal(await host.format(request('<?php $x=1;','php','a.blade.php')),null);await assert.rejects(()=>host.format(request('<?php function {','php','a.php')));}finally{plugin.stop();setExternalPlugins(null);}
 });

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { discoverTests, isTestFile, locate, parseJunit, pestFilter, phpunitFilter, summarize } from '../shared/language/php-tests';
-import { PhpTestsPlugin } from '../shared/language/plugins/php-tests';
+import { discoverTests, isTestFile, locate, parseJunit, pestFilter, phpunitFilter, summarize } from '../.tools/plugin-packages/php-tests/src/shared/language/php-tests';
+import { PhpTestsPlugin } from '../.tools/plugin-packages/php-tests/src/shared/language/plugins/php-tests';
 import { PluginHost } from '../shared/language/plugins/host';
 import type { ProjectFiles } from '../shared/language/plugins/api';
 
-const fixtures = join(import.meta.dirname, '../fixtures/php-tests');
+const fixtures = join(import.meta.dirname, './fixtures/projects/php-tests');
 const read = (path: string) => readFileSync(join(fixtures, path), 'utf8');
 /** Projeto em disco com leitura confinada à pasta, como o `ProjectFiles` do renderer. */
 function project(root: string, extra: Record<string, string> = {}): ProjectFiles {

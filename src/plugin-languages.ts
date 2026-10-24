@@ -4,7 +4,7 @@ import { isEnvPath } from '../shared/env-document';
 import * as monaco from 'monaco-editor';
 import { msg } from './i18n';
 import type { IdeApi, LanguageMethod } from '../shared/contracts';
-import { isPluginDocument } from '../shared/language/plugins/symfony';
+import { isPluginDocument } from '../shared/plugin-document-associations';
 
 // Providers for the bundled document plugins (Composer, Symfony, DotEnv and Docker).
 type Host = { path(model: monaco.editor.ITextModel): string | undefined; status(text: string): void };

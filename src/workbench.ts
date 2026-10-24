@@ -45,7 +45,7 @@ export function mountWorkbench(api: IdeApi) {
  const setLeft=(id:string) => {
   const collapse=leftTool===id&&!main.classList.contains('left-hidden');
   main.classList.toggle('left-hidden',collapse);leftTool=id;
-  for(const key of ['show-project','show-commit'])el(key).setAttribute('aria-pressed',String(!collapse&&key===id));
+  for(const key of ['show-project','show-commit'])document.getElementById(key)?.setAttribute('aria-pressed',String(!collapse&&key===id));
  };
  const setRight=(id:string) => {
   const collapse=rightTool===id&&!main.classList.contains('right-hidden');
@@ -53,20 +53,20 @@ export function mountWorkbench(api: IdeApi) {
   for(const key of ['show-agent','show-db'])el(key).setAttribute('aria-pressed',String(!collapse&&key===id));
  };
  for(const [id,kind,label] of [['show-project','project',tr('Projeto')],['show-commit','save',tr('Commit')]]) {
-  const button=el(id);const action=button.onclick;icon(button,kind,label);leftRail.append(button);
+  const button=document.getElementById(id);if(!button)continue;const action=button.onclick;icon(button,kind,label);leftRail.append(button);
   button.onclick=event=>{setLeft(id);action?.call(button,event);};
  }
- el('show-project').setAttribute('aria-pressed','true');
+ document.getElementById('show-project')?.setAttribute('aria-pressed','true');
  for(const [id,kind,label] of [['show-db','database',tr('Bancos')],['show-agent','agent',tr('Agente')]]) {
   const button=el(id);const action=button.onclick;icon(button,kind,label);rightRail.append(button);
   button.onclick=event=>{setRight(id);action?.call(button,event);};
  }
- const gitButton=el('show-git');icon(gitButton,'git','Git');leftRail.append(gitButton);
+ const gitButton=document.getElementById('show-git');if(gitButton){icon(gitButton,'git','Git');leftRail.append(gitButton);}
  main.classList.add('right-hidden');
  left.querySelector(':scope > .switch')?.remove();right.querySelector(':scope > .switch')?.remove();
  for(const [pane,side] of [[left,'left'],[right,'right']] as const) {
   const hide=document.createElement('button');hide.className='hide-tool';icon(hide,'hide',side==='left'?tr('Ocultar painel do projeto'):'Ocultar ferramentas');
-  hide.onclick=()=>{main.classList.add(side+'-hidden');const ids=side==='left'?['show-project','show-commit']:['show-db','show-agent'];for(const id of ids)el(id).setAttribute('aria-pressed','false');el(side==='left'?leftTool:rightTool||'show-db').focus();};pane.prepend(hide);
+  hide.onclick=()=>{main.classList.add(side+'-hidden');const ids=side==='left'?['show-project','show-commit']:['show-db','show-agent'];for(const id of ids)document.getElementById(id)?.setAttribute('aria-pressed','false');document.getElementById(side==='left'?leftTool:rightTool||'show-db')?.focus();};pane.prepend(hide);
  }
  const header=document.querySelector('header')!;header.className='main-toolbar';
  header.querySelector('strong')?.remove();header.querySelector('.muted')?.remove();
@@ -82,7 +82,7 @@ export function mountWorkbench(api: IdeApi) {
  let version=0;
  async function refreshBranch(){const current=++version;try{const state=await api.gitStatus();if(current===version)setBranch(state.branch);}catch{if(current===version)setBranch(tr('Git'));}}
  new MutationObserver(()=>{void refreshBranch();}).observe(project,{childList:true,characterData:true,subtree:true});
- new MutationObserver(()=>{const text=el('git-branch').textContent;if(text&&text!==tr('Git indisponível'))setBranch(text);}).observe(el('git-branch'),{childList:true});
+ const gitBranch=document.getElementById('git-branch');if(gitBranch)new MutationObserver(()=>{const text=gitBranch.textContent;if(text&&text!==tr('Git indisponível'))setBranch(text);}).observe(gitBranch,{childList:true});
  void refreshBranch();
  const space=document.createElement('span');space.className='toolbar-space';header.append(space);
  // Run widget: configuration label, Run (no runner yet: disabled with the reason) and Debug (debugs the current PHP file).
@@ -90,7 +90,7 @@ export function mountWorkbench(api: IdeApi) {
  const runConfig=document.createElement('span');runConfig.className='run-config';runConfig.textContent=tr('Arquivo atual');
  const runButton=document.createElement('button');runButton.id='run-current';runButton.disabled=true;runButton.title=tr('Executar arquivo atual: ainda não disponível; use Depurar ou o Terminal');runButton.setAttribute('aria-label',tr('Executar arquivo atual'));runButton.append(ijIcon('run'));
  const debugButton=document.createElement('button');debugButton.id='debug-current';debugButton.title=tr('Depurar o arquivo PHP atual');debugButton.setAttribute('aria-label',tr('Depurar o arquivo PHP atual'));debugButton.append(ijIcon('debug'));
- debugButton.onclick=()=>{const target=document.getElementById('debug-script');if(target)target.click();else el('status').textContent=tr('Depurador indisponível');};
+ debugButton.onclick=()=>{const target=document.getElementById('debug-script');if(target)target.click();else {el('status').textContent='Instale ou ative PHP Debugger / Xdebug em Plugins.';document.getElementById('plugins')?.click();}};
  runWidget.append(runConfig,runButton,debugButton);header.append(runWidget);
  for(const [id,kind,label] of [['nav-back','left',tr('Voltar')],['nav-forward','right',tr('Avançar')],['appearance','settings',tr('Aparência')]]) {const button=el(id);icon(button,kind,label);header.append(button);}
  for(const [id,kind,label] of [['definition','definition',tr('Declaração')],['references','usages','Encontrar usos'],['implementations','implementation',tr('Implementações')]])icon(el(id),kind,label);

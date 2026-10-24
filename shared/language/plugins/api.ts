@@ -21,7 +21,7 @@ export type StringSite = {
 /** Ponto fora de string (tag `<x-…>`, atributo, `$variável` em Blade). */
 export type CodeSite = { path: string; text: string; offset: number; blade: boolean };
 /** Itens substituem o texto de `from` (offset) até o cursor. */
-export type CodeCompletion = { from: number; items: (PluginCompletion & { insertText?: string })[] };
+export type CodeCompletion = { from: number; to?: number; incomplete?: boolean; items: (PluginCompletion & { insertText?: string })[] };
 /** Problema em um documento (posições 0-based); `code` identifica a inspeção. */
 export type PluginDiagnostic = { range: { start: Position; end: Position }; message: string; code: string; severity: 'warning' | 'error' };
 /** Ação sobre uma linha do editor (CodeLens); `command` é tratado pelo renderer. */
@@ -66,13 +66,15 @@ export const CompletionKind = { Text: 1, Method: 2, Function: 3, Field: 5, Varia
 
 // Plugins de terceiros: manifesto `plugin.json`, código num Web Worker e acesso ao
 // projeto, processos e rede só pela ponte que confere as permissões concedidas.
-export type PluginPermission = 'project.read' | 'project.write' | 'process' | 'network';
-export const PLUGIN_PERMISSIONS: readonly PluginPermission[] = ['project.read', 'project.write', 'process', 'network'];
+export type PluginPermission = 'project.read' | 'project.write' | 'process' | 'network' | 'native.tool' | 'workbench';
+export const PLUGIN_PERMISSIONS: readonly PluginPermission[] = ['project.read', 'project.write', 'process', 'network', 'native.tool', 'workbench'];
 export type PluginManifest = {
  /** `editor.nome` em minúsculas; não colide com plugins internos. */
  id: string; name: string; version: string; minIdeVersion: string;
  /** Arquivo .js relativo à pasta do plugin. */
  main: string; description?: string;
+ workbench?: {apiVersion:number;main:string;style:string;services?:string[]};
+ tool?: { protocolVersion: number; methods: string[]; event: string; workbench: string; style: string; binaries: Record<string,{path:string;sha256:string}> };
  activation: {
   /** Documentos atendidos por linguagem (`php`, `blade`, `markdown`…). */
   languages?: string[];

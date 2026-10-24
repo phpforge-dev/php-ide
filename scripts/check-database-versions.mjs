@@ -1,8 +1,15 @@
 // Matriz de versões de banco suportadas: executa o teste Rust `live_fixtures` contra containers descartáveis,
 // uma versão por vez (memória limitada), e o teste SQLite embutido. Uso: node scripts/check-database-versions.mjs [postgres:13 ...]
-import {execFileSync,spawnSync} from 'node:child_process';import {homedir} from 'node:os';import {join} from 'node:path';import {mkdir,writeFile} from 'node:fs/promises';
+import {execFileSync,spawnSync} from 'node:child_process';import {homedir} from 'node:os';import {join} from 'node:path';import {mkdir,writeFile,readFile} from 'node:fs/promises';import {fileURLToPath} from 'node:url';
+// Tests follow the same pinned external Rust source as the application, without mutating caches.
+const databasePackage=new URL('../.tools/plugin-packages/database/',import.meta.url);
+const expected=JSON.parse(await readFile(new URL('../default-plugins.json',import.meta.url),'utf8')).find(entry=>entry.plugin.id==='phpforge.database')?.plugin;
+const manifest=await readFile(new URL('plugin.json',databasePackage),'utf8').then(JSON.parse).catch(()=>null);
+const revision=await readFile(new URL('.revision',databasePackage),'utf8').catch(()=>null);
+if(!expected||manifest?.id!==expected.id||manifest.version!==expected.version||revision!==expected.revision)throw Error('Pinned database test package is missing or stale. Run npm run setup:plugins before this check.');
+const nativeManifest=fileURLToPath(new URL('native/Cargo.toml',databasePackage));
 const run=(args,opts={})=>execFileSync('docker',args,{encoding:'utf8',...opts}).trim();
-const cargo=(args,env={})=>spawnSync(join(homedir(),'.cargo','bin','cargo'),['test','--manifest-path','src-tauri/Cargo.toml',...args],{encoding:'utf8',env:{...process.env,...env}});
+const cargo=(args,env={})=>spawnSync(join(homedir(),'.cargo','bin','cargo'),['test','--manifest-path',nativeManifest,'--lib',...args],{encoding:'utf8',env:{...process.env,...env}});
 const pg=image=>['postgres',image,5432,['POSTGRES_PASSWORD=fixture','POSTGRES_DB=fixture'],{database:'fixture',user:'postgres'}];
 const my=image=>['mysql',image,3306,['MYSQL_ROOT_PASSWORD=fixture','MYSQL_DATABASE=fixture'],{database:'fixture',user:'root'}];
 const maria=image=>['mariadb',image,3306,['MARIADB_ROOT_PASSWORD=fixture','MARIADB_DATABASE=fixture'],{database:'fixture',user:'root'}];

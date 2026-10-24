@@ -39,4 +39,24 @@ Os suportes de Vue.js e React já vêm incluídos e habilitados na IDE; não pre
 
 Para testar, abra um componente do projeto e use Ctrl+Espaço e F12; em TSX, erros de tipos também são apontados. Vue 2/Nuxt, tsconfig/jsconfig e aliases de paths têm limitações descritas em [serviços web](../research/web-language-services.md).
 
-O [plugin Prettier](https://github.com/phpforge-dev/plugin-prettier) é instalado automaticamente do repositório e também está disponível pelo Marketplace, Git, pasta ou ZIP. PHP puro usa regras próprias da IDE; nenhum plugin Prettier para PHP é carregado.
+O [plugin Prettier](https://github.com/phpforge-dev/plugin-prettier) pode ser selecionado na configuração inicial e também está disponível pelo Marketplace, Git, pasta ou ZIP. PHP puro usa o plugin PHP Formatter; nenhum plugin Prettier para PHP é carregado.
+
+## Ferramentas PHP separadas (0.2.11+)
+
+PHP/Xdebug, Composer e o executor PHPUnit/Pest são plugins próprios, com backend Rust fora do binário da IDE e interfaces fornecidas pelos pacotes:
+
+- [PHP Debugger / Xdebug](https://github.com/phpforge-dev/plugin-php-debugger)
+- [Composer](https://github.com/phpforge-dev/plugin-composer)
+- [PHPUnit / Pest](https://github.com/phpforge-dev/plugin-php-tests)
+
+Instale pelo Marketplace ou pela URL Git. Os pacotes recomendados podem ser baixados em segundo plano, mas **native.tool** e **workbench** exigem consentimento antes de iniciar. Eles executam código nativo com seus privilégios e código de interface na janela da IDE; são pacotes de confiança, diferentes dos plugins de linguagem isolados em worker. Desativar/remover encerra a ferramenta e retira sua interface; a edição PHP continua funcionando.
+
+É necessário compilar/instalar a IDE 0.2.11 ou superior; versões anteriores não oferecem esse host. [Arquitetura, validação e limites](../research/native-tool-plugins.md).
+
+## Markdown
+
+[phpforge-dev/plugin-markdown](https://github.com/phpforge-dev/plugin-markdown) contains Markdown navigation, completion, diagnostics, heading outline, live preview, local images and offline Mermaid. Requires IDE 0.2.12. It is a default downloaded package, with explicit `project.read` + `workbench` activation; no native executable. The core keeps only file association and generic editor/plugin infrastructure. Markdown formatting remains the separate Prettier plugin.
+
+## Configuração inicial e atualizações
+
+A seleção de plugins na primeira abertura, a fila em segundo plano e as preferências de atualização estão descritas em [First-run and updates](../specs/first-run-and-updates.md). Auto update de plugins e IDE é desativado por padrão; avisos de novas versões continuam disponíveis.

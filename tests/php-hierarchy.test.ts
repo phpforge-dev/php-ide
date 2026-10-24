@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { parseHierarchy, PhpHierarchy, hierarchyMarkers } from '../shared/language/php-hierarchy';
+import { parseHierarchy, PhpHierarchy, hierarchyMarkers } from '../.tools/plugin-packages/php-intelligence/src/shared/language/php-hierarchy';
 
 // Fixture sintética do recorte 20; o teste cobre só a camada léxica própria.
 const root = 'docs/research/fixtures/php-semantics';

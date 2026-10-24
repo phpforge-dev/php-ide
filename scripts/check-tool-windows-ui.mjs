@@ -1,3 +1,5 @@
+import {pinnedWorkbenchFixture} from './pinned-workbench-fixture.mjs';
+const fixture=await pinnedWorkbenchFixture(["git", "docker-services"]);
 // Visual fixture only: native behavior is verified separately by check-native.
 import { chromium } from '@playwright/test';
 import { spawn } from 'node:child_process';
@@ -7,8 +9,8 @@ let browser;
 try {
  await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes('1425'))resolve();});server.once('exit',reject);});
  browser=await chromium.launch({headless:true,channel:'chrome'}); const page=await browser.newPage({viewport:{width:1440,height:940},deviceScaleFactor:1});
- await page.emulateMedia({colorScheme:'dark'});
- const text=await readFile('fixtures/php-intelligence/probe.php','utf8');
+ await page.emulateMedia({colorScheme:'dark'});await fixture.route(page);
+ const text=await readFile('tests/fixtures/projects/php-intelligence/probe.php','utf8');
  await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:`
  const file={path:'probe.php',uri:'file:///fixture/probe.php',text:${JSON.stringify(text.replace('$user->label();','$user->label(); // local change'))},etag:'preview'};
  let changes=[{path:'src/Customer.php',index:'M',worktree:' '},{path:'src/Invoice.php',index:' ',worktree:'M'},{path:'tests/CustomerTest.php',index:'?',worktree:'?'}];
@@ -20,6 +22,7 @@ try {
    if(method==='dockerLogs')return '2026-10-22T12:00:00Z [notice] fpm is running, pid 1\\n2026-10-22T12:00:00Z [notice] ready to handle connections\\n2026-10-22T12:02:14Z GET /api/customers 200 18ms';
    if(method==='dockerComposeFiles')return ['compose.yaml'];
    if(method==='recentProjects')return [{name:'customer-api',path:'/fixture',available:true},{name:'billing-service',path:'/Users/developer/Projects/billing-service',available:true},{name:'admin-panel',path:'/Users/developer/Projects/admin-panel',available:true},{name:'legacy-api',path:'/Users/developer/Archive/legacy-api',available:false}];
+   if(method==='pluginList')return {plugins:[],directories:[]};
    if(method==='workspace')return {root:'/fixture',rootUri:'file:///fixture/',name:'customer-api'};
    if(method==='tree')return [{name:'src',path:'src',directory:true},{name:'vendor',path:'vendor',directory:true},{name:'probe.php',path:'probe.php',directory:false},{name:'composer.json',path:'composer.json',directory:false}];
    if(method==='read')return file;
@@ -39,7 +42,8 @@ try {
    return [];
   };
  }});
- await (await import('/src/main.ts')).ready;document.getElementById('startup-splash')?.remove();
+ ${fixture.bootstrap}
+   await (await import('/src/main.ts')).ready;document.getElementById('startup-splash')?.remove();
  `}));
  await page.goto('http://127.0.0.1:1425');await page.locator('#show-git').click();await page.locator('.git-commit-row').first().waitFor();await page.locator('.git-commit-row').first().click();await page.locator('#git-history-files button').first().waitFor();
  const assert=(value,message)=>{if(!value)throw Error(message);};
@@ -65,5 +69,5 @@ try {
  await page.locator('#docker-tab-logs').click();await page.waitForFunction(()=>document.getElementById('docker-logs').textContent.includes('GET'));await page.locator('#docker-log-search').fill('GET');assert(!(await page.locator('#docker-logs').textContent()).includes('pid 1'),'log filter');await page.locator('#docker-log-search').fill('');await page.screenshot({path:'.artifacts/docker-logs-redesign-dark.png'});
  await page.locator('#theme-toggle').click();await page.screenshot({path:'.artifacts/docker-logs-redesign-light.png'});await page.locator('#show-git').click();assert(await page.locator('#docker-panel').isHidden(),'git did not hide docker');await page.locator('.git-commit-row').first().waitFor();await page.locator('.git-commit-row').first().click();await page.screenshot({path:'.artifacts/git-log-redesign-light.png'});
  await page.locator('#git-log-resize').focus();const before=await page.locator('#git-log-panel').evaluate(e=>e.clientHeight);await page.keyboard.press('ArrowUp');assert(await page.locator('#git-log-panel').evaluate(e=>e.clientHeight)>before,'keyboard resize');
- const report={ok:true,transport:'mock',checks:['commit and push opens push review','commit checkboxes stage and unstage','amend restores draft','collapse and expand changes','real parent graph','author and date filters','branch search and visibility','commit search','branch selection','commit details and file diff','changes search','dock mutual exclusion','Docker dashboard','stopped filter','container context actions','log filter','dark/light rendering','keyboard resize']};await writeFile('.artifacts/tools-redesign-browser.json',JSON.stringify(report,null,2));console.log(report);
+ const report={ok:true,transport:'mock',checks:['commit and push opens push review','commit checkboxes stage and unstage','amend restores draft','collapse and expand changes','real parent graph','author and date filters','branch search and visibility','commit search','branch selection','commit details and file diff','changes search','dock mutual exclusion','Docker dashboard','stopped filter','container context actions','log filter','dark/light rendering','keyboard resize']};await writeFile('.artifacts/tools-redesign-browser.json',JSON.stringify(report,null,2));fixture.assertClean();console.log(report);
 }finally{await browser?.close();server.kill();}

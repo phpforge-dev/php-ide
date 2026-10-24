@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { diff, lines, merge3, simpleMerge, summary } from '../shared/merge';
+import { diff, lines, merge3, simpleMerge, summary } from '../.tools/plugin-packages/git/shared/merge';
 
 const base = "<?php\n// cabeçalho\nfunction a() { return 1; }\n\nfunction b() { return 'b'; }\n\nfunction c() { return 'c'; }\n\nfunction d() { return 'd'; }\n";
 const ours = base.replace('return 1;', 'return 10;').replace("'c'", "'c-main'").replace("'d'", "'d2'");

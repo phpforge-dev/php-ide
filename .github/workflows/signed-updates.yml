@@ -1,0 +1,119 @@
+name: Signed IDE updates
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing immutable release tag matching the app version
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: signed-updates-${{ inputs.release_tag }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin-aarch64
+            bundles: app
+          - os: ubuntu-22.04
+            platform: linux-x86_64
+            bundles: appimage
+          - os: windows-latest
+            platform: windows-x86_64
+            bundles: nsis
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      PHP_IDE_UPDATER_PUBLIC_KEY: ${{ vars.PHP_IDE_UPDATER_PUBLIC_KEY }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+      - name: Require release signing configuration
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          test -n "$PHP_IDE_UPDATER_PUBLIC_KEY" || { echo 'Configure the updater public key repository variable'; exit 1; }
+          test -n "$TAURI_SIGNING_PRIVATE_KEY" || { echo 'Configure the Tauri signing key repository secret'; exit 1; }
+          node -e 'if (process.env.RELEASE_TAG !== "v" + require("./package.json").version) throw Error("Tag must match app version")'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: signed-${{ matrix.platform }}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring
+          coverage: none
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2
+      - run: npm ci --ignore-scripts
+      - run: npm run setup:php
+      - run: npm run check
+      - name: Configure the public updater identity
+        run: |
+          node --input-type=module <<'JS'
+          import { readFile, writeFile } from 'node:fs/promises';
+          const config = JSON.parse(await readFile('src-tauri/tauri.updater.conf.json', 'utf8'));
+          config.plugins = { updater: { pubkey: process.env.PHP_IDE_UPDATER_PUBLIC_KEY, requireSignedVersion: true } };
+          await writeFile('src-tauri/tauri.updater-build.conf.json', JSON.stringify(config));
+          JS
+      - name: Build signed updater artifacts
+        env:
+          NO_STRIP: 'true'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          rm -rf src-tauri/target/release/bundle
+          npm run tauri -- build --config src-tauri/tauri.updater-build.conf.json --bundles '${{ matrix.bundles }}'
+      - name: Collect signed platform artifact
+        run: node scripts/collect-update.mjs '${{ matrix.platform }}' src-tauri/target/release/bundle updates "$RELEASE_TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: update-${{ matrix.platform }}
+          path: updates/*
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: update-*
+          path: updates
+          merge-multiple: true
+      - name: Publish only after every platform passed
+        run: |
+          gh release view "$RELEASE_TAG"
+          node scripts/merge-update-manifest.mjs updates "${RELEASE_TAG#v}"
+          gh release upload "$RELEASE_TAG" updates/*.sig updates/*.gz updates/*.AppImage updates/*.exe
+          gh release upload "$RELEASE_TAG" updates/latest.json
