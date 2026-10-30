@@ -10,15 +10,15 @@ An open-source IDE for PHP and Laravel, built with **Rust and Tauri 2** and a **
 
 **Available in beta for macOS, Windows, and Linux.**
 
-**[Download PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Release notes](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentation](docs/README.md)
+**[Download PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Website](https://phpforge-dev.github.io/php-ide/) · [Release notes](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentation](docs/README.md)
 
 <p align="center">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-completion.png" alt="PHP IDE showing the project tree, PHP code, and method suggestions with return types." width="100%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/php-completion.png" alt="PHP IDE showing the project tree, PHP code, and method suggestions with return types." width="100%">
 </p>
 
 <p align="center">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-navigation.png" alt="PHP editor with the Named interface open and the agent panel." width="49%">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/database.png" alt="PHP code alongside the Database panel and a table of test customers." width="49%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/php-navigation.png" alt="PHP editor with the Named interface open and the agent panel." width="49%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/database.png" alt="PHP code alongside the Database panel and a table of test customers." width="49%">
 </p>
 
 ## Features

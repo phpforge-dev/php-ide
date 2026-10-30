@@ -10,15 +10,15 @@ Uma IDE de código aberto para PHP e Laravel, construída com **Rust e Tauri 2**
 
 **Disponível em versão beta para macOS, Windows e Linux.**
 
-**[Baixar PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Notas das versões](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentação](docs/README.md)
+**[Baixar PHP IDE](https://github.com/phpforge-dev/php-ide/releases)** · [Site](https://phpforge-dev.github.io/php-ide/pt.html) · [Notas das versões](https://github.com/phpforge-dev/php-ide/releases) · [Plugins](https://github.com/phpforge-dev/plugins) · [Documentação](docs/README.md)
 
 <p align="center">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-completion.png" alt="PHP IDE com árvore de projeto, código PHP e sugestões de métodos com tipos de retorno." width="100%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/php-completion.png" alt="PHP IDE com árvore de projeto, código PHP e sugestões de métodos com tipos de retorno." width="100%">
 </p>
 
 <p align="center">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/php-navigation.png" alt="Editor PHP com a interface Named aberta e o painel do agente." width="49%">
-  <img src="https://github.com/phpforge-dev/php-ide-website/raw/main/website/screenshots/database.png" alt="Código PHP junto ao painel Database e uma tabela de clientes de teste." width="49%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/php-navigation.png" alt="Editor PHP com a interface Named aberta e o painel do agente." width="49%">
+  <img src="https://phpforge-dev.github.io/php-ide/screenshots/database.png" alt="Código PHP junto ao painel Database e uma tabela de clientes de teste." width="49%">
 </p>
 
 ## Recursos
