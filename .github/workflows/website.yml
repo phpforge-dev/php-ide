@@ -1,0 +1,49 @@
+name: Project website
+
+# The site source lives in phpforge-dev/php-ide-website; it is published here so the
+# only public address is https://phpforge-dev.github.io/php-ide/.
+on:
+  repository_dispatch:
+    types: [website-updated]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/website.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: phpforge-dev/php-ide-website
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare public files
+        run: node scripts/build-pages.mjs
+        env:
+          PAGES_REPOSITORY: ${{ github.repository }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .artifacts/pages
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
