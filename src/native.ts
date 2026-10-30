@@ -1,4 +1,5 @@
 import { t as tr, activeLanguage } from './i18n';
+import {confirmDialog} from './confirm-dialog';
 import { resolvedTheme, themePreference } from './theme';
 import {pluginService} from './plugin-services';
 import { NativeLanguage } from './native-language';
@@ -50,7 +51,7 @@ export async function installNativeApi() {
  const close=protectClose({
   beforeClose:()=>window.dispatchEvent(new Event('beforeunload',{cancelable:true})),
   applyUpdate:()=>transport('appApplyIdeOnExit'),close:()=>transport('appCloseWindow'),
-  closeWithoutUpdate:error=>window.confirm(tr('Não foi possível aplicar a atualização. Fechar sem atualizar?')+'\n'+String(error)),
+  closeWithoutUpdate:async error=>{const inert=document.body.inert;document.body.inert=false;try{return await confirmDialog(tr('Não foi possível aplicar a atualização. Fechar sem atualizar?')+'\n'+String(error),tr('Fechar sem atualizar'));}finally{document.body.inert=inert;}},
   pending:value=>{if(value){previousInert=document.body.inert;document.body.inert=true;document.body.append(closeStatus);}else{document.body.inert=previousInert;closeStatus.remove();}},
   error:console.error,
  });

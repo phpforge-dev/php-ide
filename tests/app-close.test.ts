@@ -18,3 +18,9 @@ test('failed installation can be cancelled or explicitly closed without an updat
  const handler=protectClose({beforeClose:()=>true,applyUpdate:async()=>{throw Error('signature or filesystem failure');},close:async()=>{closed++;},closeWithoutUpdate:()=>allow,pending:value=>states.push(value),error:()=>{}});
  await handler({preventDefault(){}});assert.equal(closed,0);allow=true;await handler({preventDefault(){}});assert.equal(closed,1);assert.deepEqual(states,[true,false,true,false]);
 });
+test('closing without an update waits for the in-app confirmation',async()=>{
+ let answer!:(value:boolean)=>void,closed=0;
+ const handler=protectClose({beforeClose:()=>true,applyUpdate:async()=>{throw Error('failure');},close:async()=>{closed++;},closeWithoutUpdate:()=>new Promise<boolean>(resolve=>answer=resolve),pending:()=>{},error:()=>{}});
+ const pending=handler({preventDefault(){}});await new Promise(resolve=>setTimeout(resolve,0));assert.equal(closed,0);
+ answer(true);await pending;assert.equal(closed,1);
+});

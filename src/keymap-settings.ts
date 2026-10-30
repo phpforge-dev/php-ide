@@ -1,5 +1,6 @@
 // Tela "Keymap" (UI-KEYMAP-001): busca por nome e por tecla, edição, remoção, restauração e aviso de conflito.
 import { t, html, msg } from './i18n';
+import { confirmDialog } from './confirm-dialog';
 import { keymap, profiles, formatStroke, strokeFromEvent, DOUBLE_SHIFT, type ProfileId } from './keymap';
 import './keymap.css';
 
@@ -115,7 +116,7 @@ export function mountKeymapSettings() {
 
  keymap.onChange(() => { if (!editing) render(); });
  profile.onchange = () => { keymap.setProfile(profile.value as ProfileId); status.dataset.auto = ''; status.textContent = msg`Perfil ${profile.selectedOptions[0]?.text ?? ''} ativo.`; };
- $<HTMLButtonElement>('#keymap-reset-profile').onclick = () => { if (!confirm(t('Descartar todos os atalhos personalizados deste perfil?'))) return; keymap.resetProfile(); status.dataset.auto = ''; status.textContent = t('Perfil restaurado.'); };
+ $<HTMLButtonElement>('#keymap-reset-profile').onclick = async () => { if (!await confirmDialog(t('Descartar todos os atalhos personalizados deste perfil?'), t('Descartar'))) return; keymap.resetProfile(); status.dataset.auto = ''; status.textContent = t('Perfil restaurado.'); };
  search.oninput = () => { if (!keyFilter) render(); };
  conflictsOnly.onchange = render;
  const stopKeySearch = () => { keyFilter = ''; byKey.setAttribute('aria-pressed', 'false'); delete search.dataset.keymapCapture; search.readOnly = false; search.value = ''; search.placeholder = t('Buscar ação pelo nome'); render(); };

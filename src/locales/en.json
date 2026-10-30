@@ -1433,7 +1433,10 @@
     "Próximo arquivo": "Next file",
     "Nenhuma diferença": "No differences",
     "1 diferença": "1 difference",
-    "{0} diferenças": "{0} differences"
+    "{0} diferenças": "{0} differences",
+    "Fechar sem atualizar": "Close without updating",
+    "Preparando {0}/{1}…": "Staging {0}/{1}…",
+    "Retirando {0}/{1}…": "Unstaging {0}/{1}…"
   },
   "Plugins padrão": "Default plugins",
   "Instalados do GitHub com versão verificada. A primeira instalação precisa de internet e Git; depois funcionam offline.": "Installed from GitHub with verified versions. Initial installation requires internet and Git; afterwards they work offline.",

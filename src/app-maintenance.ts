@@ -1,4 +1,5 @@
 import {t as tr} from './i18n';
+import {confirmDialog} from './confirm-dialog';
 import type {IdeApi} from '../shared/contracts';
 import {essentialPlugins,outstanding,hasBackgroundWork,coversUpdate,type MaintenanceState,type PluginJob} from '../shared/app-maintenance';
 import './app-maintenance.css';
@@ -46,8 +47,7 @@ export async function mountAppMaintenance(api:IdeApi) {
  const execute=async(work:()=>Promise<unknown>)=>{if(busy)return;busy=true;feedback='';try{await work();}catch(error){feedback=String(error);}finally{busy=false;await refresh();}};
  function restart(installIde=false) {
   if(!window.dispatchEvent(new Event('beforeunload',{cancelable:true}))){feedback=tr('Salve os arquivos alterados antes de reiniciar.');render();return;}
-  if(!window.confirm(tr('Reiniciar a IDE agora? Terminais e tarefas em execução serão encerrados.')))return;
-  void execute(async()=>{await call(installIde?'appInstallIdeUpdate':'appApplyIdeOnExit',true);if(!window.dispatchEvent(new Event('beforeunload',{cancelable:true})))throw Error(tr('Salve os arquivos alterados antes de reiniciar.'));await call('appRestart');});
+  void execute(async()=>{if(!await confirmDialog(tr('Reiniciar a IDE agora? Terminais e tarefas em execução serão encerrados.'),tr('Reiniciar')))return;await call(installIde?'appInstallIdeUpdate':'appApplyIdeOnExit',true);if(!window.dispatchEvent(new Event('beforeunload',{cancelable:true})))throw Error(tr('Salve os arquivos alterados antes de reiniciar.'));await call('appRestart');});
  }
  function settings(parent:HTMLElement) {
   const section=node('section','','maintenance-preferences');section.append(node('h3',tr('Preferências de atualização')));

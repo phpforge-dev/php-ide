@@ -159,6 +159,9 @@
     "Próximo arquivo": "Próximo arquivo",
     "Nenhuma diferença": "Nenhuma diferença",
     "1 diferença": "1 diferença",
-    "{0} diferenças": "{0} diferenças"
+    "{0} diferenças": "{0} diferenças",
+    "Fechar sem atualizar": "Fechar sem atualizar",
+    "Preparando {0}/{1}…": "Preparando {0}/{1}…",
+    "Retirando {0}/{1}…": "Retirando {0}/{1}…"
   }
 }
