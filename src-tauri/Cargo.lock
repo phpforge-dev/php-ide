@@ -3325,7 +3325,7 @@ dependencies = [
 [[package]]
 name = "phpforge-docker-services"
 version = "1.0.0"
-source = "git+https://github.com/phpforge-dev/plugin-docker-services?rev=1a1f3bf3840f3ddc4160f035faf24dc19e1abb4a#1a1f3bf3840f3ddc4160f035faf24dc19e1abb4a"
+source = "git+https://github.com/phpforge-dev/plugin-docker-services?rev=bc95a57fb5049c6f84876a0e4c3ced9459205b91#bc95a57fb5049c6f84876a0e4c3ced9459205b91"
 dependencies = [
  "serde_json",
  "tauri",

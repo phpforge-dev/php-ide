@@ -78,7 +78,8 @@ export interface IdeApi {
   dockerContainerAction(context: string, container: string, action: 'start'|'stop'|'restart'|'rm'): Promise<string>;
   dockerPull(context: string, image: string, progressId?: string): Promise<string>;
   dockerComposeFiles(): Promise<string[]>;
-  dockerCompose(context: string, file: string, action: 'services'|'up'|'stop'|'build', progressId?: string): Promise<string>;
+  /** service limits up/stop to one Compose service (editor gutter). */
+  dockerCompose(context: string, file: string, action: 'services'|'up'|'stop'|'build', progressId?: string, service?: string): Promise<string>;
   dockerTerminal(id: string, context: string, container: string): Promise<{shell: string}>;
   terminalCreate(id: string, cols: number, rows: number, cwd?: string): Promise<{ shell: string }>;
   terminalWrite(id: string, data: string): Promise<void>;

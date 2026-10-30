@@ -693,6 +693,11 @@ Popup no seletor de projeto: busca, caminho, indicação do atual/indisponível,
 Services inferior com contextos, containers, imagens, volumes, redes, logs, ações de ciclo de vida, PTY exec e Compose. Download/Compose têm progresso e cancelamento. IDs DOCKER-CONNECT/SERVICES/LOGS/EXEC/COMPOSE/IMAGES-001: **Em desenvolvimento**. Evidência nativa com CLI sintético; engine real inicialmente indisponível. Sem equivalência global ou validação de daemon presumida. Especificação, dependências, complexidade, critérios e diferenças: [docker-integration.md](docker-integration.md).
 
 
+### Docker Compose: ▶ no gutter — 2026-10-30
+
+DOCKER-COMPOSE-GUTTER-001: **Em desenvolvimento**. Ao abrir `compose.yaml`/`docker-compose.yml` (inclusive em subpastas), `services:` recebe ▶▶ e cada serviço ▶; o clique abre Executar/Parar, que rodam `docker compose -f <arquivo> up -d [serviço]` ou `stop [serviço]` pelo IPC `dockerCompose` existente e mostram saída/erro no Services. Evidência: [DOC](https://www.jetbrains.com/help/phpstorm/docker-compose.html) (só cita "gutter icons to run various services") + print do usuário; sem OBS local. Testes do plugin, Rust do crate, harness Chromium e janela Tauri real (grupo Docker, CLI sintética); plugin 1.0.2 fixado. Detalhes e limitações: [docker-integration.md](docker-integration.md#ícones-de-execução-no-gutter-de-arquivos-compose-2026-10-30).
+
+
 ### Inicialização e Welcome — 2026-10-22
 
 STARTUP-SPLASH-001, PROJECT-WELCOME/CREATE/CLONE/SESSION-001: **Em desenvolvimento** na equivalência. Splash em HTML, falha recuperável, Welcome com recentes, novo projeto PHP, abrir, clone Git e sessão persistente. Treze testes Rust e seis cenários no pacote nativo aprovados; clone local descartável real. Sem inspeção do PhpStorm local nesta sessão; sem equivalência visual presumida. Critérios, dependências, evidências e diferenças: [startup-welcome.md](startup-welcome.md).

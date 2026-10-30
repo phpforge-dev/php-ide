@@ -66,3 +66,20 @@ Diferenças conhecidas: sem criação visual de contextos/TCP/TLS, sem editar co
 ## Verificação desta entrega
 
 2026-10-22: typecheck aprovado, 10 testes Rust aprovados e 17 grupos de smoke no aplicativo Tauri empacotado aprovados (`.artifacts/native-packaged.json`, sem falhas). O grupo Docker exercitou também progresso e cancelamento, usando CLI sintética. Nova consulta ao engine local expirou após 6 segundos; execução com daemon real permanece pendente.
+
+## Ícones de execução no gutter de arquivos Compose (2026-10-30)
+
+Evidência separada:
+
+- **Documentação (DOC):** a [ajuda de Docker Compose do PhpStorm](https://www.jetbrains.com/help/phpstorm/docker-compose.html) diz apenas que a IDE "adds gutter icons to run various services" definidos no arquivo Compose, que o Services (Alt+8) mostra os containers sob nós Compose e que Stop/Down ficam no nó Compose. A página não descreve posição exata, rótulos do menu nem a run configuration criada pelo gutter.
+- **Observação do usuário (print do PhpStorm, não reproduzido localmente):** a linha `services:` tem ▶▶ verde; cada chave de serviço (`cache:`, `cache.read1:`) tem ▶ verde; os ícones ficam depois dos números de linha.
+- **Requisito próprio:** clique no ícone abre um menu com Executar/Parar; Executar roda `docker compose --ansi never -f <arquivo> up -d` (tudo) ou `... up -d <serviço>`; Parar roda `stop` (tudo ou o serviço). A saída, o estado e os erros aparecem na aba Compose do Services e na barra de status. Não criamos run configuration persistente.
+
+Implementação (plugin `docker-services`, `src/compose-gutter.ts`): decorações `glyphMarginClassName` (`compose-run`, `compose-run-all`) recalculadas ao trocar de modelo e ao editar (150 ms); clique tratado em `editor.onMouseDown` com `GUTTER_GLYPH_MARGIN`. A detecção usa o nome do arquivo (`compose*.y(a)ml`, `docker-compose*.y(a)ml`) e as chaves do primeiro nível de indentação sob `services:` no topo. O IPC existente `dockerCompose` ganhou um 5º argumento opcional `service`, aceito só com `up`/`stop` e validado no Rust (`[A-Za-z0-9][A-Za-z0-9._-]*`, sem flags); o arquivo pode estar em subpasta do projeto desde que siga o nome convencional, seja relativo, confinado e exista. Nenhum IPC novo.
+
+Erros recuperáveis: CLI ausente (contextos falham, nenhum comando é executado, mensagem no Services e na status bar), daemon parado (o comando falha e a mensagem do Docker aparece), outra operação em andamento (aviso, sem enfileirar). O painel volta a ficar livre e permite repetir.
+
+Validação: 6 testes do plugin (`tests/compose-gutter.test.mjs`: decorações nas linhas certas, arquivo não-Compose sem ícones, menu e argumentos de `up`/`stop` por serviço e total, CLI ausente, daemon parado, descarte do menu/listeners), 4 testes Rust do crate nativo (inclui validação de serviço e de arquivo em subpasta), harness Chromium com `main.ts`, `mountToolPlugins` e `editor-chrome` reais e IPC simulado (`.artifacts/compose-gutter-ok-full.png`). Janela Tauri real: `npm run test:native -- --no-db --extraction-only` aprovou o grupo Docker com CLI sintética, incluindo o novo passo (abrir `compose.yaml`, ▶▶ e ▶ presentes, clique no ▶ de `app` → menu → `up app` → container em execução); as 3 falhas da rodada (Web Vue/React, catálogo SQLite, aba de preview) são de outras áreas. A suíte padrão sem `--extraction-only` falha antes do Docker porque o perfil novo não concede `workbench` aos plugins. `scripts/fake-docker.mjs` cria `fixture-compose-<serviço>-1` quando recebe um serviço.
+
+Limitações: sem Down, sem indicador de serviço em execução no ícone, sem run configuration persistente nem Debug; arquivos Compose com nome arbitrário (detectados por conteúdo) não ganham ícones; o menu não reproduz os rótulos exatos da referência; versão 1.0.2 (`bc95a57`) fixada em `default-plugins.json` e `src-tauri/Cargo.toml`. Se o plugin do depurador estiver ativo, o clique no gutter de qualquer arquivo do projeto, inclusive YAML, também alterna um breakpoint: isso é do plugin `php-debugger`, não deste recorte.
+

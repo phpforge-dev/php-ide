@@ -20,7 +20,7 @@ else if(args[0]==='container'){
 }else if(args[0]==='image'&&args[1]==='pull'){const reference=args[2];if(reference==='slow:fixture'){console.log('PULL_FIXTURE_WAIT');await new Promise(()=>setInterval(()=>console.log('Pulling layer…'),200));}state.images.push({ID:'sha256:'+'b'.repeat(64),Repository:reference.split(':')[0],Tag:reference.split(':')[1]??'latest',Size:'8 MB'});save(state);console.log('Pulled '+reference);}
 else if(args[0]==='compose'){
  if(args.includes('config'))console.log('app');
- else if(args.includes('up')){state.containers.push({ID:'c'.repeat(64),Names:'fixture-compose-app-1',Image:'php:8.3-cli',State:'running',Status:'Up',Ports:''});save(state);console.log('Compose started');}
+ else if(args.includes('up')){const service=args.at(-1)==='-d'?'app':args.at(-1);state.containers.push({ID:(service==='app'?'c':'e').repeat(64),Names:'fixture-compose-'+service+'-1',Image:'php:8.3-cli',State:'running',Status:'Up',Ports:''});save(state);console.log('Compose started');}
  else if(args.includes('stop')){for(const c of state.containers)if(c.Names.includes('fixture-compose')){c.State='exited';c.Status='Exited (0)';}save(state);console.log('Compose stopped');}
  else if(args.includes('build'))console.log('Fixture build completed');
  else process.exit(2);

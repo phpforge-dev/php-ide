@@ -240,11 +240,11 @@
       "id": "phpforge.docker-services",
       "name": "Docker Services",
       "description": "docker-services workbench integration with explicit host services.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "minIdeVersion": "0.2.13",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-docker-services",
-      "revision": "0de570e1e61b980c9c67f718269ff25379982731"
+      "revision": "bc95a57fb5049c6f84876a0e4c3ced9459205b91"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [

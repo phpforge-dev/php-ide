@@ -9,7 +9,7 @@ phpforge-database = { git = "https://github.com/phpforge-dev/plugin-database", r
 phpforge-agents = { git = "https://github.com/phpforge-dev/plugin-agents", rev = "1ccbf7c7018b236a47cb79a7c2f4fe6ef9e15826" }
 phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "7e55bfbc0ec9079a18a8ef89f3d8764ba0d36035" }
 phpforge-terminal = { git = "https://github.com/phpforge-dev/plugin-terminal", rev = "5eba8143d583efe66dd0a02cffce710413817c68" }
-phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "1a1f3bf3840f3ddc4160f035faf24dc19e1abb4a" }
+phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "bc95a57fb5049c6f84876a0e4c3ced9459205b91" }
 phpforge-php-intelligence = { git = "https://github.com/phpforge-dev/plugin-php-intelligence", rev = "eb922ddd4299b2ab52fe9877de9c93b7c3502c86" }
 dunce = "1"
 libc = "0.2"
