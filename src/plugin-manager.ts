@@ -26,6 +26,16 @@ const node = <K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<strin
  return el;
 };
 
+/** Status bar like PhpStorm: only detected project versions (Laravel: 12.0); the full plugin list stays in the tooltip. */
+export function renderPluginStatus(bar: HTMLElement, plugins: { name: string; version?: string }[]) {
+ const versions = plugins.filter(p => p.version).map(p => `${p.name}: ${p.version}`);
+ bar.textContent = versions.join(' · ');
+ bar.classList.toggle('plugins-icon-only', !versions.length);
+ bar.dataset.count = String(plugins.length);
+ bar.title = (plugins.length ? plugins.map(p => p.version ? `${p.name}: ${p.version}` : p.name).join('\n') + '\n\n' : '') + tr('Plugins ativos neste projeto · clique para gerenciar');
+ bar.setAttribute('aria-label', versions.length ? `${versions.join(', ')} · ${tr('Plugins')}` : tr('Plugins'));
+}
+
 export function mountPluginManager(api: IdeApi) {
  const call = (method: string, ...args: unknown[]) => (api as any)[method](...args) as Promise<any>;
  let root = ''; let rootUri = 'file:///';
@@ -69,7 +79,7 @@ export function mountPluginManager(api: IdeApi) {
   clearTimeout(statusTimer);
   statusTimer = setTimeout(async () => {
    const bar = document.getElementById('plugins'); if (!bar) return;
-   try { bar.textContent = (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · '); } catch { /* barra de status é informativa */ }
+   try { renderPluginStatus(bar, await api.plugins()); } catch { /* barra de status é informativa */ }
   }, 150);
  };
  const changed = () => { render(); refreshStatus(); };
@@ -252,7 +262,7 @@ export function mountPluginManager(api: IdeApi) {
  if (appearance) appearance.append(node('button', { type: 'button', className: 'plugins-open', textContent: tr('Plugins…'), onclick: (event:Event) => { event.stopPropagation(); (appearance as HTMLDialogElement).close?.(); show(); } }));
  const bar = document.getElementById('plugins');
  if (bar) {
-  bar.classList.add('plugins-status'); bar.tabIndex = 0; bar.setAttribute('role', 'button'); bar.title = tr('Plugins ativos neste projeto · clique para gerenciar');
+  bar.classList.add('plugins-status'); bar.tabIndex = 0; bar.setAttribute('role', 'button'); if (!bar.title) bar.title = tr('Plugins ativos neste projeto · clique para gerenciar');
   bar.onclick = show; bar.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); show(); } };
  }
  monaco.editor.registerCommand('php-ide.pluginCommand', async (_accessor, key: string, name: string, args: unknown[]) => {

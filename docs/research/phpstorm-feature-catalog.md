@@ -875,3 +875,20 @@ Fontes locais: seção Resolver com IA no editor de conflitos, com orientação 
 ## Consulta ao agente sobre arquivos do commit (requisito próprio, 24/10/2026)
 
 Fontes locais: na lista de alterações da janela Commit, a seleção para o agente é independente das caixas que preparam o commit. A consulta aceita um texto livre ou os atalhos de revisão e impacto, e envia somente os snapshots dos arquivos escolhidos. Testes do plugin e prévia WebKit sintética cobrem a seleção e o diálogo. Pacotes instalados, janela Tauri e agente real ainda não validados; sem promoção comparativa. [Fluxo, limites e evidências](git-agent-file-query.md).
+
+## Revisão de diff no editor principal e ações em ícone — Commit (30/10/2026)
+
+Evidência: captura do PhpStorm enviada pelo usuário (Commit + diff "Commit: arquivo"). Ela mostra o diff no editor principal com: setas de diferença anterior/próxima, lápis para ir ao código-fonte, arquivo anterior/próximo, "Side-by-side viewer", "Do not ignore", "Highlight words" e a contagem "1 difference, 0 included". As ações de IA/agente aparecem só como ícone com tooltip (estilo Copilot). Atalhos (F7/Shift+F7, F4) vêm da documentação pública do diff do IntelliJ, não da captura.
+
+Implementado (host + `plugin-git` local, ainda não fixado em `default-plugins.json`):
+- `.editor-split` vazio deixa de ocupar espaço, então a revisão do Git ocupa toda a área do editor em vez da metade de baixo.
+- A barra do diff tem ícones de diferença anterior/próxima (desativados sem diferenças; F7/Shift+F7), lápis/F4/⌘↓ que fecha a revisão e abre o arquivo na linha do cursor do lado atual, e arquivo anterior/próximo. Também tem visualizador lado a lado/unificado, "Não ignorar"/"Ignorar espaços nas pontas" e destaque de caracteres/linhas/nenhum, com escolhas persistidas, além da contagem de diferenças. Preparar/Selecionar trechos/Voltar ficam na linha do caminho.
+- "Perguntar ao agente", "Selecionar visíveis" e "Limpar seleção" viraram ícones na barra do Commit (contador em selo; a ajuda de seleção foi para o tooltip). "Gerar com IA" é um ícone ao lado de Amend.
+
+Limitações (diferenças do PhpStorm): o Monaco não destaca por palavra (opções honestas: caracteres/linhas/nenhum); não há "Ignore whitespaces and empty lines", nem "included" por trecho no diff; o diff não é aberto como aba de editor ("Commit: arquivo"), ele substitui a área do editor e esconde as abas.
+
+Validação: `npm run typecheck`, `npm test` (41 Rust), `npm run test:locales`, 6 testes do `plugin-git` (inclui contagem, F7, persistência do visualizador, lápis e ícones) e `scripts/check-git-review-layout.mjs --serve` com o build local do plugin no navegador embutido: revisão com 687/687 px da área, split oculto e restaurado ao fechar, lápis abrindo a linha 16. O WebKit do Playwright não está instalado, então a verificação foi pela página servida e não pelo modo headless do script. Falta validação comparativa lado a lado com o PhpStorm e no app empacotado.
+
+## Plugins na barra de status (requisito próprio, 30/10/2026)
+
+O PhpStorm não lista plugins na barra de status: mostra widgets de projeto/ferramenta e deixa os plugins em Settings › Plugins. A barra agora mostra só as versões detectadas pelos plugins (ex.: "Laravel: 12.0 · PHPUnit / Pest: 3.8.6"). A lista completa de plugins ativos fica no tooltip, e o clique continua abrindo o diálogo Plugins. Sem nenhuma versão detectada, aparece só um ícone de tomada, para a entrada continuar acessível. Validação: typecheck e a barra real do shell no navegador embutido com a lista de 16 plugins (de ~1.400 px para 225 px; ícone de 22 px sem versões). Falta conferir no app empacotado.

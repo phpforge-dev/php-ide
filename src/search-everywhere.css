@@ -15,9 +15,12 @@
   display:flex;align-items:center;gap:4px;padding:6px 8px 4px;flex-shrink:0;
 }
 #search-everywhere nav{
-  display:flex;flex:1;min-width:0;gap:2px;padding:0;border:0;overflow:auto;
+  display:flex;flex:1;min-width:0;gap:2px;padding:0;border:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
 }
+#search-everywhere nav::-webkit-scrollbar{display:none}
 #search-everywhere nav button{
+  /* style.css `nav button{display:block;width:100%}` would stretch each tab to the whole bar. */
+  display:inline-flex;align-items:center;width:auto;text-align:center;
   flex:none;height:24px;padding:0 10px;border:0;border-radius:var(--ij-tab-radius);
   background:transparent;color:var(--ij-text-secondary);font:inherit;cursor:pointer;white-space:nowrap;
 }

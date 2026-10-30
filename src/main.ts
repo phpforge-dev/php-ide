@@ -40,7 +40,7 @@ import './tool-windows.css';
 
 import { mountAppearance } from './appearance';
 import { mountWorkbench } from './workbench';
-import { mountPluginManager } from './plugin-manager';
+import { mountPluginManager, renderPluginStatus } from './plugin-manager';
 import { mountWorkspaceSync } from './workspace-sync';
 import { isMarkdownPath } from '../shared/markdown-document';
 import { isIgnorePath } from '../shared/plugin-document-associations';
@@ -428,7 +428,7 @@ const pluginLenses:monaco.languages.CodeLensProvider={onDidChange:pluginLensChan
 monaco.languages.registerCodeLensProvider('php',pluginLenses);
 window.addEventListener('ide-plugins-changed',()=>pluginLensChanges.fire(pluginLenses));
 window.addEventListener('beforeunload',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();event.returnValue='';}});
-const showPlugins = () => run(async () => { $('plugins').textContent = (await api.plugins()).map(p => p.version ? `${p.name}: ${p.version}` : p.name).join(' · '); });
+const showPlugins = () => run(async () => { renderPluginStatus($('plugins'), await api.plugins()); });
 export const ready=(async()=>{$('project').textContent=(await api.workspace()).name;await tree();showPlugins();})();
 const closeProjectButton=document.createElement('button');closeProjectButton.id='close-project';closeProjectButton.textContent=tr('Fechar projeto');document.querySelector('header')!.append(closeProjectButton);closeProjectButton.onclick=()=>run(async()=>{if([...buffers.values()].some(dirty))throw Error(tr('Salve os arquivos alterados antes de fechar o projeto.'));await api.closeProject();location.reload();});
 

@@ -276,11 +276,11 @@
       "id": "phpforge.git",
       "name": "Git",
       "description": "git workbench integration with explicit host services.",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "minIdeVersion": "0.2.14",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-git",
-      "revision": "79894b5603bb6dbdb4dd5968999a5e1ba4969438"
+      "revision": "1e9cebee0777ada50582c1bcc309eb6b886a97f3"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [

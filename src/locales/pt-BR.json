@@ -117,7 +117,6 @@
     "Perguntar ao agente": "Perguntar ao agente",
     "Perguntar ao agente ({0})": "Perguntar ao agente ({0})",
     "Selecionar visíveis": "Selecionar visíveis",
-    "Limpar seleção": "Limpar seleção",
     "Selecione com Ctrl/⌘+clique ou Shift+clique. Espaço alterna a seleção. As caixas preparam o commit.": "Selecione com Ctrl/⌘+clique ou Shift+clique. Espaço alterna a seleção. As caixas preparam o commit.",
     "Consultar agente sobre arquivos": "Consultar agente sobre arquivos",
     "Serão enviadas apenas as versões destes arquivos: alterações preparadas e do disco. Buffers não salvos ficam de fora.": "Serão enviadas apenas as versões destes arquivos: alterações preparadas e do disco. Buffers não salvos ficam de fora.",
@@ -143,6 +142,23 @@
     "Selecionar {0} para consultar o agente e ver diff": "Selecionar {0} para consultar o agente e ver diff",
     "Um arquivo selecionado saiu da lista de alterações. Atualize a seleção e tente novamente.": "Um arquivo selecionado saiu da lista de alterações. Atualize a seleção e tente novamente.",
     "Os arquivos selecionados são grandes demais. Selecione menos arquivos para consultar o agente.": "Os arquivos selecionados são grandes demais. Selecione menos arquivos para consultar o agente.",
-    "Selecione arquivos na lista de alterações para consultar o agente.": "Selecione arquivos na lista de alterações para consultar o agente."
+    "Selecione arquivos na lista de alterações para consultar o agente.": "Selecione arquivos na lista de alterações para consultar o agente.",
+    "Modo de visualização": "Modo de visualização",
+    "Visualizador lado a lado": "Visualizador lado a lado",
+    "Visualizador unificado": "Visualizador unificado",
+    "Espaços em branco": "Espaços em branco",
+    "Não ignorar": "Não ignorar",
+    "Ignorar espaços nas pontas": "Ignorar espaços nas pontas",
+    "Destaque das diferenças": "Destaque das diferenças",
+    "Destacar caracteres": "Destacar caracteres",
+    "Destacar linhas": "Destacar linhas",
+    "Não destacar": "Não destacar",
+    "Diferença anterior (Shift+F7)": "Diferença anterior (Shift+F7)",
+    "Ir para o código-fonte (F4)": "Ir para o código-fonte (F4)",
+    "Arquivo anterior": "Arquivo anterior",
+    "Próximo arquivo": "Próximo arquivo",
+    "Nenhuma diferença": "Nenhuma diferença",
+    "1 diferença": "1 diferença",
+    "{0} diferenças": "{0} diferenças"
   }
 }
