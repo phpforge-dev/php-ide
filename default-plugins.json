@@ -328,11 +328,11 @@
       "id": "phpforge.database",
       "name": "Database / SQL",
       "description": "Database explorer, SQL console, SQL intelligence and database driver service.",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "minIdeVersion": "0.2.13",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-database",
-      "revision": "28b63bfad6537a9af2954232cb9a0e1883ed838a"
+      "revision": "6a30048d6c89fae1119cdaa456a99a02208bfcc6"
     },
     "sha256": "aa880c83c86e16690b823dcce098724874a4f14caa5ca606231abb133a6959af",
     "permissions": [

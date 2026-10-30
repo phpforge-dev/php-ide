@@ -100,5 +100,5 @@ export function mountPluginMarketplace(options: Options) {
  }
  git.onsubmit = e => { e.preventDefault(); void download('pluginInspectGit', url.value.trim(), ref.value.trim()); };
  search.oninput = render;
- return { element: root, show() { if (!loaded && !busy) void load(); else render(); }, git() { git.hidden = false; url.focus(); }, refresh: render };
+ return { element: root, show() { if (!loaded && !busy) void load(); else render(); }, git() { git.hidden = false; url.focus(); }, find(id: string) { search.value = id; render(); search.focus(); }, refresh: render };
 }

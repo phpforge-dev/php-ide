@@ -156,7 +156,7 @@ function activate(path: string, track = true) {
 async function open(path: string, track = true) {
  if(frameworkTypes[path]){const key='library:'+path;virtual(key,frameworkTypes[path],'typescript','library',monaco.Uri.file(path));activate(key,track);return;}
  if (isImagePath(path)) {
-  if(!pluginService('imagePreview')){status(tr('Instale ou ative o plugin de imagens em Plugins.'));$('plugins').click();return;}
+  if(!pluginService('imagePreview')){status(tr('Instale ou ative o plugin de imagens em Plugins.'));showPluginFor('phpforge.image-preview');return;}
   if (!buffers.has(path)) virtual(path, '', 'plaintext', 'image', monaco.Uri.from({ scheme: 'php-ide-image', path: '/' + path }));
   activate(path, track); return;
  }
@@ -371,8 +371,10 @@ $('references').onclick=()=>run(()=>usages.show());
 // ⌘B em PHP: Declaration or Usages (declaração leva aos usos; uso único navega direto).
 for(const [id,action] of [['definition','editor.action.revealDefinition'],['implementations','editor.action.goToImplementation']]) $(id).onclick=()=>run(async()=>{editor.focus();const model=editor.getModel(),position=editor.getPosition();if(id==='definition'&&model&&position&&phpLike.includes(model.getLanguageId())){await navigateDefinition(position);return;}if(id==='implementations'&&model&&position&&model.getLanguageId()==='php'&&await phpImplementations(model,position))return;editor.trigger('navigation-toolbar',action,{});});
 async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=info.name;await tree();showPlugins();return true;} return false; }
-$('show-agent').onclick=()=>{if(!pluginService('agents')){status('Ative o plugin Agents em Plugins.');$('plugins').click();return;}$('agent').hidden=false;$('db').hidden=true;};
-$('show-db').onclick=()=>{if(!pluginService('database')){status('Ative o plugin Database em Plugins.');$('plugins').click();return;}$('agent').hidden=true;$('db').hidden=false;};
+/** Opens Plugins on the plugin behind a feature: its card when installed (state + fix), the Marketplace otherwise. */
+const showPluginFor=(id:string)=>window.dispatchEvent(new CustomEvent('ide-show-plugins',{detail:{id}}));
+$('show-agent').onclick=()=>{if(!pluginService('agents')){status('Ative o plugin Agents em Plugins.');showPluginFor('phpforge.agents');return;}$('agent').hidden=false;$('db').hidden=true;};
+$('show-db').onclick=()=>{if(!pluginService('database')){status('Ative o plugin Database em Plugins.');showPluginFor('phpforge.database');return;}$('agent').hidden=true;$('db').hidden=false;};
 const agentPanel = optionalPluginService('agents',p=>p.mount(api,$('agent'),{
  context: () => { const b = active ? buffers.get(active) : undefined; if (!b || b.virtual) return undefined; const selection = editor.getSelection(); const selected = selection && !selection.isEmpty() ? b.model.getValueInRange(selection) : undefined; return { path: b.file.path, text: b.model.getValue(), ...(selected ? { selection: selected } : {}) }; },
  reload: async (paths:string[]) => { webProject.invalidate();for (const path of paths) { const b = buffers.get(path); if (!b || dirty(b)) continue; if (b.virtual === 'image') { imagePreview.reload(); continue; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); } tabs(); },

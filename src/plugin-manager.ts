@@ -279,7 +279,21 @@ export function mountPluginManager(api: IdeApi) {
  if (project) new MutationObserver(later).observe(project, { childList: true, characterData: true, subtree: true });
  window.addEventListener('ide-workspace-file-changed', event => { const path = String((event as CustomEvent).detail?.path ?? ''); if (path.includes('/.php-ide/plugins/')) later(); });
  window.addEventListener('ide-user-plugins-changed',later);
- window.addEventListener('ide-show-plugins',show);
+ // A feature entry point (rail icon, action) names its plugin: an installed one opens on its card, which states
+ // why it is not active (disabled, awaiting consent, failed to load) and offers the fix; a missing one opens the Marketplace on it.
+ const showPlugin = (event: Event) => {
+  const id = (event as CustomEvent<{ id?: string } | null>).detail?.id;
+  if (!id) { show(); return; }
+  const installed = listing?.plugins.some(p => p.manifest?.id === id);
+  if (!dialog.open) dialog.showModal();
+  selectTab(!installed);
+  if (!installed) { marketplace.find(id); return; }
+  void render().then(() => {
+   const card = body.querySelector<HTMLElement>(`[data-installed-plugin="${CSS.escape(id)}"]`); if (!card) return;
+   card.tabIndex = -1; card.classList.add('plugin-card-focus'); card.scrollIntoView({ block: 'nearest' }); card.focus();
+  });
+ };
+ window.addEventListener('ide-show-plugins',showPlugin);
  const ready = reload();
  void ready.catch(error => { feedback = String(error); changed(); });
  return { reload, show, ready };

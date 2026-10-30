@@ -32,3 +32,5 @@ pre.plugin-error{white-space:pre-wrap;font-size:11px;max-height:120px;overflow:a
 .marketplace-tools button,.plugin-git-form button{padding:5px 10px;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius);background:var(--ij-button);color:var(--ij-text)}
 .plugin-git-form{display:grid;gap:8px;margin:14px 0;padding:14px;border:1px solid var(--ij-control-border);border-radius:var(--ij-popup-radius)}
 .plugin-git-form h3,.plugin-git-form p{margin:0}.plugin-git-form button{justify-self:end}.plugin-marketplace button:disabled{opacity:.55;cursor:default}
+.plugin-card-focus{border-color:var(--ij-focus,#548af7)}
+.plugin-card:focus{outline:none}
