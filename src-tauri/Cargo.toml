@@ -1,13 +1,13 @@
 [package]
 name = "php-ide"
-version = "0.2.17"
+version = "0.2.18"
 edition = "2021"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 [dependencies]
 phpforge-database = { git = "https://github.com/phpforge-dev/plugin-database", rev = "b5e78bfb10144868be039e2b114ff514bc5d7b5b" }
 phpforge-agents = { git = "https://github.com/phpforge-dev/plugin-agents", rev = "1ccbf7c7018b236a47cb79a7c2f4fe6ef9e15826" }
-phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "8b55ab1910ad6c9607e5363eb7996fb9f1119176" }
+phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "39ef5443f4bbec5b3c4f3a6a6531ba05f4e633ea" }
 phpforge-terminal = { git = "https://github.com/phpforge-dev/plugin-terminal", rev = "5eba8143d583efe66dd0a02cffce710413817c68" }
 phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "bc95a57fb5049c6f84876a0e4c3ced9459205b91" }
 phpforge-php-intelligence = { git = "https://github.com/phpforge-dev/plugin-php-intelligence", rev = "eb922ddd4299b2ab52fe9877de9c93b7c3502c86" }
