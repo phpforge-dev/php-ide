@@ -6,6 +6,8 @@ type Refactorings={
  classIn(path:string):Promise<{fqn:string;name:string}|undefined>;
  renameClass(fqn:string,options?:{name?:string;file?:string;fromTree?:boolean;strings?:boolean}):Promise<void>;
  moveClassFile(path:string,directory:string,namespace:string):Promise<void>;
+ /** Itens extras no fim do menu (ex.: "Marcar diretório como › Excluído", "Mostrar arquivos excluídos"). */
+ treeItems?(target:{path:string;directory:boolean}):MenuItem[];
 };
 import { keymap } from './keymap';
 import { openMenu as openFloatingMenu, type MenuItem } from './context-menu';
@@ -309,6 +311,8 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
    { id: 'local-history', label: tr('Histórico local'), children: [
     { label: root ? tr('Mostrar histórico do projeto') : tr('Mostrar histórico'), run: act(() => history(t)) },
    ] },
+   '-',
+   ...(hooks.refactor?.treeItems?.(t) ?? []),
   ];
  }
  function openMenu(t: Target, x: number, y: number, only?: string) {

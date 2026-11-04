@@ -73,3 +73,57 @@ Limites: exclusão não marca a árvore nem esconde arquivos; sem tela de Settin
 - WebKit (motor do WebView do macOS), API simulada e plugin do checkout local:
   `node scripts/check-php-intelligence-fidelity.mjs [--plugin=dir] [--only=…] [--shots]` — 13 cenários (f2, rename-class, rename-escape, rename-variable, rename-options, rename-conflict, inline-method, change-signature, inspections, create-class, plugin-create-fix, paste-imports, exclusions). Capturas em `.artifacts/php-intelligence-fidelity/`.
 - Não executado: `npm run test:native` (janela Tauri real), porque o host fixa o plugin publicado; a validação nativa depende do release do plugin. A transação com criação de arquivo exige o crate nativo novo no host.
+
+## Rodada 2 (04/11/2026)
+
+Commits locais no `main` do plugin (sem push, sem bump; versão 1.1.0): `e0b7a4b` (Change Signature),
+`a2a781b` (argumentos entre arquivos), `8640dc3` (Configurações › Inspeções), `ba8d2f1` (Rename),
+`547512a` (exclusão). Neste repositório: harness com 6 cenários novos e um gancho no menu da árvore
+(`src/project-actions.ts`: `refactor.treeItems?(target)` acrescenta itens no fim do menu).
+
+Fontes desta rodada: **DOC** consultada em 04/11/2026 —
+[Change signature](https://www.jetbrains.com/help/phpstorm/change-signature.html) (Propagate Parameters, "Select Methods to Propagate New Parameters", Caller/Callee Method, Default só para chamadas de quem não foi propagado; "Create and initialize class properties" no construtor, campo com a visibilidade padrão do Code Generation, exemplo `private $q;`),
+[Rename refactorings](https://www.jetbrains.com/help/phpstorm/rename-refactorings.html) ("Text occurrences": arquivos sem código-fonte),
+[Configuring inspection severities](https://www.jetbrains.com/help/phpstorm/configuring-inspection-severities.html) (oito severidades, na ordem),
+[Disabling and enabling inspections](https://www.jetbrains.com/help/phpstorm/disabling-and-enabling-inspections.html) ("Disable inspection" no ⌥⏎; alteradas em azul; "Show Only Modified Inspections"),
+[Customizing profiles](https://www.jetbrains.com/help/phpstorm/customizing-profiles.html) (Project Default guardado no projeto),
+[Configuring project structure](https://www.jetbrains.com/help/phpstorm/configuring-project-structure.html) ("Mark Directory As › Excluded"; excluídas ficam fora de busca, parsing e navegação),
+[Project tool window](https://www.jetbrains.com/help/phpstorm/project-tool-window.html) ("Show Excluded Files" no menu de opções da janela).
+**OBS**: nenhuma nesta rodada (a tela do PhpStorm não foi dirigida); os itens abaixo seguem a DOC e, onde ela cala, são **REQ** ou **hipótese**, marcados como tal.
+
+### 1. Change Signature: propagação, propriedades e PHPDoc
+Critérios: botão "Propagar parâmetros" só com parâmetro novo; janela "Selecionar métodos para propagar os parâmetros novos" com chamadores diretos, chamadores dos chamadores ao expandir e código do chamador/chamado (DOC); chamador marcado ganha os parâmetros no fim, as chamadas dentro dele passam a variável e as chamadas a ele recebem o "Padrão" (DOC); propagação em cadeia; conflito se o chamador já tem o nome ou é variádico; aviso de obrigatório depois de opcional. No construtor, "Criar e inicializar propriedades da classe" (marcada por padrão — hipótese): `private Tipo $x;` depois das propriedades existentes (ou no topo) e `$this->x = $x;` no fim do corpo; propriedade existente ou promovida não é duplicada. PHPDoc (REQ, a DOC não fala): tags `@param` seguem a ordem nova com continuações, removidas saem, renomeadas mudam, novas entram com o tipo ou `mixed`; sem tags, a nova entra antes da primeira tag ou do fecho.
+Testes: 5 novos em `tests/refactor-methods.test.ts`; harness `change-signature-propagate` (diálogo, árvore, código, aplicação, ⌘Z, construtor).
+Limites: a visibilidade da propriedade é sempre `private` (o PhpStorm usa a do Code Generation); chamadores que são closures ou código solto não aparecem; a árvore usa o mesmo cálculo de chamadas do Change Signature (família do Phpactor para métodos, referências para funções).
+
+### 2. Inspeções de argumento entre arquivos
+Critérios: funções (namespace atual e, como o PHP, o global), métodos por tipo inferido do receptor (`$var`, `$this`/`self`/`static`, `parent`, `Classe::`), herança pela hierarquia, `new Classe(...)` pelo construtor herdado, variádicos e argumentos nomeados; tipos dos parâmetros qualificados no arquivo que declara; buffer aberto sobrepõe a versão indexada; hierarquia incompleta não acusa; modo estrito decidido pelo arquivo que chama; correção "Converter 'x' para int" nos escalares; retorno de função de outro arquivo alimenta a inferência.
+Implementação: `SignatureIndex` em `src/inspections.ts`, montado com os arquivos do projeto (fora as exclusões) e invalidado como a hierarquia.
+Testes: `tests/inspections.test.ts` (caso novo); harness `inspections-cross-file` (marcadores, ⌥⏎, edição não salva do outro arquivo).
+Limites: sem correção "alterar tipo do parâmetro" quando a declaração está em outro arquivo; receptor com mais de um tipo possível não é inspecionado; `use function` não é resolvido.
+
+### 3. Configurações › Editor › Inspeções (PHP)
+Critérios (DOC): ligar/desligar por inspeção e por grupo (caixa com estado misto), severidade com as oito opções na ordem da ajuda, alteradas destacadas, filtro por nome e "Só as alteradas", restaurar, Aplicar/OK; perfil "Padrão do projeto" guardado no projeto; "Desativar inspeção" no submenu do ⌥⏎ (DOC) e "Configurar inspeção…" (REQ). "Sem destaque (correção disponível)" tira o marcador e mantém a correção no ⌥⏎.
+Implementação: `src/inspection-profile.ts`; `.php-ide/php-intelligence.json` → `inspections` só com o que difere (REQ; o PhpStorm usa `.idea/inspectionProfiles`). Ação "Configurações › Editor › Inspeções…" (id `settings.inspections`, sem atalho).
+Mudança: conversões escalares com `strict_types` agora usam o id `PhpStrictTypeCheckingInspection` (erro), separado de `PhpIncompatibleReturnTypeInspection`/`PhpParamsInspection` — id por **hipótese** (mensagens diferentes observadas em P21–P23), a confirmar.
+Limites: a tela é um diálogo do plugin, não uma página da janela de configurações do host (que hoje só tem Aparência); sem escopos, sem perfis da IDE nem cópia de perfil; sem alteração, cada caso mantém a severidade de origem (o Phpactor manda a sua).
+
+### 4. Rename: ocorrências de texto e sugestões
+Critérios: classes ganham "Ocorrências de texto" no popup ⌥⇧O, nos ícones em linha e no diálogo; procura em arquivos sem código (md, txt, rst, json, yaml, xml, twig, html, neon, ini…, fora `vendor`/`node_modules`/excluídos): FQN, FQN com `\\` e o nome curto como palavra (não em `Outro\Nome`, `$Nome` ou `NomeLista`) (DOC para o conceito; regras de casamento REQ). Sugestões (REQ/hipótese): propriedades pelo tipo declarado ou promovido; métodos acessores `return $this->x;` → `getX` (`isX` para bool), setter → `setX`, bool sem prefixo → `isNome`; classes pelo nome do arquivo e pelo sufixo da classe-mãe/interface (`Abstract`/`Base`/`Interface` removidos).
+Correção encontrada no harness: no WebKit, clicar numa caixa do popup não a foca, então Esc/Enter paravam de funcionar; o foco agora volta ao popup.
+Testes: `tests/rename-text.test.ts`; harness `rename-text`, `rename-class` e `rename-options` atualizados (dois ícones; três opções).
+Limites: as sugestões do PhpStorm por uso e por IA não existem; ocorrências de texto não consultam o Phpactor.
+
+### 5. Exclusão configurável
+Critérios: "Marcar diretório como › Excluído" no menu da árvore (DOC); a pasta excluída e o conteúdo ficam marcados (nome e ícone em outra cor; REQ visual); dentro de uma pasta excluída, "Excluído" fica desabilitado; na raiz da exclusão aparece "Cancelar exclusão"; "Mostrar arquivos excluídos" (marcado por padrão) esconde/mostra os nós (DOC: "Show Excluded Files"); o Phpactor passa a usar a lista nova sem reiniciar a IDE.
+Implementação: atributos `data-php-excluded`/`data-php-excluded-root` nos nós da árvore do host, observados por `MutationObserver`; `showExcluded` em `.php-ide/php-intelligence.json`. Nativo: gravar o arquivo pela IDE (ou editá-lo à mão — a data do arquivo é conferida a cada pedido) com lista diferente encerra o servidor; o próximo pedido o inicia com `indexer.exclude_patterns` novo e reindexação completa. O teste `exclusao_gravada_faz_o_phpactor_reler_a_lista` (ignorado por padrão; `PHPFORGE_TEST_PHP_TOOLS=<.tools>`) rodou com Phpactor real em 04/11: a classe da pasta excluída sai de `workspace/symbol`.
+Limites: o PhpStorm põe "Show Excluded Files" no menu de opções do cabeçalho da janela Projeto; o host não tem esse menu, então o item fica no menu de contexto (com exclusões) e como ação. Só diretórios; sem "Mark as Plain Text"; a reindexação completa pode levar o tempo da indexação inicial.
+
+### Validação da rodada
+- Plugin: `npm test` (71), `cargo test` (10 + 2 ignorados), `cargo clippy --all-targets -D warnings`; teste com Phpactor real executado à parte.
+- Host: `npm run typecheck`, `npm test` (41) e `cargo check` do `src-tauri` com o crate local por `--config patch` (sem mudar `Cargo.toml`; os métodos nativos agora são genéricos no runtime do Tauri e o host compila sem ajuste).
+- WebKit: `node scripts/check-php-intelligence-fidelity.mjs` — 19 cenários, todos passando.
+- Limitação anterior a esta rodada (reproduzida com a 1.1.0): a primeira ⌥⏎ dada ~300 ms depois de os marcadores aparecerem às vezes não abre o menu; a segunda abre. O harness espera 600 ms; a causa (cálculo do lightbulb do Monaco × provider assíncrono) não foi corrigida.
+- Não executado: `npm run test:native` (o host fixa o plugin publicado) e observação do PhpStorm.
+
+Nenhum item é promovido: todos seguem **Em desenvolvimento / não validados comparativamente**.
