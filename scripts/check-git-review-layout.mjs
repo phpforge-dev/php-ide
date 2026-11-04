@@ -65,6 +65,7 @@ const bootstrap=`
   const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
    gitChangelists:async input=>changelists(input),
    gitTools:async()=>structuredClone(window.toolsState),
+   workspace:async()=>({root:'/tmp/project',name:'project'}),
    gitOperation:async input=>{window.operations=(window.operations??[]).concat([input]);return 'ok';},gitBranches:async()=>(${JSON.stringify(tools.branches)}),
    gitLog:async filter=>{window.logRequests=(window.logRequests??[]).concat([filter]);let list=${JSON.stringify(logCommits)};
     if(filter.authors?.length)list=list.filter(c=>filter.authors.includes(c.author));
@@ -310,5 +311,39 @@ await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitFor
  assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Checkout','Enviar para origin','Excluir']);
  await page.keyboard.press('Escape');
  console.log('WebKit: reset — Git Reset dialog, Mixed default, cancel, Hard, Checkout Revision, New Branch from commit and tag Checkout passed.');
+ // 7. Worktrees: tab shown with more than one worktree, list, New Worktree (branch already open → New branch), Delete, Prune.
+ assert.equal(await page.locator('#git-log-panel .git-worktrees-tab').isVisible(),true,'tab appears when the repository has two worktrees');
+ await page.locator('#git-worktrees-tab').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.git-worktree-row').length===2);
+ assert.deepEqual(await page.locator('.git-worktree-row').first().locator('span,strong').allTextContents(),['✓','project','main','/tmp/project','']);
+ assert.equal(await page.locator('#git-log-panel .git-log-body').isHidden(),true,'Worktrees replaces the Log body');
+ await page.screenshot({path:'.artifacts/git-worktrees.png'});
+ await page.locator('.git-worktree-row').first().click();
+ assert.equal(await page.locator('#git-worktree-delete').isDisabled(),true,'main worktree cannot be deleted');
+ await page.locator('#git-worktree-new').click();
+ const wt=page.locator('.git-worktree-dialog');
+ assert.equal(await wt.locator('h2').textContent(),'Novo worktree');
+ assert.equal(await wt.locator('input[name=location]').inputValue(),'/tmp','location defaults to the project parent');
+ await wt.locator('select[name=branch]').selectOption('feature/report');
+ assert.equal(await wt.locator('input[name=useNew]').isChecked(),true,'a branch open in another worktree needs a new branch');
+ await wt.locator('input[name=newBranch]').fill('feature/report-2');
+ assert.equal(await wt.locator('input[name=name]').inputValue(),'project-report-2');
+ assert.equal(await wt.locator('.git-wt-hint').textContent(),'O worktree será criado em: /tmp/project-report-2');
+ await page.screenshot({path:'.artifacts/git-worktree-new.png'});
+ await wt.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-add');
+ assert.deepEqual(await operation(),{kind:'worktree-add',target:'/tmp/project-report-2',branch:'feature/report',newBranch:'feature/report-2',expectedHead:'6f946771'});
+ await page.locator('.git-worktree-row').nth(1).click();
+ await page.locator('#git-worktree-delete').click();
+ await page.locator('.git-worktree-confirm button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-remove');
+ assert.equal((await operation()).target,'/tmp/project-wt');
+ await page.locator('#git-worktree-prune').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-prune');
+ await page.locator('.git-worktree-row').nth(1).dblclick();
+ assert.match(await page.locator('#git-log-status').textContent(),/\/tmp\/project-wt/);
+ await page.locator('#git-log-title').click();
+ assert.equal(await page.locator('#git-log-panel .git-log-body').isVisible(),true,'Log tab returns to the Log');
+ console.log('WebKit: worktrees — tab, list, New Worktree with new branch and location hint, Delete, Prune and open passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}
