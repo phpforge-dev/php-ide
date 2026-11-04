@@ -35,7 +35,7 @@ test('URL ida e volta', () => {
 test('entrada de conexão respeita capacidades do driver', () => {
   const ms = { ...newSource('sqlserver', 'b'), readOnly: true, startup: 'SET NOCOUNT ON; SELECT 1;' };
   const input = toInput(ms, 'secret');
-  assert.equal(input.readOnly, false);
+  assert.equal(input.readOnly, true, 'SQL Server aceita somente leitura (Database 1.1.0)');
   assert.equal(input.startup?.length, 2);
   assert.equal(input.password, 'secret');
   const redis = { ...newSource('redis', 'c'), startup: 'PING', ssh: { enabled: true, host: 'bastion', port: 22, user: 'u', key: '' } };
@@ -46,7 +46,7 @@ test('entrada de conexão respeita capacidades do driver', () => {
   assert.equal(defaultName(lite), 'app.sqlite');
   const ora = { ...newSource('oracle', 'e'), connectType: 'sid' as const, database: 'XE', readOnly: true, startup: "ALTER SESSION SET NLS_DATE_FORMAT='YYYY';" };
   const o = toInput(ora, 'pw');
-  assert.equal(o.connectType, 'sid'); assert.equal(o.readOnly, false); assert.equal(o.startup?.length, 1); assert.equal(o.ssl?.mode, 'disable');
+  assert.equal(o.connectType, 'sid'); assert.equal(o.readOnly, true); assert.equal(o.startup?.length, 1); assert.equal(o.ssl?.mode, 'disable');
   const tls = { ...newSource('redis', 'f'), ssl: { mode: 'verify-full' as const, ca: ' /certs/ca.pem ' } };
   assert.equal(toInput(tls, '').ssl?.ca, '/certs/ca.pem', 'Redis aceita CA próprio');
 });

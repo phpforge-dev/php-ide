@@ -84,11 +84,11 @@
       "id": "phpforge.php-debugger",
       "name": "PHP Debugger / Xdebug",
       "description": "PHP Debugger / Xdebug: separate Rust tool service and workbench integration.",
-      "version": "1.0.0",
-      "minIdeVersion": "0.2.11",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-php-debugger",
-      "revision": "53b3c3361434b68821ddc4d247a9ebafc304d878"
+      "revision": "06a1e716e455e16ce7f1074202046c382977c020"
     },
     "sha256": "2188fa7e25b77d32b4527b52073700eea0eca161e571d2688ca9d7518791936a",
     "permissions": [
@@ -102,11 +102,11 @@
       "id": "phpforge.composer",
       "name": "Composer",
       "description": "Composer: separate Rust tool service and workbench integration.",
-      "version": "1.0.0",
-      "minIdeVersion": "0.2.11",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-composer",
-      "revision": "08793150cc239a0f26b5646f681f3d0dfe0dfab1"
+      "revision": "6a2a1015f84ae0b7f445e31b2a3337d4cf3db4bd"
     },
     "sha256": "10893b3f8469a65e4290df8b723c7064cb1b8b91eedc03c9ff940312892e2b43",
     "permissions": [
@@ -120,13 +120,13 @@
       "id": "phpforge.php-tests",
       "name": "PHPUnit / Pest",
       "description": "PHPUnit / Pest: separate Rust tool service and workbench integration.",
-      "version": "1.0.0",
-      "minIdeVersion": "0.2.11",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-php-tests",
-      "revision": "9e36c458021bcbcc09a7d47b5cffb49fcbf838c2"
+      "revision": "7eb83a8a132d24210a1db66126c02d40f1b013c2"
     },
-    "sha256": "a4f701ecfcb35a774435b591688964992265a2e633bdb91343728006b8748347",
+    "sha256": "6619093cd2bef87bd6535fb8c81a6e104a9fd34adcea6604cd049e0cca0fa0b6",
     "permissions": [
       "project.read",
       "native.tool",
@@ -155,13 +155,13 @@
       "id": "phpforge.symfony",
       "name": "Symfony / Twig",
       "description": "Symfony routes, Twig templates, services, parameters and environment references.",
-      "version": "1.0.0",
-      "minIdeVersion": "0.2.13",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-symfony",
-      "revision": "e0ad443b104075bddc13621e91d707b394a99c7f"
+      "revision": "b8fa7f788fc75324e15f5cb2dca049da71dabdda"
     },
-    "sha256": "4471acb223c98f299e6b6969bf947862454e97692b1d2e643b1e0a5d0c1a8e16",
+    "sha256": "42345f628b73597d187cddad12db375e4f6147d3610e4e0c818b337f66b18ea9",
     "permissions": [
       "project.read"
     ]
@@ -187,11 +187,11 @@
       "id": "phpforge.svg-preview",
       "name": "SVG Preview",
       "description": "Live SVG source preview, zoom, backgrounds and recoverable XML errors.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "minIdeVersion": "0.2.13",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-svg-preview",
-      "revision": "aaa5ac3d9576e9cbbc1ae914d0b23e1b5971b961"
+      "revision": "b6dd6a543a0adfe4447ec25b539048dea28183c5"
     },
     "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
     "permissions": [
@@ -204,11 +204,11 @@
       "id": "phpforge.image-preview",
       "name": "Image Preview",
       "description": "Image viewing, zoom, transparency backgrounds and disk reload.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "minIdeVersion": "0.2.13",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-image-preview",
-      "revision": "88a6cd698c0b8e25e53f0d9dbaa7cb39169b83d7"
+      "revision": "1d030d958847aba1a46bee698b3cc88560aa04bb"
     },
     "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
     "permissions": [
@@ -221,11 +221,11 @@
       "id": "phpforge.php-intelligence",
       "name": "PHP Intelligence",
       "description": "PHP semantic navigation, local types, hierarchy, inspections and refactorings.",
-      "version": "1.0.1",
-      "minIdeVersion": "0.2.13",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-php-intelligence",
-      "revision": "34075e092a76fdf4c6bed77dfae50c02a0ab8c7b"
+      "revision": "4112b24671ef6bf6fdbb5067afc0ba6a5cb04641"
     },
     "sha256": "73dcd7054464edbea54983da3876ab0658a0c99dabce7f306887a2754688b442",
     "permissions": [
@@ -276,11 +276,11 @@
       "id": "phpforge.git",
       "name": "Git",
       "description": "git workbench integration with explicit host services.",
-      "version": "1.1.1",
-      "minIdeVersion": "0.2.18",
+      "version": "1.2.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-git",
-      "revision": "39ef5443f4bbec5b3c4f3a6a6531ba05f4e633ea"
+      "revision": "2e63ef0090b66be828b3e6d6bdc0450bea204f18"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [
@@ -294,11 +294,11 @@
       "id": "phpforge.agents",
       "name": "Agents",
       "description": "agents workbench integration with explicit host services.",
-      "version": "1.0.2",
-      "minIdeVersion": "0.2.14",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-agents",
-      "revision": "a1f2dee3603f32abe7fd024ea2344c0871e38d61"
+      "revision": "cb899d1a5dcbd2f9b66315a6b034e0d6b54ab382"
     },
     "sha256": "f5a58c3467133b1d5a4e81a1497c36da5f0c9a7f51198a22187c263395e30875",
     "permissions": [
@@ -328,11 +328,11 @@
       "id": "phpforge.database",
       "name": "Database / SQL",
       "description": "Database explorer, SQL console, SQL intelligence and database driver service.",
-      "version": "1.0.5",
-      "minIdeVersion": "0.2.13",
+      "version": "1.1.0",
+      "minIdeVersion": "0.2.19",
       "author": "Jeidison Farias",
       "repository": "https://github.com/phpforge-dev/plugin-database",
-      "revision": "d005d015dca95fb19417fbfcf5c167a0d6e2f213"
+      "revision": "283d268ce896c32ea16496ba91d9a9cb40d696bb"
     },
     "sha256": "aa880c83c86e16690b823dcce098724874a4f14caa5ca606231abb133a6959af",
     "permissions": [

@@ -2907,7 +2907,7 @@ version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8"
 dependencies = [
- "proc-macro-crate 1.3.1",
+ "proc-macro-crate 3.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -3339,7 +3339,7 @@ dependencies = [
 
 [[package]]
 name = "php-ide"
-version = "0.2.18"
+version = "0.2.19"
 dependencies = [
  "chrono",
  "dunce",
@@ -3374,7 +3374,7 @@ dependencies = [
 [[package]]
 name = "phpforge-agents"
 version = "1.0.0"
-source = "git+https://github.com/phpforge-dev/plugin-agents?rev=1ccbf7c7018b236a47cb79a7c2f4fe6ef9e15826#1ccbf7c7018b236a47cb79a7c2f4fe6ef9e15826"
+source = "git+https://github.com/phpforge-dev/plugin-agents?rev=cb899d1a5dcbd2f9b66315a6b034e0d6b54ab382#cb899d1a5dcbd2f9b66315a6b034e0d6b54ab382"
 dependencies = [
  "libc",
  "serde_json",
@@ -3388,7 +3388,7 @@ dependencies = [
 [[package]]
 name = "phpforge-database"
 version = "1.0.0"
-source = "git+https://github.com/phpforge-dev/plugin-database?rev=b5e78bfb10144868be039e2b114ff514bc5d7b5b#b5e78bfb10144868be039e2b114ff514bc5d7b5b"
+source = "git+https://github.com/phpforge-dev/plugin-database?rev=283d268ce896c32ea16496ba91d9a9cb40d696bb#283d268ce896c32ea16496ba91d9a9cb40d696bb"
 dependencies = [
  "chrono",
  "futures-util",
@@ -3423,7 +3423,7 @@ dependencies = [
 [[package]]
 name = "phpforge-git"
 version = "1.0.0"
-source = "git+https://github.com/phpforge-dev/plugin-git?rev=39ef5443f4bbec5b3c4f3a6a6531ba05f4e633ea#39ef5443f4bbec5b3c4f3a6a6531ba05f4e633ea"
+source = "git+https://github.com/phpforge-dev/plugin-git?rev=2e63ef0090b66be828b3e6d6bdc0450bea204f18#2e63ef0090b66be828b3e6d6bdc0450bea204f18"
 dependencies = [
  "chrono",
  "dunce",
@@ -3439,7 +3439,7 @@ dependencies = [
 [[package]]
 name = "phpforge-php-intelligence"
 version = "1.0.0"
-source = "git+https://github.com/phpforge-dev/plugin-php-intelligence?rev=eb922ddd4299b2ab52fe9877de9c93b7c3502c86#eb922ddd4299b2ab52fe9877de9c93b7c3502c86"
+source = "git+https://github.com/phpforge-dev/plugin-php-intelligence?rev=4112b24671ef6bf6fdbb5067afc0ba6a5cb04641#4112b24671ef6bf6fdbb5067afc0ba6a5cb04641"
 dependencies = [
  "dunce",
  "flate2",
@@ -6347,7 +6347,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

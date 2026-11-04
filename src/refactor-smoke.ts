@@ -18,6 +18,9 @@ export async function refactorSmoke({ check, assert, wait }: Tools) {
  const other = `<?php\n\nnamespace Elsewhere;\n\nclass Invoice {}\n$x = new Invoice();\n`;
  await check('Refatoração: Rename de classe com prévia exata, cancelar, arquivo renomeado e desfazer', async () => {
   await api.fileCreate('Invoice.php', 'file', invoice); await api.fileCreate('billing.php', 'file', billing); await api.fileCreate('elsewhere.php', 'file', other);
+  // O padrão é o rename in-place (PhpStorm); este roteiro cobre o modo "em diálogos".
+  localStorage.setItem('php-intelligence.refactoring-options', 'dialog');
+  try {
   await open('billing.php'); at('new Invoice', 5);
   ed().getAction('php-ide.renameSymbol')!.run(); let d = await dialog(); fill(d, 'Bill2'); press(d, 'cancel');
   await sleep(200); assert((await api.read('billing.php')).text === billing && (await api.read('Invoice.php')).text === invoice, 'cancelar alterou arquivos');
@@ -37,6 +40,7 @@ export async function refactorSmoke({ check, assert, wait }: Tools) {
   await wait(() => status().startsWith('Desfeito'), 20000, 'desfazer falhou: ' + status());
   assert((await api.read('Invoice.php')).text === invoice && (await api.read('billing.php')).text === billing, 'desfazer não restaurou o conteúdo');
   await wait(() => ed().getModel()?.getValue() === billing, 10000, 'buffer não restaurado');
+  } finally { localStorage.removeItem('php-intelligence.refactoring-options'); }
  });
  await check('Refatoração: Extract Method, Ctrl+Z, inspeção de tipo e quick fix', async () => {
   const errors: string[] = []; const onError = (e: ErrorEvent) => errors.push(String(e.message)); window.addEventListener('error', onError);
@@ -48,14 +52,14 @@ export async function refactorSmoke({ check, assert, wait }: Tools) {
   fill(d, 'multiply'); press(d, 'ok');
   await wait(() => m.getValue().includes('$sum = $this->multiply($price, $qty);') && m.getValue().includes('private function multiply($price, int $qty)'), 10000, 'Extract Method não aplicado: ' + status());
   m.undo(); await wait(() => m.getValue() === invoice, 5000, 'Ctrl+Z não restaurou');
-  m.applyEdits([{ range: m.getFullModelRange(), text: invoice.replace('return $sum;', "return 'x';") }]);
+  m.applyEdits([{ range: m.getFullModelRange(), text: invoice.replace('<?php\n', '<?php\ndeclare(strict_types=1);\n').replace('return $sum;', "return 'x';") }]);
   await wait(() => monaco.editor.getModelMarkers({ resource: m.uri, owner: 'php-inspections' }).some(k => k.code === 'PhpIncompatibleReturnTypeInspection'), 15000, 'inspeção de tipo ausente');
   const x = m.getValue().indexOf("'x'"); const p = m.getPositionAt(x + 1);
   const { pluginService } = await import('./plugin-services');const codeActions=pluginService('phpIntelligence')?.codeActions;if(!codeActions)throw Error('PHP intelligence plugin is inactive');
   const actions:monaco.languages.CodeAction[] = await codeActions(m, new monaco.Range(p.lineNumber, p.column, p.lineNumber, p.column));
   const titles = actions.map(a => a.title);
-  assert(titles.includes('Suprimir PhpIncompatibleReturnTypeInspection nesta instrução'), 'supressão ausente: ' + titles.join(' | '));
-  const fix = actions.find(a => a.title === 'Alterar tipo de retorno para string'); assert(fix?.edit, 'quick fix ausente: ' + titles.join(' | '));
+  assert(titles.includes("Suprimir 'PhpIncompatibleReturnTypeInspection'…"), 'supressão ausente: ' + titles.join(' | '));
+  const fix = actions.find(a => a.title === "Alterar tipo de retorno de 'int' para 'string'"); assert(fix?.edit, 'quick fix ausente: ' + titles.join(' | '));
   m.pushEditOperations([], fix!.edit!.edits.map(e => ({ range: (e as monaco.languages.IWorkspaceTextEdit).textEdit.range, text: (e as monaco.languages.IWorkspaceTextEdit).textEdit.text })), () => null);
   await wait(() => m.getValue().includes('function total(int $qty): string'), 10000, 'quick fix não aplicado');
   await wait(() => !monaco.editor.getModelMarkers({ resource: m.uri, owner: 'php-inspections' }).some(k => k.code === 'PhpIncompatibleReturnTypeInspection'), 15000, 'marcador permaneceu');
