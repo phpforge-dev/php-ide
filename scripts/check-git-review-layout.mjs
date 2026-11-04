@@ -53,6 +53,7 @@ const bootstrap=`
   editorPreviewLayout(editor);mountEditorChrome(editor);window.statuses=[];
   window.opened=[];
   // Changelists kept in memory with the native semantics: unique names, active list receives moves with "Set active".
+  window.toolsState=${JSON.stringify(tools)};
   window.lists=[{id:'default',name:'Changes',comment:'',active:true,files:['app/DTOs/Payment/SaveCreditCardTokenDTO.php','src/User.php']}];
   const changelists=input=>{const lists=window.lists;const byId=id=>lists.find(l=>l.id===id);
    if(input.action==='move'){let target=input.target&&byId(input.target);if(!target){target={id:'cl'+lists.length,name:input.name,comment:input.comment??'',active:false,files:[]};lists.push(target);}
@@ -63,7 +64,8 @@ const bootstrap=`
    window.changelistCalls=(window.changelistCalls??[]).concat([input]);return {lists:structuredClone(window.lists)};};
   const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
    gitChangelists:async input=>changelists(input),
-   gitTools:async()=>(${JSON.stringify(tools)}),gitBranches:async()=>(${JSON.stringify(tools.branches)}),
+   gitTools:async()=>structuredClone(window.toolsState),
+   gitOperation:async input=>{window.operations=(window.operations??[]).concat([input]);return 'ok';},gitBranches:async()=>(${JSON.stringify(tools.branches)}),
    gitLog:async filter=>{window.logRequests=(window.logRequests??[]).concat([filter]);let list=${JSON.stringify(logCommits)};
     if(filter.authors?.length)list=list.filter(c=>filter.authors.includes(c.author));
     if(filter.text)list=list.filter(c=>filter.regex?new RegExp(filter.text,filter.matchCase?'':'i').test(c.subject):(filter.matchCase?c.subject:c.subject.toLowerCase()).includes(filter.matchCase?filter.text:filter.text.toLowerCase()));
@@ -244,5 +246,40 @@ await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitFor
  assert.equal(await page.locator('#git-log-panel').isVisible(),true,'Annotate link opens the Log');
  assert.equal(await page.locator('#git-filter-paths').textContent(),'Caminhos: src/User.php');
  console.log('WebKit: Log — graph, labels, branches tree, Branch/User/Date/Paths/text filters, commit menu and Annotate link passed.');
+ // 5. Tags: Log → New Tag… (name only), Tag v1.1 → Delete, Tags node menu, Git → New Tag… with Force/Commit/Message.
+ const row=hash=>page.locator(`#git-log .git-commit-row[data-hash^="${hash}"]`);
+ const operation=()=>page.evaluate(()=>window.operations?.at(-1));
+ await row('83f448f3').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Nova tag…'}).click();
+ const tagDialog=page.locator('.git-tag-dialog');
+ assert.equal(await tagDialog.locator('h2').textContent(),'Criar nova tag em 83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9');
+ assert.equal(await tagDialog.locator('.git-tag-prompt').textContent(),'Digite o nome da nova tag');
+ assert.equal(await tagDialog.locator('button[type=submit]').isDisabled(),true,'OK disabled until a name is typed');
+ assert.equal(await tagDialog.locator('.git-tag-full').first().isHidden(),true,'Log variant asks only the name');
+ await tagDialog.locator('input[name=name]').fill('v1.0.1');
+ await page.screenshot({path:'.artifacts/git-tag-new.png'});
+ await tagDialog.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations?.length===1);
+ assert.deepEqual(await operation(),{kind:'create-tag',target:'v1.0.1',commit:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',expectedHead:'6f946771'});
+ await row('03f8346c').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Tag v1.1'}).click();
+ await page.locator('.git-menu').last().locator('.git-menu-item',{hasText:'Excluir'}).click();
+ await page.waitForFunction(()=>window.operations?.length===2);
+ assert.deepEqual(await operation(),{kind:'delete-tag',target:'v1.1',expectedHead:'6f946771'});
+ await page.evaluate(()=>{window.toolsState.remotes=['origin'];});await page.locator('#git-log-refresh').click();await page.waitForTimeout(200);
+ await page.locator('#git-log-refs .git-ref-tag',{hasText:'v1.0'}).click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Enviar para origin','Excluir']);
+ await page.locator('.git-menu-item',{hasText:'Enviar para origin'}).click();
+ await page.waitForFunction(()=>window.operations?.length===3);
+ assert.deepEqual(await operation(),{kind:'push-tag',target:'v1.0',remote:'origin',expectedHead:'6f946771'});
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent('ide-git-new-tag')));
+ assert.equal(await tagDialog.locator('h2').textContent(),'Tag');
+ await tagDialog.locator('input[name=name]').fill('v2.0');await tagDialog.locator('textarea').fill('Release 2.0');await tagDialog.locator('input[name=force]').check();
+ assert.equal(await tagDialog.locator('button[type=submit]').textContent(),'Criar tag');
+ await page.screenshot({path:'.artifacts/git-tag-dialog.png'});
+ await tagDialog.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations?.length===4);
+ assert.deepEqual(await operation(),{kind:'create-tag',target:'v2.0',commit:'HEAD',force:true,message:'Release 2.0',expectedHead:'6f946771'});
+ console.log('WebKit: tags — New Tag from the Log, Tag submenu delete, push from the Tags node and annotated New Tag passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}

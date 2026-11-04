@@ -14,10 +14,10 @@ export type GitBlame = { path: string; revision: string | null; content?: string
 export type GitChangelist = { id: string; name: string; comment: string; active: boolean; files: string[] };
 export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string; email?: string; committer?: string };
 export type GitBranch = { name: string; current: boolean; remote: boolean; upstream: string; tracking: string };
-export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[]; user?: string };
+export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[]; user?: string; tags?: { name: string; commit: string; annotated: boolean }[] };
 export type GitHistory = { hash: string; parents: string[]; files: { path: string; oldPath?: string; status: string }[] };
 export type GitHunks = { token: string; hunks: { id: number; patch: string }[] };
-export type GitOperation = { kind: 'checkout-remote' | 'create-branch' | 'switch' | 'delete-branch' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'fetch' | 'pull' | 'push' | 'stash' | 'stash-apply' | 'merge-abort' | 'cherry-pick-abort' | 'revert-abort' | 'rebase-abort' | 'rebase-continue'; target?: string; checkout?: boolean; expectedBranch?: string; expectedHead: string | null };
+export type GitOperation = { kind: 'create-tag' | 'delete-tag' | 'push-tag' | 'checkout-remote' | 'create-branch' | 'switch' | 'delete-branch' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'fetch' | 'pull' | 'push' | 'stash' | 'stash-apply' | 'merge-abort' | 'cherry-pick-abort' | 'revert-abort' | 'rebase-abort' | 'rebase-continue'; target?: string; checkout?: boolean; expectedBranch?: string; expectedHead: string | null; commit?: string; force?: boolean; message?: string; remote?: string };
 export type GitConflict = { path: string; base: string; ours: string; theirs: string; result: string; token: string;
   operation: 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'conflict'; oursLabel: string; theirsLabel: string };
 export type LanguageMethod = 'textDocument/definition' | 'textDocument/completion' |
