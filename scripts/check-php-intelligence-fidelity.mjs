@@ -1,6 +1,6 @@
 // WebKit harness (engine of the macOS Tauri WebView) for the PHP Intelligence fidelity work:
 // F2/Shift+F2 tooltip, in-place rename, Inline Method, Change Signature, inspections/quick fixes and
-// paste imports. Runs the plugin from a LOCAL checkout (default ~/Projects/plugin-php-intelligence,
+// paste imports, Propagate Parameters, inspection settings and exclusions. Runs the plugin from a LOCAL checkout (default ~/Projects/plugin-php-intelligence,
 // or --plugin=<dir>), builds it first, and drives the real IDE shell with a simulated `window.ide`
 // API (no Phpactor, no disk). Native behavior still needs `npm run test:native`.
 // Usage: node scripts/check-php-intelligence-fidelity.mjs [--plugin=dir] [--only=f2,rename,...] [--chromium] [--shots]
@@ -106,7 +106,7 @@ scenario('rename-class', { 'src/models.php': invoice, 'src/billing.php': billing
  await page.keyboard.press('Shift+F6'); await page.waitForSelector('.php-rename-primary', { timeout: 8000 });
  const boxes = await page.evaluate(() => [document.querySelectorAll('.php-rename-primary').length, document.querySelectorAll('.php-rename-other').length]);
  assert.deepEqual(boxes, [1, 3], 'name boxed, the other three occurrences in this file highlighted (use, @var, other new)');
- assert.ok(await page.locator('.php-rename-icons button').count() === 1, 'one option icon (comments and strings) beside the name');
+ assert.ok(await page.locator('.php-rename-icons button').count() === 2, 'two option icons (comments and strings, text occurrences) beside the name');
  await page.keyboard.type('Bill'); await page.waitForTimeout(150); await h.shot('rename-class-live');
  const live = await h.text();
  assert.ok(live.includes('use App\\Bill;') && live.includes('@var Bill $first') && (live.match(/new Bill\(\)/g) ?? []).length === 2 && live.includes('// keep: Invoice'), 'all occurrences follow the typing, comment untouched:\n' + live);
@@ -153,9 +153,9 @@ scenario('rename-options', { 'src/Invoice.php': same, 'src/Receipt.php': `<?php\
  assert.match(await page.locator('.php-rename-hint').textContent(), /⌥⇧O/, 'options hint in the lookup');
  await page.keyboard.press('Alt+Shift+O'); await page.waitForSelector('.php-rename-options');
  const labels = await page.locator('.php-rename-options label').allTextContents();
- assert.deepEqual(labels, ['Comentários e strings', 'Renomear arquivo']);
+ assert.deepEqual(labels, ['Comentários e strings', 'Ocorrências de texto', 'Renomear arquivo']);
  const checks = await page.locator('.php-rename-options input').evaluateAll(i => i.map(x => x.checked));
- assert.deepEqual(checks, [false, true], 'file rename on by default when the file is named after the class');
+ assert.deepEqual(checks, [false, false, true], 'file rename on by default when the file is named after the class');
  await h.shot('rename-options');
  await page.locator('.php-rename-options input').first().check(); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
  assert.equal(await page.locator('.php-rename-icons button.on').count(), 1, 'icon reflects the option');
@@ -266,6 +266,8 @@ scenario('inspections', { 'composer.json': JSON.stringify({ autoload: { 'psr-4':
  await h.open('src/Shop.php'); await h.waitMarkers(1);
  const marker = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => [m.startLineNumber, m.message]));
  assert.deepEqual(marker, [[10, "O valor de retorno deveria ser '\\App\\User'; '\\App\\Circle' retornado"]], 'inferred class mismatch through the variable (OBS P2 wording)');
+ // A ⌥⏎ logo após os marcadores às vezes se perde (também na 1.1.0 publicada); espera o lightbulb assentar.
+ await page.waitForTimeout(600);
  await h.caret(10, 16); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
  const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
  assert.equal(items[0], "Alterar tipo de retorno de '\\App\\User' para '\\App\\Circle'", 'inspection fix first: ' + items.join(' | '));
@@ -276,7 +278,7 @@ scenario('inspections', { 'composer.json': JSON.stringify({ autoload: { 'psr-4':
  await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget'); await page.waitForTimeout(300);
  await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].find(o => o.textContent.includes('Suprimir')).click());
  await page.waitForSelector('.php-inspection-menu', { timeout: 4000 });
- assert.deepEqual(await page.locator('.php-inspection-menu button').allTextContents(), ['Suprimir todas no arquivo', 'Suprimir no arquivo', 'Suprimir na instrução']);
+ assert.deepEqual(await page.locator('.php-inspection-menu button').allTextContents(), ['Suprimir todas no arquivo', 'Suprimir no arquivo', 'Suprimir na instrução', 'Desativar inspeção', 'Configurar inspeção…']);
  await page.locator('.php-inspection-menu button').nth(2).click(); await page.waitForTimeout(200);
  assert.ok((await h.text()).includes('/** @noinspection PhpIncompatibleReturnTypeInspection */\n        return $c;'), 'suppressed for the statement:\n' + await h.text());
  await page.keyboard.press('Meta+z'); await page.waitForTimeout(800); await h.caret(10, 16);
@@ -348,6 +350,172 @@ scenario('exclusions', { 'src/Shop.php': `<?php\n\nnamespace App;\n\nclass Shop\
  await page.keyboard.type(' '); await page.waitForTimeout(1500);
  const left = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => m.message));
  assert.deepEqual(left, [], 'excluded package: no class mismatch is asserted: ' + left);
+});
+
+// ── Change Signature: Propagate Parameters e "Criar e inicializar propriedades" (DOC change-signature) ──
+const mailer = `<?php\n\nnamespace App;\n\nclass Mailer\n{\n    private string $from;\n\n    /**\n     * @param string $from sender\n     */\n    public function __construct(string $from)\n    {\n        $this->from = $from;\n    }\n\n    public function send(string $to): string\n    {\n        return $this->format($to);\n    }\n\n    /**\n     * @param string $to recipient\n     */\n    public function format(string $to): string\n    {\n        return "$this->from: $to";\n    }\n\n    public function notify(): string\n    {\n        return $this->send('ana');\n    }\n}\n`;
+scenario('change-signature-propagate', { 'src/Mailer.php': mailer }, async (page, h) => {
+ await page.evaluate(methodServer);
+ await h.open('src/Mailer.php'); await h.caretAt('function format', 10);
+ await page.keyboard.press('Meta+F6'); await page.waitForSelector('.refactor-signature');
+ const propagate = page.locator('.refactor-params-toolbar button[aria-label="Propagar parâmetros"]');
+ assert.equal(await propagate.isDisabled(), true, 'propagation needs a new parameter');
+ assert.equal(await page.locator('.refactor-init-properties').count(), 0, 'property option only for constructors');
+ await page.locator('.refactor-params-toolbar button[aria-label="Adicionar parâmetro"]').click();
+ await page.locator('.refactor-signature .param-type').nth(1).fill('string'); await page.locator('.refactor-signature .param-name').nth(1).fill('$subject'); await page.locator('.refactor-signature .param-call').nth(1).fill("'Oi'");
+ await propagate.click(); await page.waitForSelector('.refactor-propagate');
+ assert.equal(await page.locator('.refactor-propagate h2').textContent(), 'Selecionar métodos para propagar os parâmetros novos');
+ assert.deepEqual(await page.locator('.refactor-propagate-tree > li > .row span').allTextContents(), ['Mailer::send()'], 'direct callers');
+ assert.match(await page.locator('.refactor-propagate pre.callee').textContent(), /function format\(string \$to\)/);
+ assert.match(await page.locator('.refactor-propagate pre.caller').textContent(), /return \$this->format\(\$to\);/, 'caller code shown');
+ await page.locator('.refactor-propagate-tree > li > .row input').check();
+ await page.locator('.refactor-propagate-tree > li > .row .twisty').click(); await page.waitForSelector('.refactor-propagate-tree ul .row');
+ assert.deepEqual(await page.locator('.refactor-propagate-tree ul .row span').allTextContents(), ['Mailer::notify()'], 'callers of callers on expand');
+ await page.locator('.refactor-propagate-tree ul .row input').check();
+ await h.shot('change-signature-propagate');
+ await page.locator('.refactor-propagate footer button[value=ok]').click(); await page.waitForTimeout(150);
+ assert.match(await propagate.getAttribute('title'), /2 selecionado/);
+ await page.locator('.refactor-signature footer button[value=ok]').click(); await page.waitForTimeout(800);
+ let after = await h.text();
+ assert.ok(after.includes('     * @param string $to recipient\n     * @param string $subject\n     */\n    public function format(string $to, string $subject): string'), 'PHPDoc gets the new @param:\n' + after);
+ assert.ok(after.includes('public function send(string $to, string $subject): string\n    {\n        return $this->format($to, $subject);'), 'propagated caller passes the variable:\n' + after);
+ assert.ok(after.includes("public function notify(string $subject): string\n    {\n        return $this->send('ana', $subject);"), 'propagated to the caller of the caller:\n' + after);
+ await page.keyboard.press('Meta+z'); await page.waitForTimeout(200); assert.equal(await h.text(), mailer, 'Cmd+Z restores');
+ // Constructor: "Criar e inicializar propriedades da classe" (checked) adds the field and the assignment.
+ await h.caretAt('function __construct', 12); await page.keyboard.press('Meta+F6'); await page.waitForSelector('.refactor-signature');
+ assert.equal(await page.locator('.refactor-init-properties input').isChecked(), true);
+ assert.equal(await page.locator('.refactor-init-properties').textContent(), 'Criar e inicializar propriedades da classe');
+ await page.locator('.refactor-params-toolbar button[aria-label="Adicionar parâmetro"]').click();
+ await page.locator('.refactor-signature .param-type').nth(1).fill('int'); await page.locator('.refactor-signature .param-name').nth(1).fill('$port = 25');
+ await h.shot('change-signature-constructor');
+ await page.locator('.refactor-signature footer button[value=ok]').click(); await page.waitForTimeout(800);
+ after = await h.text();
+ assert.ok(after.includes('    private string $from;\n    private int $port;\n'), 'field created:\n' + after);
+ assert.ok(after.includes('     * @param string $from sender\n     * @param int $port\n     */\n    public function __construct(string $from, int $port = 25)\n    {\n        $this->from = $from;\n        $this->port = $port;\n    }'), 'parameter, @param and assignment:\n' + after);
+});
+
+// ── Argumentos entre arquivos (índice de assinaturas do projeto) ─────────────────────────────
+const helpers = `<?php\n\nnamespace App\\Util;\n\nfunction money(int $cents): string\n{\n    return (string) $cents;\n}\n`;
+const repo = `<?php\n\nnamespace App\\Repo;\n\nuse App\\User;\n\nclass Users\n{\n    public function save(User $user): void\n    {\n    }\n}\n`;
+const caller = `<?php\n\ndeclare(strict_types=1);\n\nnamespace App\\Util;\n\nuse App\\Circle;\nuse App\\Repo\\Users;\n\n$repo = new Users();\n$repo->save(new Circle());\necho money('12');\n`;
+scenario('inspections-cross-file', { 'src/models.php': shapes, 'src/Util/helpers.php': helpers, 'src/Repo/Users.php': repo, 'src/Util/bill.php': caller }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/Util/bill.php'); await h.waitMarkers(2);
+ const markers = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => [m.startLineNumber, m.severity, m.message]));
+ assert.deepEqual(markers, [[11, 4, "Esperado parâmetro do tipo '\\App\\User'; '\\App\\Circle' fornecido"], [12, 8, "Esperado parâmetro do tipo 'int'; 'string' fornecido"]], 'method of another file by receiver type; function of another file (strict → error): ' + JSON.stringify(markers));
+ await h.caret(12, 12); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
+ assert.equal(items[0], "Converter '12' para int", items.join(' | '));
+ await h.shot('inspections-cross-file');
+ await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+ assert.ok((await h.text()).includes("echo money((int) '12');"));
+ // Editing the other file (open buffer) changes the verdict without saving.
+ await h.open('src/Util/helpers.php');
+ await page.evaluate(() => { const m = monacoApi.editor.getModels().find(m => m.uri.path.endsWith('helpers.php')); m.setValue(m.getValue().replace('int $cents', 'string $cents')); });
+ await h.open('src/Util/bill.php'); await page.keyboard.type(' '); await page.waitForTimeout(1500);
+ const left = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => m.message));
+ assert.deepEqual(left, ["Esperado parâmetro do tipo '\\App\\User'; '\\App\\Circle' fornecido"], 'unsaved buffer of the declaring file is used: ' + left);
+});
+
+// ── Configurações › Editor › Inspeções (perfil do projeto) ───────────────────────────────────
+scenario('inspection-settings', { 'src/models.php': shapes, 'src/Shop.php': typed }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/Shop.php'); await h.waitMarkers(1);
+ const markers = () => page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => [m.startLineNumber, m.severity, m.code]));
+ // ⌥⏎ › Suprimir… › Desativar inspeção (DOC "Disable inspection"): marker gone, profile saved in the project.
+ await page.waitForTimeout(500); await h.caret(10, 16); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ console.log('  · disable from ⌥⏎');
+ await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].find(o => o.textContent.includes('Suprimir')).click());
+ await page.waitForSelector('.php-inspection-menu'); await page.locator('.php-inspection-menu button', { hasText: 'Desativar inspeção' }).click();
+ await page.waitForFunction(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).length === 0, null, { timeout: 5000 });
+ assert.deepEqual(JSON.parse(await page.evaluate(() => window.files['.php-ide/php-intelligence.json'])).inspections, { PhpIncompatibleReturnTypeInspection: { enabled: false } });
+ // Settings page: PHP tree with groups, the disabled inspection unchecked and marked as modified.
+ await page.evaluate(() => monacoApi.editor.getEditors().find(e => e.getDomNode()?.closest('#editor')).getAction('php-ide.inspectionSettings').run());
+ await page.waitForSelector('.php-inspections-settings');
+ assert.equal(await page.locator('.php-inspections-settings .crumbs').textContent(), 'Editor › Inspeções');
+ const groups = await page.locator('.php-inspections-settings .tree li.group > .row > span').allTextContents();
+ assert.deepEqual(groups, ['PHP', 'Compatibilidade de tipos', 'Prováveis bugs', 'Símbolos indefinidos', 'Símbolos não usados', 'Más práticas', 'Outros']);
+ const row = page.locator('.php-inspections-settings .tree li[data-id="PhpIncompatibleReturnTypeInspection"]');
+ assert.equal(await row.locator('input').isChecked(), false); assert.ok(await row.evaluate(e => e.classList.contains('modified')), 'modified inspections are highlighted');
+ assert.equal(await page.locator('.php-inspections-settings .tree li.group').first().locator('input').evaluate(e => e.indeterminate), true, 'group checkbox shows the mixed state');
+ await page.locator('.php-inspections-settings input[name=modified]').check();
+ assert.deepEqual(await page.locator('.php-inspections-settings .tree li[data-id]').evaluateAll(l => l.map(e => e.dataset.id)), ['PhpIncompatibleReturnTypeInspection'], 'Show only modified');
+ await page.locator('.php-inspections-settings input[name=modified]').uncheck();
+ await page.locator('.php-inspections-settings input[type=search]').fill('retorno');
+ assert.deepEqual(await page.locator('.php-inspections-settings .tree li[data-id]').evaluateAll(l => l.map(e => e.dataset.id)), ['PhpIncompatibleReturnTypeInspection', 'PhpMissingReturnValueInspection'], 'filter by name');
+ await row.locator('input').check(); await row.click();
+ assert.equal(await page.locator('.php-inspections-settings .right h3').textContent(), 'Tipo de retorno incompatível');
+ assert.deepEqual(await page.locator('.php-inspections-settings select[name=severity] option').allTextContents(), ['Erro', 'Aviso', 'Aviso fraco', 'Problema do servidor', 'Erro gramatical', 'Erro de digitação', 'Consideração', 'Sem destaque (correção disponível)']);
+ await page.locator('.php-inspections-settings select[name=severity]').selectOption('ERROR');
+ assert.match(await row.locator('small').textContent(), /Erro/);
+ await h.shot('inspection-settings');
+ await page.locator('.php-inspections-settings footer button[value=ok]').click();
+ await page.waitForFunction(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).some(m => m.severity === 8), null, { timeout: 5000 });
+ assert.deepEqual(await markers(), [[10, 8, 'PhpIncompatibleReturnTypeInspection']], 'severity changed to Error');
+ assert.deepEqual(JSON.parse(await page.evaluate(() => window.files['.php-ide/php-intelligence.json'])).inspections, { PhpIncompatibleReturnTypeInspection: { severity: 'ERROR' } });
+ // "No highlighting (fix available)": no marker, but ⌥⏎ still offers the fix.
+ await page.evaluate(() => monacoApi.editor.getEditors().find(e => e.getDomNode()?.closest('#editor')).getAction('php-ide.inspectionSettings').run());
+ await page.waitForSelector('.php-inspections-settings'); await page.locator('.php-inspections-settings .tree li[data-id="PhpIncompatibleReturnTypeInspection"]').click();
+ await page.locator('.php-inspections-settings select[name=severity]').selectOption('INFORMATION'); await page.locator('.php-inspections-settings footer .apply').click(); await page.waitForTimeout(300);
+ await page.locator('.php-inspections-settings footer button[value=cancel]').click();
+ await page.waitForFunction(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).length === 0, null, { timeout: 5000 });
+ console.log('  · no highlighting');
+ await h.caret(10, 16); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
+ assert.equal(items[0], "Alterar tipo de retorno de '\\App\\User' para '\\App\\Circle'", items.join(' | '));
+});
+
+// ── Rename de classe: ocorrências de texto e sugestões de nome além das variáveis ─────────────
+const docModels = `<?php\n\nnamespace App;\n\nabstract class Document {}\n\nclass Invoice extends Document\n{\n    private ?CustomerAccount $account = null;\n\n    public function account(): ?CustomerAccount\n    {\n        return $this->account;\n    }\n}\n\nclass CustomerAccount {}\n`;
+const readme = 'Billing\n=======\n\n`App\\Invoice` is the main document. Every Invoice has an account; InvoiceLine is unrelated.\n';
+const yaml = 'documents:\n  invoice: App\\Invoice\n';
+scenario('rename-text', { 'src/models.php': docModels, 'README.md': readme, 'config/documents.yaml': yaml }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/models.php'); await h.caretAt('class Invoice', 8);
+ await page.keyboard.press('Shift+F6'); await page.waitForSelector('.php-rename-primary', { timeout: 8000 });
+ assert.deepEqual(await page.locator('.php-rename-item').allTextContents(), ['Invoice', 'InvoiceDocument'], 'class: suggestion from the parent class');
+ await page.keyboard.press('Alt+Shift+O'); await page.waitForSelector('.php-rename-options');
+ await page.locator('.php-rename-options input[data-option=text]').check(); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+ assert.equal(await page.locator('.php-rename-icons button.on').count(), 1);
+ await page.keyboard.type('Bill'); await page.waitForTimeout(150);
+ await h.shot('rename-text');
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.files['README.md'].includes('Every Bill'), null, { timeout: 8000 });
+ assert.equal(await page.evaluate(() => window.files['README.md']), readme.replace('`App\\Invoice`', '`App\\Bill`').replace('Every Invoice', 'Every Bill'), 'text occurrences: FQN and short name, InvoiceLine untouched');
+ assert.equal(await page.evaluate(() => window.files['config/documents.yaml']), 'documents:\n  invoice: App\\Bill\n');
+ assert.ok((await h.text()).includes('class Bill extends Document'));
+ // Accessor method (`return $this->account;`): getter name in the lookup.
+ await page.evaluate(methodServer); await page.waitForTimeout(300);
+ await h.caretAt('function account', 10); await page.keyboard.press('Shift+F6'); await page.waitForSelector('.php-rename-primary', { timeout: 8000 });
+ assert.deepEqual(await page.locator('.php-rename-item').allTextContents(), ['account', 'getAccount'], 'method: accessor suggestion');
+ await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+});
+
+// ── Exclusão pela árvore: "Marcar diretório como › Excluído", marca visual e "Mostrar arquivos excluídos" ──
+scenario('exclusions-tree', { 'src/Shop.php': `<?php\n\nnamespace App;\n\nclass Shop {}\n`, 'storage/cache/Compiled.php': `<?php\n\nnamespace App;\n\nclass Compiled {}\n` }, async (page, h) => {
+ const menu = async (path, ...labels) => { await page.locator(`#tree summary[data-path="${path}"], #tree button[data-path="${path}"]`).first().click({ button: "right" }); for (const label of labels) { await page.locator('.context-menu [role^=menuitem]', { hasText: label }).last().click(); await page.waitForTimeout(150); } };
+ const config = () => page.evaluate(() => JSON.parse(window.files['.php-ide/php-intelligence.json'] ?? 'null'));
+ await page.locator('#tree summary[data-path="storage"]').waitFor();
+ await menu('storage', 'Marcar diretório como', 'Excluído');
+ await page.waitForFunction(() => document.querySelector('#tree details[data-path="storage"]')?.hasAttribute('data-php-excluded-root'), null, { timeout: 5000 });
+ assert.deepEqual((await config()).excluded, ['storage']);
+ await page.locator('#tree summary[data-path="storage"]').click(); await page.waitForTimeout(300);
+ assert.equal(await page.locator('#tree details[data-path="storage/cache"]').evaluate(e => e.hasAttribute('data-php-excluded')), true, 'children marked too');
+ assert.notEqual(await page.locator('#tree summary[data-path="storage"] .resource-name').evaluate(e => getComputedStyle(e).color), await page.locator('#tree summary[data-path="src"] .resource-name').evaluate(e => getComputedStyle(e).color), 'excluded folder drawn differently');
+ await h.shot('exclusions-tree');
+ // The submenu of an excluded root offers "Cancelar exclusão"; children of it cannot be excluded again.
+ await page.locator('#tree [data-path="storage/cache"]').first().click({ button: 'right' }); await page.locator('.context-menu [role^=menuitem]', { hasText: 'Marcar diretório como' }).last().click(); await page.waitForTimeout(150);
+ assert.equal(await page.locator('.context-menu [role^=menuitem]', { hasText: 'Excluído' }).last().isDisabled(), true);
+ await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+ // "Mostrar arquivos excluídos" off: excluded nodes disappear; on again: back.
+ await menu('src', 'Mostrar arquivos excluídos');
+ await page.waitForFunction(() => getComputedStyle(document.querySelector('#tree details[data-path="storage"]')).display === 'none', null, { timeout: 5000 });
+ assert.equal((await config()).showExcluded, false);
+ await menu('src', 'Mostrar arquivos excluídos');
+ await page.waitForFunction(() => getComputedStyle(document.querySelector('#tree details[data-path="storage"]')).display !== 'none', null, { timeout: 5000 });
+ await menu('storage', 'Marcar diretório como', 'Cancelar exclusão');
+ await page.waitForFunction(() => !document.querySelector('#tree details[data-path="storage"]').hasAttribute('data-php-excluded'), null, { timeout: 5000 });
+ assert.deepEqual((await config()).excluded, []);
 });
 
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'pipe' });
