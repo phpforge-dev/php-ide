@@ -20,6 +20,7 @@ import { mountMulticursor } from './editor-multicursor';
 import { mountSearchEverywhere } from './search-everywhere';
 
 import { editorColors, editorFont, editorRules } from './editor-theme';
+import { mountEditorChrome } from './editor-chrome';
 
 import { mountProjectActions } from './project-actions';
 
@@ -61,6 +62,7 @@ window.addEventListener('ide-workspace-file-changed',event=>{if(/\.(?:[cm]?[jt]s
 monaco.editor.defineTheme('independent-dark', { base: 'vs-dark', inherit: true, rules: editorRules(false), colors: editorColors(false) });
 const editor = monaco.editor.create($('editor'), { theme: 'independent-dark', automaticLayout: true, fontSize: editorFont.size, lineHeight: editorFont.lineHeight(editorFont.size), fontFamily: editorFont.family, codeLensFontFamily: editorFont.codeLensFamily, codeLensFontSize: editorFont.codeLensSize, bracketPairColorization: {enabled: false}, quickSuggestions: {other: true, comments: false, strings: true}, suggestOnTriggerCharacters: true, wordBasedSuggestions: 'off', minimap: { enabled: false }, scrollBeyondLastLine: false, padding: { top: 12 } });
 editor.updateOptions({'semanticHighlighting.enabled':true});
+mountEditorChrome(editor);
 mountMulticursor(editor,showCursor);
 // Monaco stores bracket colors on models too; diff editors must not restore their defaults.
 monaco.editor.onDidCreateModel(model=>model.updateOptions({bracketColorizationOptions:{enabled:false,independentColorPoolPerBracketType:false}}));

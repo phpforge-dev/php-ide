@@ -162,6 +162,13 @@
     "{0} diferenças": "{0} diferenças",
     "Fechar sem atualizar": "Fechar sem atualizar",
     "Preparando {0}/{1}…": "Preparando {0}/{1}…",
-    "Retirando {0}/{1}…": "Retirando {0}/{1}…"
+    "Retirando {0}/{1}…": "Retirando {0}/{1}…",
+    "Nenhum problema encontrado": "Nenhum problema encontrado",
+    "{0} erro": "{0} erro",
+    "{0} erros": "{0} erros",
+    "{0} aviso": "{0} aviso",
+    "{0} avisos": "{0} avisos",
+    "{0} aviso fraco": "{0} aviso fraco",
+    "{0} avisos fracos": "{0} avisos fracos"
   }
 }

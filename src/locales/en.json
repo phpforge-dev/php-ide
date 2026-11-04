@@ -1446,7 +1446,14 @@
     "{0} diferenças": "{0} differences",
     "Fechar sem atualizar": "Close without updating",
     "Preparando {0}/{1}…": "Staging {0}/{1}…",
-    "Retirando {0}/{1}…": "Unstaging {0}/{1}…"
+    "Retirando {0}/{1}…": "Unstaging {0}/{1}…",
+    "Nenhum problema encontrado": "No problems found",
+    "{0} erro": "{0} error",
+    "{0} erros": "{0} errors",
+    "{0} aviso": "{0} warning",
+    "{0} avisos": "{0} warnings",
+    "{0} aviso fraco": "{0} weak warning",
+    "{0} avisos fracos": "{0} weak warnings"
   },
   "Plugins padrão": "Default plugins",
   "Instalados do GitHub com versão verificada. A primeira instalação precisa de internet e Git; depois funcionam offline.": "Installed from GitHub with verified versions. Initial installation requires internet and Git; afterwards they work offline.",

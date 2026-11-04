@@ -1,0 +1,29 @@
+/* PhpStorm editor chrome (UI-EDITOR-CHROME-001). Sizes measured on references 05/40; colors are Islands tokens. */
+/* Gutter: [numbers][icons][folding · VCS bar] | separator | code. */
+.phpstorm-editor .margin-view-overlays .line-numbers{translate:calc(-1 * var(--ij-gutter-glyph,0px)) 0}
+.phpstorm-editor .glyph-margin,.phpstorm-editor .glyph-margin-widgets{translate:var(--ij-gutter-numbers,0px) 0}
+.phpstorm-editor .margin{background-image:linear-gradient(to left,transparent 3px,var(--ij-gutter-separator) 3px,var(--ij-gutter-separator) 4px,transparent 4px)}
+/* The VCS bar touches the separator, as on the references; deleted lines keep their wedge there too. */
+.phpstorm-editor .margin-view-overlays :is(.git-line-added,.git-line-modified){margin-left:calc(var(--ij-gutter-decorations,30px) - 7px)!important;width:0!important;border-left-width:3px!important}
+.phpstorm-editor .margin-view-overlays .git-line-deleted{margin-left:calc(var(--ij-gutter-decorations,30px) - 13px)!important}
+/* Scrollbar: thin rounded thumb over the error stripe, as on macOS PhpStorm. */
+.phpstorm-editor .monaco-scrollable-element>.scrollbar>.slider{border-radius:4px}
+.phpstorm-editor .monaco-scrollable-element>.scrollbar.vertical>.slider{left:2px!important}
+.phpstorm-editor .monaco-scrollable-element>.scrollbar.horizontal>.slider{top:2px!important}
+/* Error stripe: short dashes; VCS changes are narrow ticks at the stripe's left. */
+.error-stripe{position:absolute;right:0;width:12px;z-index:5;pointer-events:none}
+.error-stripe i{position:absolute;height:3px;pointer-events:auto;cursor:pointer}
+.error-stripe .error-stripe-mark{left:2px;right:1px;border-radius:1px}
+.error-stripe .error-stripe-vcs{left:1px;width:3px}
+/* Inspection widget (top-right corner). */
+.inspection-widget{display:flex;align-items:center;gap:1px;margin:6px 18px 0 0;padding:0;font:12px var(--ij-font-ui);color:var(--ij-text-secondary);background:var(--ij-editor-bg);border-radius:4px}
+.inspection-widget button{display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 3px;border:0;border-radius:4px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.inspection-widget button:hover:not(:disabled){background:var(--ij-hover)}
+.inspection-widget button:disabled{cursor:default;opacity:1}
+/* Observed at rest at roughly half strength (05/40); full strength on hover is our own choice. */
+.inspection-widget{opacity:.6;transition:opacity .12s}.inspection-widget:hover,.inspection-widget:focus-within{opacity:1}
+.inspection-widget svg{width:14px;height:14px;flex:none}
+.inspection-count{display:inline-flex;align-items:center;gap:2px;font-variant-numeric:tabular-nums}.inspection-count svg{color:var(--icon)}
+.inspection-error{--icon:var(--ij-editor-error-icon)}.inspection-warning{--icon:var(--ij-editor-warning-icon)}.inspection-weak{--icon:var(--ij-editor-weak-icon)}
+.inspection-ok{color:var(--ij-success)}
+.inspection-arrow svg{width:16px;height:16px}.inspection-arrow{padding:0 1px!important}

@@ -74,6 +74,8 @@ export function editorColors(isLight:boolean):Record<string,string>{return isLig
  'editor.findMatchBackground':'#FCD47E','editor.findMatchHighlightBackground':'#FCD47E99', // TEXT_SEARCH_RESULT
  'editorError.foreground':'#F50000','editorWarning.foreground':'#F2BF57','editorInfo.foreground':'#3871E1', // WRONG_REFERENCES / WARNING stripe
  'editorOverviewRuler.errorForeground':'#F50000','editorOverviewRuler.warningForeground':'#F2BF57','editorOverviewRuler.border':'#00000000',
+ // Error stripe: ERROR_STRIPE_COLOR of IDENTIFIER_UNDER_CARET / WRITE_ / TEXT_SEARCH_RESULT (expUI_lightScheme.xml); info = weak warning (hipótese).
+ 'editorOverviewRuler.wordHighlightForeground':'#D0A1FF','editorOverviewRuler.wordHighlightTextForeground':'#D0A1FF','editorOverviewRuler.wordHighlightStrongForeground':'#F0A8D2','editorOverviewRuler.findMatchForeground':'#C47233','editorOverviewRuler.infoForeground':'#A8ADBD',
  'editorGutter.background':'#FFFFFF','editorGutter.addedBackground':'#7FC784','editorGutter.modifiedBackground':'#88ADF7','editorGutter.deletedBackground':'#767A8A', // *_LINES_COLOR
  'editorCodeLens.foreground':'#7A7A7A', // observado: inlays em 40
  'editorInlayHint.foreground':'#5F6269','editorInlayHint.background':'#EBECF0',
@@ -99,6 +101,8 @@ export function editorColors(isLight:boolean):Record<string,string>{return isLig
  'editor.findMatchBackground':'#2D543F','editor.findMatchHighlightBackground':'#114957',
  'editorError.foreground':'#FA6675','editorWarning.foreground':'#F2C55C','editorInfo.foreground':'#548AF7',
  'editorOverviewRuler.errorForeground':'#D64D5B','editorOverviewRuler.warningForeground':'#C29E4A','editorOverviewRuler.border':'#00000000',
+ // Error stripe: same attributes in IslandSchemeDark.xml/expUI_darkScheme.xml.
+ 'editorOverviewRuler.wordHighlightForeground':'#5B786A','editorOverviewRuler.wordHighlightTextForeground':'#5B786A','editorOverviewRuler.wordHighlightStrongForeground':'#BA6387','editorOverviewRuler.findMatchForeground':'#72D6D6','editorOverviewRuler.infoForeground':'#868A91',
  'editorGutter.background':'#191A1C','editorGutter.addedBackground':'#549159','editorGutter.modifiedBackground':'#375FAD','editorGutter.deletedBackground':'#868A91',
  'editorCodeLens.foreground':'#727782', // INLAY_TEXT_WITHOUT_BACKGROUND (observado #737781 em C02)
  'editorInlayHint.foreground':'#858A94','editorInlayHint.background':'#393B40', // INLINE_PARAMETER_HINT
