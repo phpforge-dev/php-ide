@@ -49,11 +49,11 @@ export type AgentChange = { path: string; before: string | null; after: string }
 /** Resumo de uma conversa do histórico do agente (por projeto, fora do repositório). */
 export type AgentHistorySummary = { id: string; title: string; agent: string; created: number; updated: number; renamed?: boolean };
 /** Dados extras do pedido: conversa restaurada, menções/anexos resolvidos. */
-export type AgentPromptExtras = { history?: string };
+export type AgentPromptExtras = { history?: string; attachments?: Record<string, unknown>[] };
 export type AgentInfo = { id: string; name: string; available: boolean; detail: string };
 /** Eventos de uma sessão de agente (ACP ou Codex) para o painel. */
 export type AgentEvent =
-  { type: 'session'; agent: string; protocol: number; modes: { id: string; name: string }[]; mode: string | null } |
+  { type: 'session'; agent: string; protocol: number; modes: { id: string; name: string }[]; mode: string | null; capabilities?: { image: boolean; embeddedContext: boolean } } |
   { type: 'message' | 'thought'; text: string } |
   { type: 'tool'; id: string; title?: string; kind?: string; status?: string } |
   { type: 'plan'; entries: { content: string; status: string }[] } |

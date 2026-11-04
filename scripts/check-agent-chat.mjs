@@ -70,6 +70,43 @@ scenario('history', async () => {
  await page.close();
 });
 
+scenario('mentions', async () => {
+ const {page, errors} = await page_({database: true});
+ await startAgent(page);
+ // Seleção real no Monaco (linhas 7–10) para @selection.
+ await page.evaluate(() => window.editor.setSelection(new window.monaco.Selection(7, 5, 10, 6)));
+ const prompt = page.locator('#agent-prompt');
+ await prompt.click(); await page.keyboard.type('Explique @');
+ await page.waitForSelector('#agent-popup:not([hidden]) .agent-popup-item');
+ assert.deepEqual((await page.locator('.agent-popup-label').allTextContents()).slice(0, 6), ['@thisFile', '@selection', '@file:', '@folder:', '@symbol:', '@dbObject:']);
+ await shot(page, 'mentions-popup');
+ await page.keyboard.type('file:Use');
+ await page.waitForFunction(() => document.querySelector('.agent-popup-label')?.textContent === 'User.php');
+ await page.keyboard.press('Enter');
+ await page.keyboard.type('com @sel'); await page.waitForFunction(() => document.querySelector('.agent-popup-label')?.textContent === '@selection');
+ await page.keyboard.press('Enter');
+ await page.keyboard.type('e @dbObject:us'); await page.waitForFunction(() => document.querySelector('.agent-popup-label')?.textContent === 'public.users');
+ await page.keyboard.press('Enter');
+ await page.keyboard.type('e @symbol:User'); await page.waitForFunction(() => document.querySelector('.agent-popup-label')?.textContent === 'User');
+ await page.keyboard.press('Enter');
+ assert.equal(await prompt.inputValue(), 'Explique @file:User.php com @selection e @dbObject:public.users e @symbol:User ');
+ assert.deepEqual(await page.locator('#agent-chips .agent-chip-label').allTextContents(), ['User.php', 'User.php:7-10', 'public.users', 'User']);
+ // O realce cobre exatamente os tokens, alinhado ao texto do campo.
+ const marks = await page.locator('.agent-highlight mark').allTextContents();
+ assert.deepEqual(marks, ['@file:User.php', '@selection', '@dbObject:public.users', '@symbol:User']);
+ const [box, text] = await Promise.all([page.locator('.agent-highlight mark').first().boundingBox(), prompt.boundingBox()]);
+ assert.ok(box.x > text.x && box.x < text.x + 80 && box.y < text.y + 30, 'realce fora do lugar');
+ await shot(page, 'mentions-chips');
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.api.calls.some(c => c[0] === 'agentPrompt'));
+ const extras = await page.evaluate(() => window.api.calls.find(c => c[0] === 'agentPrompt')[3]);
+ assert.deepEqual(extras.attachments.map(a => a.type), ['file', 'selection', 'schema', 'symbol']);
+ assert.equal(extras.attachments[1].line, 7); assert.equal(extras.attachments[1].endLine, 10);
+ assert.match(extras.attachments[1].text, /public function name/);
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 const page_ = page;
 try {
  await server.listen();

@@ -11,7 +11,7 @@ new AgentSideConnection(connection => {
  const update = (sessionId, value) => connection.sessionUpdate({ sessionId, update: value });
  const say = (sessionId, text) => update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } });
  return {
-  async initialize() { return { protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: false }, authMethods: [] }; },
+  async initialize() { return { protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: false, promptCapabilities: { image: true, embeddedContext: true } }, authMethods: [] }; },
   async authenticate() {},
   async newSession({ cwd }) {
    const id = `fake-${sessions.size + 1}`; sessions.set(id, { cwd, cancelled: false });
@@ -30,6 +30,12 @@ new AgentSideConnection(connection => {
    await update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId: 'read-1', status: 'completed' });
    await say(sessionId, `Li User.php (${user.content.split('\n').length} linhas). `);
    if (resource) await say(sessionId, `Contexto recebido: ${resource.resource.uri.split('/').pop()}. `);
+   // Menções/anexos: lista o que chegou (recursos embutidos, links e imagens) para os testes conferirem.
+   const received = prompt.filter(b => b.type === 'resource' || b.type === 'resource_link' || b.type === 'image')
+    .map(b => b.type === 'image' ? `imagem ${b.mimeType} ${Buffer.from(b.data, 'base64').length}B` : b.type === 'resource_link' ? `link ${b.name}` : `${b.resource.uri.split('/').pop()} (${b.resource.text.split('\n').length} linhas)`);
+   if (received.length > 1 || (received.length && !resource)) await say(sessionId, `Anexos: ${received.join('; ')}. `);
+   const restored = prompt.find(b => b.type === 'text' && b.text.startsWith('Conversa anterior restaurada'));
+   if (restored) await say(sessionId, `Histórico restaurado com ${restored.text.split('\n').length - 1} linhas. `);
    if (text.includes('editar')) {
     await update(sessionId, { sessionUpdate: 'tool_call', toolCallId: 'edit-1', title: 'Editar src/User.php', kind: 'edit', status: 'pending' });
     const answer = await connection.requestPermission({ sessionId, toolCall: { toolCallId: 'edit-1', title: 'Editar src/User.php', kind: 'edit' }, options: [{ optionId: 'allow', name: 'Permitir', kind: 'allow_once' }, { optionId: 'reject', name: 'Recusar', kind: 'reject_once' }] });
