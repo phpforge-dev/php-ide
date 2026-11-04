@@ -155,7 +155,7 @@ try{
  await page.waitForFunction(()=>window.calls.filter(c=>c.method==='databaseGridEdit').length===2);
  const nokey=(await calls(page,'databaseGridEdit')).at(-1);
  assert.equal(nokey.args[2],'logs');
- assert.deepEqual(nokey.args[3],[{op:'update',key:{$rowid:'(0,2)'},set:{msg:'shutdown'}}]);
+ assert.deepEqual(nokey.args[3],[{op:'update',key:{$rowid:'(0,2)',at:'10:00',msg:'boot'},set:{msg:'shutdown'}}]);
  await shot(page,'grid-no-primary-key');
 
  // 3. Console: Stop button and ⌘F2 cancel the running statement.
