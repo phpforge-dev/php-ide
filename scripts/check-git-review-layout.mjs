@@ -21,6 +21,8 @@ const blame={path:'src/User.php',revision:null,content:null,lines:[...Array(8).f
  [H.rename]:{hash:H.rename,author:'Ana Fixture',email:'ana@example.invalid',authorTime:at(today,9),commitTime:at(today,9),summary:'Rename default user',message:'Rename default user',previous:{hash:H.init,path:'src/User.php'},uncommitted:false,path:'src/User.php'},
  [H.footer]:{hash:H.footer,author:'Ana Fixture',email:'ana@example.invalid',authorTime:at(today,11),commitTime:at(today,11),summary:'Add footer comment',message:'Add footer comment',previous:{hash:H.rename,path:'src/User.php'},uncommitted:false,path:'src/User.php'},
  [H.none]:{hash:H.none,uncommitted:true}}};
+const userBefore=userPhp.replace('        // edited locally\n','');const userAfter=userPhp.replace('        // edited locally\n','        // edited locally\n        // and another\n');
+const userPatch='@@ -9,0 +10,2 @@\n+        // edited locally\n+        // and another\n';const dtoPatch='@@ -16 +16 @@\n- public ?Carbon $expiresAt = null\n+ public ?Carbon $expiresAt = null,\n';
 const bootstrap=`
   import * as monaco from 'monaco-editor';
   import {installEditorWorkers} from '/src/editor-workers.ts';
@@ -48,9 +50,11 @@ const bootstrap=`
    window.changelistCalls=(window.changelistCalls??[]).concat([input]);return {lists:structuredClone(window.lists)};};
   const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
    gitChangelists:async input=>changelists(input),
+   gitHunks:async(path,staged)=>path==='src/User.php'&&!staged?{token:'h1',hunks:[{id:0,patch:${JSON.stringify(userPatch)}}]}:{token:'h0',hunks:[{id:0,patch:${JSON.stringify(dtoPatch)}}]},
+   gitApplyHunk:async(...args)=>{window.applied=(window.applied??[]).concat([args]);},
    gitEditorBase:async()=>({text:${JSON.stringify(userPhp)},label:'HEAD → editor'}),
    gitBlame:async input=>{window.blameCalls=(window.blameCalls??[]).concat([input]);return ${JSON.stringify(blame)};},
-   gitDiff:async()=>({before:${JSON.stringify(before)},after:${JSON.stringify(after)},beforeLabel:'HEAD',afterLabel:'Disco',token:'t'}),
+   gitDiff:async path=>path==='src/User.php'?{path,before:${JSON.stringify(userBefore)},after:${JSON.stringify(userAfter)},beforeLabel:'Preparado (index)',afterLabel:'Disco',token:'u'}:({before:${JSON.stringify(before)},after:${JSON.stringify(after)},beforeLabel:'HEAD',afterLabel:'Disco',token:'t'}),
    agents:async()=>[]};
   window.api=api;
   const {activate}=await import('/__git-plugin.js');let contribution;
@@ -87,7 +91,7 @@ try{
  // The shell no longer always renders .editor-split; when present, an empty split must not keep space.
  if(await page.locator('.editor-split').count())assert.equal(await page.locator('.editor-split').evaluate(el=>getComputedStyle(el).display),'none','empty editor split must not keep space');
  assert.ok(review.height>code.height-40,`review fills the editor area (${review.height} of ${code.height})`);
- assert.equal(await page.locator('#git-diff-count').textContent(),'1 diferença');
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 0 incluídas');
  assert.equal(await page.locator('.git-commit-toolbar .git-agent-ask svg').count(),1,'agent actions are icons in the Commit toolbar');
  assert.equal(await page.locator('.git-commit-options .git-generate-message svg').count(),1,'AI message is an icon beside Amend');
  await mkdir('.artifacts',{recursive:true});
@@ -151,5 +155,24 @@ try{
  await page.waitForFunction(()=>document.querySelectorAll('details.git-changelist').length===1);
  assert.equal(await group('Alterações').locator('.git-file-row').count(),2,'files of a deleted list return to the active one');
  console.log('WebKit: changelists — move with Set active, bold active list, comment, set active and delete passed.');
+ // 3. Line selection in the diff: chunk and line checkboxes, "N diferenças, M incluídas", stage only the marked lines.
+ await page.locator('.git-file-row[data-path="src/User.php"]').click();
+ await page.waitForSelector('#git-review .line-numbers.git-chunk-box');
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 0 incluídas');
+ assert.equal(await page.locator('#git-stage-lines').isDisabled(),true,'nothing included yet');
+ assert.equal(await page.locator('#git-review .git-line-box').count(),2,'one checkbox per line of a multi-line chunk');
+ await page.locator('#git-review .git-line-box').first().click();
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 1 incluídas');
+ await page.waitForSelector('#git-review .line-numbers.git-chunk-box.partial'); // chunk shows a partial selection
+ await page.screenshot({path:'.artifacts/git-diff-lines.png'});
+ await page.locator('#git-stage-lines').click();
+ await page.waitForFunction(()=>window.applied?.length===1);
+ assert.deepEqual(await page.evaluate(()=>window.applied[0]),['src/User.php',false,'h1',{0:[0]}],'only the first added line is staged');
+ await page.locator('#git-review .line-numbers.git-chunk-box').click();
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 1 incluídas');
+ await page.locator('#git-stage-lines').click();await page.waitForFunction(()=>window.applied?.length===2);
+ assert.deepEqual(await page.evaluate(()=>window.applied[1][3]),{0:true},'chunk checkbox includes the whole chunk');
+ await page.locator('#git-close-diff').click();
+ console.log('WebKit: diff line selection — chunk/line checkboxes, included count and partial staging passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}
