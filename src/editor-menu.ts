@@ -53,7 +53,10 @@ export function mountEditorMenu(editor: monaco.editor.IStandaloneCodeEditor, hoo
   const selection = editor.getSelection(); const selected = !!selection && !selection.isEmpty();
   const path = hooks.path(); const file = path ? hooks.fileItems(path) : undefined; const readOnly = !!editor.getOption(monaco.editor.EditorOption.readOnly);
   const supported = editor.getSupportedActions();
-  const refactors = supported.filter(a => a.id !== 'editor.action.refactor' && /extract|inline|introduce|change.?signature|refactor/i.test(a.id)).map(a => action(a.id, a.label));
+  // Refactorings contributed by plugins (Extract Method/Variable, Inline…); Monaco's own actions are not refactorings.
+  const contributed = supported.filter(a => !a.id.startsWith('editor.') && /extract|inline|introduce|change.?signature|refactor/i.test(a.id));
+  const refactorThis = contributed.some(a => /(isto|this)…?$/i.test(a.label));
+  const refactors = contributed.map(a => action(a.id, a.label));
   const git = supported.filter(a => /^Git:\s*/.test(a.label)).map(a => action(a.id, a.label.replace(/^Git:\s*/, '').replace(/^./, c => c.toUpperCase())));
   const ref = reference();
   const column = !!editor.getOption(monaco.editor.EditorOption.columnSelection);
@@ -87,7 +90,7 @@ export function mountEditorMenu(editor: monaco.editor.IStandaloneCodeEditor, hoo
    ] },
    '-',
    action('editor.action.rename', t('Renomear…'), { disabled: readOnly }),
-   { id: 'refactor', label: t('Refatorar'), disabled: readOnly, children: [action('editor.action.rename', t('Renomear…')), action('editor.action.refactor', t('Refatorar este…')), ...refactors] },
+   { id: 'refactor', label: t('Refatorar'), disabled: readOnly, children: [action('editor.action.rename', t('Renomear…')), ...(refactorThis ? [] : [action('editor.action.refactor', t('Refatorar este…'))]), ...refactors] },
    '-',
    ...(file ? [file.openIn, '-', file.history] as MenuItem[] : []),
    ...(git.length ? [{ id: 'git', label: 'Git', children: git } as Entry] : []),

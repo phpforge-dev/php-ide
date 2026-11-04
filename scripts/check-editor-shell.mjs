@@ -11,7 +11,9 @@ import {mkdir,readFile} from 'node:fs/promises';
 const fixture=await pinnedWorkbenchFixture(["git","php-intelligence"]);
 const port=Number(process.argv.find(arg=>arg.startsWith('--port='))?.slice(7)??1487);
 const out=process.argv.find(arg=>arg.startsWith('--out='))?.slice(6)??'.artifacts/editor-shell';
-const assertOn=!process.argv.includes('--no-assert');
+const lang=process.argv.find(arg=>arg.startsWith('--lang='))?.slice(7);
+// Assertions use the pt-BR source labels; --lang=en only records screenshots with PhpStorm's English labels.
+const assertOn=!process.argv.includes('--no-assert')&&!lang;
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(port),'--strictPort'],{stdio:'pipe'});
 const broken=`<?php
 
@@ -58,7 +60,7 @@ try {
  for(const theme of ['dark','light']){
   const page=await browser.newPage({viewport:{width:1400,height:909},deviceScaleFactor:1});
   await page.emulateMedia({colorScheme:theme});await fixture.route(page);if(process.env.STACK)page.on('pageerror',e=>console.log(e.stack));
-  await page.addInitScript(t=>{try{localStorage.clear();localStorage.setItem('php-ide-appearance',JSON.stringify({theme:t}));}catch{}},theme);
+  await page.addInitScript(([t,l])=>{try{localStorage.clear();localStorage.setItem('php-ide-appearance',JSON.stringify({theme:t}));if(l)localStorage.setItem('php-ide-language',l);}catch{}},[theme,lang]);
   await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:`${api}
    ${fixture.bootstrap}
    await (await import('/src/main.ts')).ready;document.getElementById('startup-splash')?.remove();
@@ -150,12 +152,14 @@ try {
    // Submenu by keyboard: Go To › opens and lists the navigation actions.
    await page.locator('.context-menu[data-depth="0"] button',{hasText:/^(Ir para|Go To)›?$/}).hover();await page.waitForTimeout(100);
    const goTo=await page.evaluate(()=>[...document.querySelectorAll('.context-menu[data-depth="1"] button span')].map(s=>s.textContent));
+   await page.locator('.context-menu[data-depth="0"] button',{hasText:/^(Refatorar|Refactor)›?$/}).hover();await page.waitForTimeout(100);
+   const refactor=await page.evaluate(()=>[...document.querySelectorAll('.context-menu[data-depth="1"] button span')].map(s=>s.textContent));
    await page.keyboard.press('Escape');
    // Close Tabs to the Left (from Broken.php, the last tab) keeps only Broken.php.
    await page.locator('#tabs .file-tab',{hasText:'Broken.php'}).click({button:'right'});
    await page.locator('.context-menu button',{hasText:/Fechar abas à esquerda|Close Tabs to the Left/}).click();await page.waitForTimeout(150);
    const remaining=await page.evaluate(()=>[...document.querySelectorAll('#tabs .file-tab')].map(t=>t.textContent.replace('×','').trim()));
-   return {tab,firstTab,editorMenu,monacoMenu,goTo,remaining};
+   return {tab,firstTab,editorMenu,monacoMenu,goTo,refactor,remaining};
   });
   // --- 4. Keymap: chords, conflict chooser, export/import -----------------------------------------
   await step(theme+':keymap',async()=>{
@@ -233,6 +237,7 @@ try {
    assert.ok(m.firstTab.some(i=>i.startsWith('Fechar abas à direita'))&&!m.firstTab.some(i=>i.startsWith('Fechar abas à esquerda')),'left/right closers only when tabs exist on that side');
    assert.deepEqual(m.editorMenu.filter(i=>i!=='—').map(i=>i.replace(/ \[.*\]/,'').replace(' (off)','')).slice(0,6),['Mostrar ações de contexto','Colar','Copiar/colar especial','Modo de seleção em coluna','Encontrar usos','Ir para'],'editor menu starts like reference 31');
    assert.ok(m.goTo.length>=3,'Go To submenu');
+   assert.ok(['Extrair método…','Extrair variável…','Incorporar variável'].every(l=>m.refactor.includes(l)),'plugin refactorings kept under Refactor: '+m.refactor);
    assert.deepEqual(m.remaining,['Broken.php'],'Close Tabs to the Left');
    const k=results[theme+':keymap'];
    assert.match(k.waiting,/segunda tecla|second stroke/i,'first chord stroke waits for the second');
