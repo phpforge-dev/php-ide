@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Keymap, normalizeStroke, strokeFromEvent, formatStroke, allowedIn, DOUBLE_SHIFT, STORAGE_KEY, type KeyLike } from '../src/keymap';
+import { Keymap, normalizeStroke, strokeFromEvent, formatStroke, allowedIn, jetbrainsStroke, DOUBLE_SHIFT, STORAGE_KEY, type KeyLike } from '../src/keymap';
 
 class MemoryStorage { data = new Map<string, string>(); getItem(key: string) { return this.data.get(key) ?? null; } setItem(key: string, value: string) { this.data.set(key, value); } }
 const key = (code: string, mods: Partial<KeyLike> = {}, keyName = code): KeyLike => ({ key: keyName, code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
@@ -143,4 +143,76 @@ test('aria-keyshortcuts usa a sintaxe WAI-ARIA', () => {
  keymap.registerAction({ id: 'nav.back', label: 'Voltar', defaults: { other: 'Ctrl+Alt+Left' }, run: () => {} });
  assert.equal(keymap.ariaShortcuts('nav.back'), 'Control+Alt+ArrowLeft');
  assert.equal(keymap.ariaShortcuts('search.everywhere'), '');
+});
+
+test('chords: grafias, formato, conflito com o prefixo e despacho em duas teclas', () => {
+ assert.equal(normalizeStroke('cmd+k, cmd+c'), 'Meta+K Meta+C');
+ assert.equal(normalizeStroke('⌘K, ⌘C'), 'Meta+K Meta+C');
+ assert.equal(normalizeStroke('Ctrl+K Ctrl+C'), 'Ctrl+K Ctrl+C');
+ assert.equal(normalizeStroke('Meta+,'), 'Meta+,');
+ assert.equal(normalizeStroke('Meta+,, Meta+K'), 'Meta+, Meta+K');
+ assert.equal(normalizeStroke('Ctrl + K'), 'Ctrl+K');
+ assert.equal(normalizeStroke('a, b, c'), undefined);
+ assert.equal(formatStroke('Meta+K Meta+C', 'mac'), '⌘K, ⌘C');
+ assert.equal(formatStroke('Ctrl+K Ctrl+C', 'other'), 'Ctrl+K, Ctrl+C');
+ const keymap = new Keymap('mac', new MemoryStorage()); const ran: string[] = []; const pending: (string | undefined)[] = [];
+ keymap.onPending = stroke => pending.push(stroke);
+ keymap.registerAction({ id: 'chord', label: 'Chord', defaults: { mac: 'Meta+K Meta+C' }, run: () => { ran.push('chord'); } });
+ keymap.registerAction({ id: 'single', label: 'Single', defaults: { mac: 'Meta+K' }, run: () => { ran.push('single'); } });
+ assert.deepEqual(keymap.conflictingActions('Meta+K', 'single'), ['chord'], 'a chord hides the single stroke equal to its first key');
+ const target = element(['.monaco-editor']);
+ assert.equal(keymap.dispatch(key('KeyK', { metaKey: true }, 'k'), target), true);
+ assert.equal(keymap.pending, 'Meta+K');
+ assert.equal(keymap.dispatch(key('MetaLeft', { metaKey: true }, 'Meta'), target), false, 'modifier alone keeps waiting');
+ assert.equal(keymap.dispatch(key('KeyC', { metaKey: true }, 'c'), target), true);
+ assert.deepEqual(ran, ['chord']);
+ // Second key that completes no chord: the first stroke runs alone and the key goes on (a letter is typed).
+ keymap.dispatch(key('KeyK', { metaKey: true }, 'k'), target);
+ assert.equal(keymap.dispatch(key('KeyX', {}, 'x'), target), false);
+ assert.deepEqual(ran, ['chord', 'single']);
+ // Escape cancels.
+ keymap.dispatch(key('KeyK', { metaKey: true }, 'k'), target); assert.equal(keymap.dispatch(key('Escape'), target), true); assert.deepEqual(ran, ['chord', 'single']);
+ assert.deepEqual(pending, ['Meta+K', undefined, 'Meta+K', undefined, 'Meta+K', undefined]);
+});
+
+test('conflito no despacho: com seletor, oferece as ações empatadas; sem seletor, vence a primeira', () => {
+ const keymap = new Keymap('mac', new MemoryStorage()); const ran: string[] = [];
+ keymap.registerAction({ id: 'one', label: 'One', defaults: { mac: 'Ctrl+Alt+J' }, run: () => { ran.push('one'); } });
+ keymap.registerAction({ id: 'two', label: 'Two', defaults: { mac: 'Ctrl+Alt+J' }, run: () => { ran.push('two'); } });
+ keymap.registerAction({ id: 'off', label: 'Off', defaults: { mac: 'Ctrl+Alt+J' }, enabled: () => false, run: () => { ran.push('off'); } });
+ keymap.dispatch(key('KeyJ', { ctrlKey: true, altKey: true }, 'j'), null); assert.deepEqual(ran, ['one']);
+ let offered: string[] = [];
+ keymap.chooser = (actions, _stroke, run) => { offered = actions.map(a => a.id); run(actions[1].id); };
+ keymap.dispatch(key('KeyJ', { ctrlKey: true, altKey: true }, 'j'), null);
+ assert.deepEqual(offered, ['one', 'two'], 'disabled actions are not offered');
+ assert.deepEqual(ran, ['one', 'two']);
+});
+
+test('exporta e importa: JSON próprio e keymap XML do PhpStorm', () => {
+ const storage = new MemoryStorage(); const keymap = new Keymap('mac', storage);
+ keymap.registerAction({ id: 'tool.problems', label: 'Problems', defaults: { mac: 'Alt+6' }, run: () => {} });
+ keymap.registerAction({ id: 'editor.closeAllTabs', label: 'Close all', defaults: {}, run: () => {} });
+ keymap.setBindings('tool.problems', ['Meta+Alt+6']);
+ const exported = keymap.exportProfile();
+ assert.deepEqual(JSON.parse(exported).overrides, { 'tool.problems': ['Alt+Meta+6'] });
+ keymap.resetProfile(); assert.deepEqual(keymap.bindings('tool.problems'), ['Alt+6']);
+ assert.deepEqual(keymap.importProfile(exported).applied, ['tool.problems']);
+ assert.deepEqual(keymap.bindings('tool.problems'), ['Alt+Meta+6']);
+ assert.throws(() => keymap.importProfile('{"format":"other"}'), /formato/);
+ assert.throws(() => keymap.importProfile('not a keymap'), /JSON nem XML/);
+ assert.equal(jetbrainsStroke('meta shift OPEN_BRACKET'), 'Shift+Meta+[');
+ assert.equal(jetbrainsStroke('ctrl alt LEFT'), 'Ctrl+Alt+Left');
+ assert.equal(jetbrainsStroke('hyper X'), undefined);
+ const report = keymap.importProfile(`<keymap version="1" name="Mine" parent="Mac OS X 10.5+">
+  <action id="ActivateProblemsViewToolWindow"><keyboard-shortcut first-keystroke="meta 6" /></action>
+  <action id="CloseAllEditors"><keyboard-shortcut first-keystroke="meta K" second-keystroke="meta W"/></action>
+  <action id="Unknown.Action"><keyboard-shortcut first-keystroke="meta Y"/></action>
+  <action id="GotoDeclaration" />
+ </keymap>`);
+ assert.equal(report.format, 'xml');
+ assert.deepEqual(report.applied, ['tool.problems', 'editor.closeAllTabs', 'nav.declaration']);
+ assert.deepEqual(report.skipped, ['Unknown.Action']);
+ assert.deepEqual(keymap.bindings('tool.problems'), ['Meta+6']);
+ assert.deepEqual(keymap.bindings('editor.closeAllTabs'), ['Meta+K Meta+W']);
+ assert.ok(JSON.parse(storage.getItem(STORAGE_KEY)!).overrides['default-mac']['nav.declaration'].length === 0, 'an empty action removes its shortcuts');
 });

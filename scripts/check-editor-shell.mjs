@@ -172,7 +172,7 @@ try {
    const waiting=await page.locator('#status').textContent();
    await page.keyboard.press(`${mod}+KeyC`);await page.waitForTimeout(50);
    await page.keyboard.press('Control+Alt+KeyJ');await page.waitForTimeout(150);
-   const chooser=await page.evaluate(()=>[...document.querySelectorAll('.keymap-chooser [role=option]')].map(o=>o.textContent));
+   const chooser=await page.evaluate(()=>[...document.querySelectorAll('.keymap-chooser [role=option]')].map(o=>o.firstChild.textContent));
    await page.screenshot({path:`${out}/keymap-chooser-${theme}.png`});
    await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(100);
    const log=await page.evaluate(()=>window.__log.slice());
