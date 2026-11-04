@@ -561,6 +561,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Recorte 13:** [console SQL, completion de tabelas/colunas, SQL em strings PHP e DDL](implementation-slice-13.md); observado no PhpStorm só com PostgreSQL.
 - **Recorte 18:** diálogo de fontes de dados (abas, URL, SSL por modo, túnel SSH, schemas visíveis, somente leitura, script de inicialização) e fontes persistidas sem senha; integração real aprovada, sem comparação com a referência ([recorte 18](implementation-slice-18.md)).
 - **Fidelidade 04/11/2026:** Stop/⌘F2 com a sessão preservada, somente leitura (servidor + recusa prévia), grade com WHERE/ORDER BY, ordenação por cabeçalho e Submit/Revert atômico pela PK, aprovados contra container descartável e no harness WebKit ([fidelidade Database](database-fidelity.md)). Sem OBS; limitações: tabelas sem PK, células truncadas e binárias não editáveis.
+- **Fidelidade 04/11/2026, rodada 2:** grade de tabela sem PK editável pelo `ctid` (inclusive uma de duas linhas idênticas; linha alterada por outro cliente desfaz o Submit); somente leitura aceita `SELECT … FOR UPDATE` (o servidor recusa na transação read-only), colunas `update`/`delete` sem aspas e `CALL` de procedimento cujo corpo no catálogo só lê; Stop confere o mesmo backend antes e depois ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). Sem OBS; supera a limitação "tabelas sem PK" acima.
 
 ## DB-MYSQL-001 — MySQL
 
@@ -577,6 +578,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Recorte 13:** [console SQL, completion de tabelas/colunas, SQL em strings PHP e DDL](implementation-slice-13.md); observado no PhpStorm só com PostgreSQL.
 - **Recorte 18:** mesmo diálogo e opções do PostgreSQL; integração real com MySQL 8.4 aprovada, sem comparação com a referência ([recorte 18](implementation-slice-18.md)).
 - **Fidelidade 04/11/2026:** Stop/⌘F2 com a sessão preservada, somente leitura (servidor + recusa prévia), grade com WHERE/ORDER BY, ordenação por cabeçalho e Submit/Revert atômico pela PK, aprovados contra container descartável e no harness WebKit ([fidelidade Database](database-fidelity.md)). `SLEEP()` interrompido devolve resultado (o resto do lote é pulado). Sem OBS.
+- **Fidelidade 04/11/2026, rodada 2:** `SLEEP()` interrompido agora é erro "Consulta cancelada" e para o lote (como o cancelamento do JDBC); grade sem PK por todas as colunas comparáveis, recusando linhas duplicadas; somente leitura aceita `FOR UPDATE` (o MySQL 8.4 recusa no servidor), `t.update` e `CALL` de procedimento sem escrita no corpo (`READS SQL DATA` declarado não basta); console executa `CREATE PROCEDURE` e outros comandos fora do protocolo de prepared statements ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). Sem OBS.
 
 ## DB-MARIA-001 — MariaDB
 
@@ -592,6 +594,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Diferenças conhecidas:** Exploração e prévia somente leitura. Sem console SQL, escrita, DDL e oracle completo da referência.
 - **Recorte 18:** driver próprio no menu (protocolo MySQL); integração real com MariaDB 11.4 aprovada ([recorte 18](implementation-slice-18.md)).
 - **Fidelidade 04/11/2026:** mesmo escopo do MySQL, aprovado em MariaDB 11.4 ([fidelidade Database](database-fidelity.md)). Sem OBS.
+- **Fidelidade 04/11/2026, rodada 2:** mesmo escopo do MySQL, aprovado em MariaDB 11.4 ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). Sem OBS.
 
 ## DB-ORACLE-001 — Oracle
 
@@ -606,6 +609,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Estado de implementação:** Em desenvolvimento — [recorte 26](implementation-slice-26.md): conexão por Service name/SID (crate `oracle-rs`, sem Instant Client), schemas, tabelas/views/colunas, prévia paginada, console com PL/SQL e DDL de metadados aprovados contra Oracle Free 23 descartável.
 - **Diferenças conhecidas:** Sem TNS; TCPS não testado; sem somente leitura e cancelamento; `ALTER SESSION` não suportado pelo driver; erros podem chegar sem código ORA; sem oracle da referência.
 - **Fidelidade 04/11/2026:** TNS (TNS_ADMIN, aliases, IFILE, Easy Connect) e TCPS (CA, wallet PEM, DN) aprovados por TLS terminado diante do Oracle Free descartável; somente leitura por `SET TRANSACTION READ ONLY` + recusa prévia; Stop por `ALTER SYSTEM CANCEL SQL` ou reabertura após 2 s; grade com Submit sem commit automático ([fidelidade Database](database-fidelity.md)). Ainda: sem break do protocolo, sem LDAP/failover, DATE depende do NLS; sem OBS. As linhas "Sem TNS; TCPS não testado; sem somente leitura e cancelamento" acima ficam superadas por esta.
+- **Fidelidade 04/11/2026, rodada 2:** Stop por *break* do protocolo (marker INTERRUPT + RESET, ORA-01013) na própria conexão, sobre TCP e TCPS, com o mesmo SID depois; TNS com todos os ADDRESS TCP/TCPS, FAILOVER (padrão ligado), LOAD_BALANCE, RETRY_COUNT e Easy Connect com vários hosts; grade sem PK pelo `ROWID`; somente leitura em transação READ ONLY por comando (o segundo comando derrubava a conexão) ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). Ainda: sem DESCRIPTION_LIST/LDAP, `CALL`/PL/SQL recusados em somente leitura, crates oracle-rs vendorizado com patch; sem OBS. Supera "sem break do protocolo, sem failover".
 
 ## DB-MSSQL-001 — SQL Server
 
@@ -620,6 +624,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Estado de implementação:** Em desenvolvimento. Conexão, SSL, schemas, tabelas, prévia paginada, console e DDL de metadados aprovados contra SQL Server 2022 descartável (emulação amd64) ([recorte 18](implementation-slice-18.md)).
 - **Diferenças conhecidas:** Sem cancelamento e sem somente leitura; DDL sem defaults, FKs e índices; sem oracle da referência.
 - **Fidelidade 04/11/2026:** Stop por `KILL` (sessão do console reaberta), somente leitura por transação sempre desfeita + recusa prévia, DDL com defaults, identity, computadas, PK/UNIQUE/FK/CHECK e índices (include, filtro, clustering) que se recria idêntico, e grade com Submit ([fidelidade Database](database-fidelity.md)). Sem *attention* TDS; formato do DDL é hipótese sobre o DataGrip (sem OBS). Supera as diferenças "sem cancelamento/somente leitura; DDL sem defaults, FKs e índices".
+- **Fidelidade 04/11/2026, rodada 2:** Stop por *attention* TDS na própria conexão: a transação aberta, `#temp` e SETs sobrevivem (KILL só como reserva após 5 s); grade sem PK por todas as colunas; somente leitura aceita `EXEC` de procedimentos de sistema de consulta (`sp_help`, `sp_columns`…) ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). tiberius vendorizado com patch; sem OBS. Supera "Stop por KILL" e "sem attention TDS".
 
 ## DB-REDIS-001 — Redis
 
@@ -634,6 +639,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Estado de implementação:** Em desenvolvimento. SCAN limitado, tipo, TTL, prévia por tipo e console ([recorte 18](implementation-slice-18.md)); edição pela prévia (string, hash, list, set, zset, TTL, renomear/excluir com confirmação e checagem atômica), CA personalizado em TLS e paginação por cursor (HSCAN/SSCAN, XRANGE) ([recorte 26](implementation-slice-26.md)), aprovados contra Redis 7 descartável com e sem TLS.
 - **Diferenças conhecidas:** Sem edição de stream, criação de chave pela prévia e valores binários; sem oracle da referência.
 - **Fidelidade 04/11/2026:** nova chave (6 tipos, TTL, sem sobrescrever), stream com XADD/XDEL pela prévia, valores binários em hexadecimal com formato Texto/Hex e compara-e-grava em bytes, Stop por `CLIENT UNBLOCK`, somente leitura por lista de comandos de leitura ([fidelidade Database](database-fidelity.md)). Chaves com nome não UTF-8 omitidas; entradas de stream não editáveis (só acréscimo); sem OBS. Supera "sem edição de stream, criação de chave e valores binários".
+- **Fidelidade 04/11/2026, rodada 2:** chaves com nome não UTF-8 aparecem na árvore no formato do redis-cli (`"img:\xff"`) e abrem, editam, renomeiam e excluem pela prévia; o console aceita `\xNN` entre aspas duplas e mostra nomes binários do mesmo jeito ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)). Sem OBS; supera "chaves com nome não UTF-8 omitidas".
 
 ## DB-SQLITE-001 — SQLite
 
@@ -648,6 +654,7 @@ Roteiros iniciais e contrato de testes: [plano](phpstorm-compatibility-test-plan
 - **Estado de implementação:** Em desenvolvimento. Teste Rust ponta a ponta aprovado ([recorte 18](implementation-slice-18.md)).
 - **Diferenças conhecidas:** Sem cancelamento; não cria arquivos novos; sem bancos anexados pela interface.
 - **Fidelidade 04/11/2026:** Stop pelo progress handler (interrompe e mantém a sessão) e grade com WHERE/ORDER BY e Submit atômico, em teste Rust com arquivo descartável ([fidelidade Database](database-fidelity.md)). Supera "sem cancelamento".
+- **Fidelidade 04/11/2026, rodada 2:** grade sem PK pelo `rowid` (views e tabelas WITHOUT ROWID sem PK continuam somente leitura), em teste Rust com arquivo descartável ([fidelidade Database, rodada 2](database-fidelity.md#rodada-2-04112026)).
 
 ## AI-CODEX-001 — Agente Codex
 
