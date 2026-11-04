@@ -96,6 +96,8 @@ aside.project-pane,aside.tools{background:var(--ij-island);border:0!important;bo
 #tree{padding:0 8px 12px}
 #tree button,#tree summary{height:var(--ij-row-height);font-size:var(--ij-font-size);color:var(--ij-text);border-radius:var(--ij-control-radius-compact);border:0;gap:6px;background:transparent}
 #tree summary{padding:0 4px}
+#tree .resource-decoration{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ij-text-secondary);font-size:var(--ij-font-size)}
+#tree .resource-name:has(+ .resource-decoration){flex-shrink:0}
 #tree button{padding:0 4px 0 26px}
 #tree button:hover,#tree summary:hover{background:var(--ij-list-hover)}
 #tree button.selected,#tree summary.selected{background:var(--ij-selection-inactive)}

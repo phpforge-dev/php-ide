@@ -10,6 +10,7 @@ import { registerDotenvLanguage } from './dotenv-language';
 import { isEnvPath } from '../shared/env-document';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
+import { decorateTreeRow } from './project-tree-decorations';
 import { showTabMenu, configureTabs } from './tab-menu';
 
 import { mountRecentProjects } from './recent-projects';
@@ -278,8 +279,8 @@ async function tree(path = '', parent: HTMLElement = $('tree'), expanded?: Set<s
  const pending: {path:string;button:HTMLElement}[]=[];
  parent.replaceChildren();
  for (const entry of entries) {
-  if (entry.directory) { const details = document.createElement('details'); details.dataset.path = entry.path; const summary = document.createElement('summary'); const label=document.createElement('span');label.className='resource-name';label.textContent=entry.name;summary.append(fileIcon(entry.path,true),label); summary.dataset.path = entry.path; details.append(summary); const children = document.createElement('div'); details.append(children); details.ontoggle = () => { if (details.open) run(() => tree(entry.path,children,expanded)); }; parent.append(details); if (expanded?.has(entry.path)) details.open = true; }
-  else { const button = document.createElement('button'); const label=document.createElement('span');label.className='resource-name';label.textContent=entry.name;button.append(fileIcon(entry.path),label); button.setAttribute('aria-label',entry.name); button.dataset.ext=entry.name.split('.').pop(); button.dataset.path=entry.path; button.onclick = () => run(() => open(entry.path)); parent.append(button);if(/\.php$/i.test(entry.path)&&!/\.blade\.php$/i.test(entry.path))pending.push({path:entry.path,button}); }
+  if (entry.directory) { const details = document.createElement('details'); details.dataset.path = entry.path; const summary = document.createElement('summary'); const label=document.createElement('span');label.className='resource-name';label.textContent=entry.name;summary.append(fileIcon(entry.path,true),label); summary.dataset.path = entry.path; decorateTreeRow(summary); details.append(summary); const children = document.createElement('div'); details.append(children); details.ontoggle = () => { if (details.open) run(() => tree(entry.path,children,expanded)); }; parent.append(details); if (expanded?.has(entry.path)) details.open = true; }
+  else { const button = document.createElement('button'); const label=document.createElement('span');label.className='resource-name';label.textContent=entry.name;button.append(fileIcon(entry.path),label); button.setAttribute('aria-label',entry.name); button.dataset.ext=entry.name.split('.').pop(); button.dataset.path=entry.path; decorateTreeRow(button); button.onclick = () => run(() => open(entry.path)); parent.append(button);if(/\.php$/i.test(entry.path)&&!/\.blade\.php$/i.test(entry.path))pending.push({path:entry.path,button}); }
  }
  // Only visible directory entries, with bounded reads; never scan vendor recursively for icons.
  let next=0;
