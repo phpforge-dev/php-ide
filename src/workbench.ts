@@ -1,4 +1,5 @@
 import { t as tr, msg, html } from './i18n';
+import {mountRunConfigurations} from './run-configurations';
 import type { IdeApi } from '../shared/contracts';
 import { keymap, type Binding } from './keymap';
 import { mountKeymapSettings } from './keymap-settings';
@@ -101,6 +102,7 @@ export function mountWorkbench(api: IdeApi) {
  const debugButton=document.createElement('button');debugButton.id='debug-current';debugButton.title=tr('Depurar o arquivo PHP atual');debugButton.setAttribute('aria-label',tr('Depurar o arquivo PHP atual'));debugButton.append(ijIcon('debug'));
  debugButton.onclick=()=>{const target=document.getElementById('debug-script');if(target)target.click();else {el('status').textContent='Instale ou ative PHP Debugger / Xdebug em Plugins.';document.getElementById('plugins')?.click();}};
  runWidget.append(runConfig,runButton,debugButton);header.append(runWidget);
+ mountRunConfigurations(runWidget,text=>{el('status').textContent=text;});
  for(const [id,kind,label] of [['nav-back','left',tr('Voltar')],['nav-forward','right',tr('Avançar')],['appearance','settings',tr('Aparência')]]) {const button=el(id);icon(button,kind,label);header.append(button);}
  for(const [id,kind,label] of [['definition','definition',tr('Declaração')],['references','usages','Encontrar usos'],['implementations','implementation',tr('Implementações')]])icon(el(id),kind,label);
  const themeToggle=document.getElementById('theme-toggle');if(themeToggle)header.insertBefore(themeToggle,el('appearance'));

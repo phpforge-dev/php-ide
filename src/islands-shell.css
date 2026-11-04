@@ -148,3 +148,17 @@ dialog::backdrop{background:var(--ij-backdrop)}
 .monaco-editor .suggest-widget .monaco-list-row{border-radius:var(--ij-tab-radius);margin:1px 4px}
 .monaco-editor .suggest-widget .monaco-list-row.focused{background-color:var(--ij-selection)!important}
 .monaco-editor .suggest-widget .suggest-status{background:var(--ij-popup-footer)!important;color:var(--ij-popup-footer-text)!important;border-top:1px solid var(--ij-popup-border)!important}
+.run-config:has(.run-config-select){padding:0}
+.run-config-select{display:inline-flex;align-items:center;gap:6px;max-width:260px;height:26px;padding:0 8px;border:0;border-radius:var(--ij-control-radius-compact,4px);background:transparent;color:var(--ij-text);font:inherit;cursor:pointer}
+.run-config-select:hover,.run-config-select[aria-expanded=true]{background:var(--ij-hover)}
+.run-config-select::after{content:'';width:6px;height:6px;margin:0 0 3px 2px;border:solid currentColor;border-width:0 1.3px 1.3px 0;transform:rotate(45deg);opacity:.7}
+.run-config-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run-config-select.temporary .run-config-name,.run-config-menu .temporary .run-config-menu-label{opacity:.72}
+.run-config-icon{display:inline-flex;width:16px;height:16px;flex:none;color:#2496ED}
+.run-config-icon svg{width:16px;height:16px}
+.run-config-menu{position:fixed;z-index:1000;min-width:240px}
+.run-config-menu button{display:flex;align-items:center;gap:6px}
+.run-config-menu-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.run-config-menu-run{display:inline-flex;width:16px;height:16px;color:var(--ij-run-icon);opacity:0}
+.run-config-menu button:hover .run-config-menu-run,.run-config-menu button:focus .run-config-menu-run{opacity:1}
+.run-config-menu-run svg{width:14px;height:14px}
