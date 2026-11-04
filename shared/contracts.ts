@@ -12,9 +12,9 @@ export type GitDiff = { path: string; before: string; after: string; beforeLabel
 export type GitBlameCommit = { hash: string; author?: string; email?: string; authorTime?: number; commitTime?: number; summary?: string; message?: string; previous?: { hash: string; path: string }; path?: string; uncommitted: boolean };
 export type GitBlame = { path: string; revision: string | null; content?: string | null; lines: { hash: string; original: number }[]; commits: Record<string, GitBlameCommit> };
 export type GitChangelist = { id: string; name: string; comment: string; active: boolean; files: string[] };
-export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string };
+export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string; email?: string; committer?: string };
 export type GitBranch = { name: string; current: boolean; remote: boolean; upstream: string; tracking: string };
-export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[] };
+export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[]; user?: string };
 export type GitHistory = { hash: string; parents: string[]; files: { path: string; oldPath?: string; status: string }[] };
 export type GitHunks = { token: string; hunks: { id: number; patch: string }[] };
 export type GitOperation = { kind: 'checkout-remote' | 'create-branch' | 'switch' | 'delete-branch' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'fetch' | 'pull' | 'push' | 'stash' | 'stash-apply' | 'merge-abort' | 'cherry-pick-abort' | 'revert-abort' | 'rebase-abort' | 'rebase-continue'; target?: string; checkout?: boolean; expectedBranch?: string; expectedHead: string | null };
@@ -139,7 +139,8 @@ export interface IdeApi {
   gitStage(path: string, staged: boolean, token: string): Promise<void>;
   gitCommitMessage(): Promise<string>;
   gitCommit(message: string, indexToken: string, amend?: boolean): Promise<string>;
-  gitLog(ref?: string): Promise<GitCommit[]>;
+  /** Sem argumento ou com ref: histórico simples; com filtros (Log do PhpStorm), aplicados pelo Git. */
+  gitLog(ref?: string | { ref?: string; refs?: string[]; authors?: string[]; since?: string; until?: string; paths?: string[]; text?: string; regex?: boolean; matchCase?: boolean; limit?: number }): Promise<GitCommit[]>;
   gitBranches(): Promise<GitBranch[]>;
   gitTools(): Promise<GitTools>;
   gitHistory(hash: string): Promise<GitHistory>;

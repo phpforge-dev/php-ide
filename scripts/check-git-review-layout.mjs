@@ -23,12 +23,25 @@ const blame={path:'src/User.php',revision:null,content:null,lines:[...Array(8).f
  [H.none]:{hash:H.none,uncommitted:true}}};
 const userBefore=userPhp.replace('        // edited locally\n','');const userAfter=userPhp.replace('        // edited locally\n','        // edited locally\n        // and another\n');
 const userPatch='@@ -9,0 +10,2 @@\n+        // edited locally\n+        // and another\n';const dtoPatch='@@ -16 +16 @@\n- public ?Carbon $expiresAt = null\n+ public ?Carbon $expiresAt = null,\n';
+// Log fixture: the repository observed in PhpStorm (G-16), with a merge, a branch tip, tags and another author.
+const iso=(d,h)=>new Date(d+'T'+String(h).padStart(2,'0')+':00:00').toISOString();
+const logCommits=[
+ {hash:'580a03e0'+'1'.repeat(32),author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,22),subject:'Report draft',parents:['03f8346cae166908f817f2a20cb21c22cb603e34'],refs:'feature/report',committer:'Ana Fixture'},
+ {hash:'03f8346cae166908f817f2a20cb21c22cb603e34',author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,21),subject:'Add footer comment',parents:['d9f445f0'+'2'.repeat(32)],refs:'HEAD -> main, tag: v1.1',committer:'Ana Fixture'},
+ {hash:'d9f445f0'+'2'.repeat(32),author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,20),subject:'Merge branch feature/login',parents:['83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9','2618cba0'+'3'.repeat(32)],refs:'',committer:'Ana Fixture'},
+ {hash:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,19),subject:'Rename default user',parents:['6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5'],refs:'',committer:'Ana Fixture'},
+ {hash:'2618cba0'+'3'.repeat(32),author:'Bruno Dev',email:'bruno@example.invalid',date:iso(today,18),subject:'Add login helper',parents:['6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5'],refs:'feature/login',committer:'Ana Fixture'},
+ {hash:'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5',author:'Ana Fixture',email:'ana@example.invalid',date:iso('2026-10-01',10),subject:'Initial user class',parents:[],refs:'tag: v1.0',committer:'Ana Fixture'}];
+const tools={user:'Ana Fixture',remotes:[],stashes:[],branches:[{name:'main',current:true,remote:false,upstream:'',tracking:''},{name:'feature/login',current:false,remote:false,upstream:'',tracking:''},{name:'feature/report',current:false,remote:false,upstream:'',tracking:''}],
+ tags:[{name:'v1.1',commit:'03f8346cae166908f817f2a20cb21c22cb603e34',annotated:true},{name:'v1.0',commit:'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5',annotated:false}],
+ worktrees:[{path:'/tmp/project',name:'project',branch:'main',head:'03f8346c',current:true,main:true},{path:'/tmp/project-wt',name:'project-wt',branch:'feature/report',head:'580a03e0',current:false}]};
 const bootstrap=`
   import * as monaco from 'monaco-editor';
   import {installEditorWorkers} from '/src/editor-workers.ts';
   import {mountWorkbench} from '/src/workbench.ts';
   import {editorPreviewLayout} from '/src/editor-preview-layout.ts';
   import {mountEditorChrome} from '/src/editor-chrome.ts';
+  import {dockWindow,resizeToolWindow} from '/src/tool-window.ts';
   import '/src/themes.css';import '/src/style.css';import '/src/workbench.css';import '/src/theme-surfaces.css';import '/src/tool-windows.css';
   installEditorWorkers();
   document.documentElement.dataset.theme='dark';
@@ -50,6 +63,12 @@ const bootstrap=`
    window.changelistCalls=(window.changelistCalls??[]).concat([input]);return {lists:structuredClone(window.lists)};};
   const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
    gitChangelists:async input=>changelists(input),
+   gitTools:async()=>(${JSON.stringify(tools)}),gitBranches:async()=>(${JSON.stringify(tools.branches)}),
+   gitLog:async filter=>{window.logRequests=(window.logRequests??[]).concat([filter]);let list=${JSON.stringify(logCommits)};
+    if(filter.authors?.length)list=list.filter(c=>filter.authors.includes(c.author));
+    if(filter.text)list=list.filter(c=>filter.regex?new RegExp(filter.text,filter.matchCase?'':'i').test(c.subject):(filter.matchCase?c.subject:c.subject.toLowerCase()).includes(filter.matchCase?filter.text:filter.text.toLowerCase()));
+    if(filter.since)list=list.filter(c=>c.date.slice(0,10)>=filter.since);return list;},
+   gitHistory:async hash=>({hash,parents:[],files:[{path:'src/User.php',status:'M'}]}),
    gitHunks:async(path,staged)=>path==='src/User.php'&&!staged?{token:'h1',hunks:[{id:0,patch:${JSON.stringify(userPatch)}}]}:{token:'h0',hunks:[{id:0,patch:${JSON.stringify(dtoPatch)}}]},
    gitApplyHunk:async(...args)=>{window.applied=(window.applied??[]).concat([args]);},
    gitEditorBase:async()=>({text:${JSON.stringify(userPhp)},label:'HEAD → editor'}),
@@ -59,7 +78,7 @@ const bootstrap=`
   window.api=api;
   const {activate}=await import('/__git-plugin.js');let contribution;
   activate({own:()=>{},provide:(name,value)=>contribution=value,tr:s=>s,msg:(p,...a)=>p.reduce((v,s,i)=>v+s+(a[i]??''),''),html:(p,...a)=>typeof p==='string'?p:p.reduce((v,s,i)=>v+s+(a[i]??''),''),
-   activeLanguage:()=>'pt-BR',dockWindow:()=>()=>{},resizeToolWindow:()=>{},toolIcon:(b,path,label)=>{b.title=label;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+path+'</svg>'},
+   activeLanguage:()=>'pt-BR',dockWindow,resizeToolWindow,toolIcon:(b,path,label)=>{b.title=label;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+path+'</svg>'},
    editorFont:{size:13,family:'monospace'},fileIcon:()=>document.createElement('span'),keymap:{registerAction:()=>()=>{},onChange:()=>()=>{},shortcut:()=>'',ariaShortcuts:()=>''},
    monaco,api,service:()=>({generate:async()=>'',cancel:async()=>{}}),host:{editor,open:async(path,line)=>window.opened.push([path,line]),status:()=>{}}});
   contribution.mount(api,()=>false,async()=>{});
@@ -174,5 +193,56 @@ try{
  assert.deepEqual(await page.evaluate(()=>window.applied[1][3]),{0:true},'chunk checkbox includes the whole chunk');
  await page.locator('#git-close-diff').click();
  console.log('WebKit: diff line selection — chunk/line checkboxes, included count and partial staging passed.');
+ // 4. Log: graph, labels, branches tree, filters (Branch, User → me, Date, Paths, text with Regex/Cc) and commit menu.
+ if(await page.locator('#git-log-panel').isHidden())await page.locator('#show-git').click();
+await page.locator('#git-filter-branch').click();await page.locator('.git-menu-item',{hasText:'HEAD'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===6);
+ assert.equal(await page.locator('#git-log .git-head-node').count(),1,'HEAD commit drawn as a ring');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-merge .git-commit-text').textContent(),'Merge branch feature/login');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-on-branch').count(),5,'current branch commits are highlighted');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-mine').count(),5,'own commits in bold');
+ assert.deepEqual(await page.locator('#git-log .git-commit-row').nth(1).locator('.git-ref-label').allTextContents(),['main','v1.1']);
+ assert.ok(await page.locator('#git-log path.git-lane').count()>10,'continuous lane segments');
+ assert.deepEqual(await page.locator('#git-log-refs .git-ref-row').allTextContents(),['HEAD (Branch atual)','main','login','report','v1.1','v1.0'],'Local grouped by folder, then Tags');
+ assert.equal(await page.locator('#git-log-refs details summary').allTextContents().then(t=>t.join('|')),'Local|feature|Tags');
+await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitForSelector('#git-history-files .git-file-row');
+ await page.screenshot({path:'.artifacts/git-log.png'});
+ await page.locator('#git-filter-user').click();
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Selecionar…','eu','Bruno Dev']);
+ await page.locator('.git-menu-item',{hasText:'eu'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===5);
+ assert.deepEqual((await page.evaluate(()=>window.logRequests.at(-1))).authors,['Ana Fixture']);
+ assert.equal(await page.locator('#git-filter-user').textContent(),'Usuário: Ana Fixture');
+ await page.locator('#git-filter-date').click();
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Selecionar…','Últimas 24 horas','Últimos 7 dias']);
+ await page.screenshot({path:'.artifacts/git-log-filters.png'});
+ await page.locator('.git-menu-item',{hasText:'Últimos 7 dias'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===4);
+ await page.locator('#git-filter-paths').click();await page.locator('.git-menu-item',{hasText:'Selecionar pastas'}).click();
+ await page.locator('.git-log-ask input').fill('src/');await page.locator('.git-log-ask button[type=submit]').click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).paths?.[0]==='src');
+ await page.locator('#git-filter-branch').click();await page.locator('.git-menu-item',{hasText:'Todas'}).click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).refs?.[0]==='--all');
+ await page.locator('#git-log-search').fill('LOGIN');
+ await page.waitForFunction(()=>window.logRequests.at(-1).text==='LOGIN');
+ await page.locator('#git-log-case').click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).matchCase===true);
+ assert.equal(await page.locator('#git-log .git-commit-row').count(),0,'Match Case');
+ await page.locator('#git-log-case').click();await page.locator('#git-log-search').fill('');
+ await page.locator('#git-filter-user').click();await page.locator('.git-menu-item',{hasText:'Todos'}).click();
+ await page.locator('#git-filter-date').click();await page.locator('.git-menu-item',{hasText:'Todas'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===6);
+ await page.locator('#git-log .git-commit-row').nth(3).click({button:'right'});
+ const logMenu=await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents();
+ for(const item of ['Copiar número da revisão','Cherry-pick','Reverter commit','Ir para o commit filho','Ir para o commit pai'])assert.ok(logMenu.includes(item),item);
+ await page.keyboard.press('Escape');
+ await page.locator('#git-log .git-commit-row').nth(3).focus();await page.keyboard.press('ArrowRight');
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.hash),'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5','→ goes to the parent commit');
+ // Annotate → click opens this commit in the Log.
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent('ide-git-show-commit',{detail:{hash:'2618cba0'+'3'.repeat(32),path:'src/User.php'}})));
+ await page.waitForFunction(()=>document.querySelector('#git-log .git-commit-row[aria-selected=true]')?.dataset.hash.startsWith('2618cba0'));
+ assert.equal(await page.locator('#git-log-panel').isVisible(),true,'Annotate link opens the Log');
+ assert.equal(await page.locator('#git-filter-paths').textContent(),'Caminhos: src/User.php');
+ console.log('WebKit: Log — graph, labels, branches tree, Branch/User/Date/Paths/text filters, commit menu and Annotate link passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}
