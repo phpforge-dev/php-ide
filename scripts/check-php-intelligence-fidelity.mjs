@@ -296,6 +296,42 @@ scenario('plugin-create-fix', { 'routes/web.php': `<?php\n\nreturn view('welcome
  await page.waitForFunction(() => 'resources/views/welcome.blade.php' in window.files, null, { timeout: 8000 });
 });
 
+// ── Paste imports and configurable exclusion ─────────────────────────────────────────────────
+const billingSrc = `<?php\n\nnamespace App\\Billing;\n\nuse App\\Model\\User;\n\nclass Invoice {}\n\nfunction charge(User $u): Invoice\n{\n    return new Invoice();\n}\n`;
+const shopSrc = `<?php\n\nnamespace App\\Shop;\n\nclass Cart {}\n`;
+scenario('paste-imports', { 'src/Billing/charge.php': billingSrc, 'src/Shop/Cart.php': shopSrc }, async (page, h) => {
+ await h.open('src/Billing/charge.php');
+ await page.evaluate(() => { const e = monacoApi.editor.getEditors().find(e => e.getDomNode()?.closest('#editor')); const m = e.getModel(); const t = m.getValue(); const a = t.indexOf('function charge'); const b = t.indexOf('}\n', a) + 1; const s = m.getPositionAt(a), f = m.getPositionAt(b); e.setSelection(new monacoApi.Selection(s.lineNumber, s.column, f.lineNumber, f.column)); e.focus(); });
+ await page.keyboard.press('Meta+c'); await page.waitForTimeout(150);
+ await h.open('src/Shop/Cart.php'); await h.caret(6, 1); await page.keyboard.press('Meta+v');
+ await page.waitForSelector('.refactor-dialog', { timeout: 5000 });
+ const labels = await page.locator('.refactor-dialog label.refactor-check').allTextContents();
+ assert.deepEqual(labels, ['App\\Billing\\Invoice', 'App\\Model\\User'], 'Ask: the classes to import, all checked');
+ await h.shot('paste-imports');
+ await page.locator('.refactor-dialog label.refactor-check input').nth(1).uncheck();
+ await page.locator('.refactor-dialog footer button[value=ok]').click(); await page.waitForTimeout(300);
+ const after = await h.text();
+ assert.ok(after.includes('namespace App\\Shop;\n\nuse App\\Billing\\Invoice;\n\nclass Cart {}'), 'only the chosen import inserted:\n' + after);
+ assert.ok(!after.includes('use App\\Model\\User'));
+ await page.keyboard.press('Meta+z'); await page.waitForTimeout(150);
+ assert.ok(!(await h.text()).includes('use App\\Billing\\Invoice;') && (await h.text()).includes('function charge'), 'Cmd+Z undoes the imports, keeps the paste');
+});
+scenario('exclusions', { 'src/Shop.php': `<?php\n\nnamespace App;\n\nclass Shop\n{\n    public function owner(): User\n    {\n        $c = new Circle();\n        return $c;\n    }\n}\n`, 'vendor/acme/shapes/models.php': shapes }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/Shop.php'); await h.waitMarkers(1);
+ // Excluding the vendor package removes its classes from the hierarchy: no class verdict without it.
+ await page.evaluate(() => monacoApi.editor.getEditors().find(e => e.getDomNode()?.closest('#editor')).getAction('php-ide.phpSettings').run());
+ await page.waitForSelector('.refactor-settings'); await page.locator('.refactor-settings textarea').fill('vendor/acme');
+ assert.equal(await page.locator('.refactor-settings input[name=paste]:checked').getAttribute('value'), 'ask', 'paste imports default: Ask');
+ await h.shot('exclusions');
+ await page.locator('.refactor-settings footer button[value=ok]').click();
+ await page.waitForFunction(() => '.php-ide/php-intelligence.json' in window.files, null, { timeout: 5000 });
+ assert.deepEqual(JSON.parse(await page.evaluate(() => window.files['.php-ide/php-intelligence.json'])), { excluded: ['vendor/acme'], pasteImports: 'ask' });
+ await page.keyboard.type(' '); await page.waitForTimeout(1500);
+ const left = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => m.message));
+ assert.deepEqual(left, [], 'excluded package: no class mismatch is asserted: ' + left);
+});
+
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'pipe' });
 let browser; const results = {}; const failures = [];
 process.on('exit', () => server.kill('SIGKILL'));
