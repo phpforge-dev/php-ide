@@ -122,7 +122,7 @@ async function open(root, service) {
  document.getElementById('startup-splash')?.remove();
  await import('/src/main.ts');` }));
  await page.goto(`http://127.0.0.1:${port}`);
- await page.waitForFunction(() => !!window.__sdk && !!document.querySelector('#run-config-select'), null, { timeout: 30000 });
+ await page.waitForFunction(() => !!window.__sdk && !!document.querySelector('#run-config-host'), null, { timeout: 30000 });
  return { page, errors, calls };
 }
 
@@ -159,8 +159,8 @@ try {
   const { page, errors, calls } = await open(root, service);
   await openFile(page, 'tests/Unit/CalculatorTest.php');
   // 1. Run configurations
-  check((await page.locator('#run-config-select').textContent()).includes('Arquivo atual'), 'seletor começa em "Arquivo atual"');
-  check(await page.locator('.run-config').isHidden() && await page.locator('#run-current').isHidden(), 'rótulo/botão do host substituídos enquanto o plugin está ativo');
+  check((await page.locator('#run-config-host').textContent()).includes('Arquivo atual'), 'seletor começa em "Arquivo atual"');
+  check(await page.locator('.run-config #run-config-host').isVisible() && await page.locator('#run-current').isEnabled(), 'um só seletor no widget Run (o do host) e Run habilitado para o arquivo de teste atual');
   check(/pt-g-run-all/.test(await glyph(page, 10)) && /pt-g-run\b/.test(await glyph(page, 12)), 'gutter: ▶▶ na classe e ▶ no método');
   const events = []; await page.exposeFunction('__event', e => events.push(e));
   if (debuggerSource) {
@@ -171,18 +171,18 @@ try {
    await page.keyboard.press('Escape');
   }
   { const n = runs(); await gutter(page, 12, 'run'); await finished(page, n); }
-  check((await page.locator('#run-config-select').textContent()).includes('CalculatorTest::testAddsNumbers'), 'ação do gutter cria e seleciona a temporária "CalculatorTest::testAddsNumbers"');
-  check(await page.locator('#run-config-select').evaluate(e => e.classList.contains('pt-temporary')), 'temporária com ícone esmaecido');
+  check((await page.locator('#run-config-host').textContent()).includes('CalculatorTest::testAddsNumbers'), 'ação do gutter cria e seleciona a temporária "CalculatorTest::testAddsNumbers"');
+  check(await page.locator('#run-config-host').evaluate(e => e.classList.contains('temporary')), 'temporária com ícone esmaecido');
   check(calls.some(c => c[0] === 'testRun' && c[4] === '/Tests\\\\Unit\\\\CalculatorTest::testAddsNumbers( with data set .*)?$/'), 'filtro exato do método enviado ao serviço');
-  await page.locator('#run-config-select').click();
-  check(await page.locator('#run-config-menu [data-action="save"]').count() === 1, 'menu oferece "Salvar a configuração" para a temporária');
+  await page.locator('#run-config-host').click();
+  check(await page.locator('#run-config-host-menu [data-action="save"]').count() === 1, 'menu oferece "Salvar a configuração" para a temporária');
   await page.screenshot({ path: join(shots, '01-run-config-menu.png') });
-  await page.locator('#run-config-menu [data-action="save"]').click();
+  await page.locator('#run-config-host-menu [data-action="save"]').click();
   await page.waitForTimeout(300);
   const saved = JSON.parse(await readFile(join(root, '.php-ide/run-configurations.json'), 'utf8'));
   check(saved.configurations.length === 1 && saved.configurations[0].name === 'CalculatorTest::testAddsNumbers' && saved.selected === saved.configurations[0].id, 'configuração salva no projeto (.php-ide/run-configurations.json)');
   // Editar: novo, validação, aplicar.
-  await page.locator('#run-config-select').click(); await page.locator('#run-config-menu [data-action="edit"]').click();
+  await page.locator('#run-config-host').click(); await page.locator('#run-config-host-menu [data-action="edit"]').click();
   await page.locator('#run-config-dialog [data-action="add"]').click();
   await page.locator('#run-config-dialog input[name=run-config-scope][value=class]').check();
   await page.locator('#run-config-path').fill('tests/Unit/ComparisonTest.php');
@@ -196,7 +196,7 @@ try {
   check(JSON.parse(await readFile(join(root, '.php-ide/run-configurations.json'), 'utf8')).configurations.some(c => c.name === 'Comparação' && c.scope === 'class' && c.options === '--display-warnings'), 'Aplicar grava a nova configuração');
   { const n = runs(); await page.locator('#run-config-execute').click(); await finished(page, n); }
   check(calls.some(c => c[0] === 'testRun' && c[3] === 'tests/Unit/ComparisonTest.php' && c[5]?.options?.[0] === '--display-warnings'), 'Executar no diálogo usa escopo e opções da configuração');
-  check((await page.locator('#run-config-select').textContent()).includes('Comparação'), 'configuração executada fica selecionada');
+  check((await page.locator('#run-config-host').textContent()).includes('Comparação'), 'configuração executada fica selecionada');
   // Popup "Executar" (⌃⌥R) com "0 Editar configurações…" e configurações numeradas.
   await page.evaluate(`${'window.__sdk.host.editor'}.focus()`); await page.keyboard.press('Control+Alt+r');
   await page.waitForSelector('.pt-run-popup');
@@ -264,7 +264,7 @@ try {
   if (docker) {
    const wrapper = await pcovWrapper(temp);
    service.current.stop(); service.current = native(root, { PHP_IDE_PHP_BIN: wrapper }); service.current.on(p => service.forward?.(p));
-   await page.reload(); await page.waitForFunction(() => !!window.__sdk && !!document.querySelector('#run-config-select'));
+   await page.reload(); await page.waitForFunction(() => !!window.__sdk && !!document.querySelector('#run-config-host'));
    await openFile(page, 'tests/Unit/ComparisonTest.php');
    { const n = runs(); await gutter(page, 9, 'coverage'); await finished(page, n); }
    await page.waitForFunction(() => !document.querySelector('#coverage-panel').hidden);
