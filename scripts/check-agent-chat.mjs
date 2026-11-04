@@ -124,6 +124,38 @@ scenario('commands', async () => {
  await page.close();
 });
 
+scenario('attachments', async () => {
+ const {page, errors} = await page_({database: true});
+ await startAgent(page);
+ await page.locator('#agent-attach').click();
+ await page.waitForSelector('#agent-attach-menu');
+ const labels = await page.locator('#agent-attach-menu .agent-attach-item .agent-popup-label').allTextContents();
+ assert.deepEqual(labels.slice(0, 3), ['Arquivos e pastas', 'Imagem…', 'Schema de banco…']);
+ await shot(page, 'attachments-menu');
+ // Imagem…: seletor de arquivos real do WebKit.
+ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+ const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.locator('#agent-attach-menu .agent-attach-item', {hasText: 'Imagem…'}).click()]);
+ await chooser.setFiles({name: 'tela.png', mimeType: 'image/png', buffer: PNG});
+ await page.waitForSelector('#agent-chips .agent-chip img');
+ // Busca no menu anexa arquivo do projeto.
+ await page.locator('#agent-attach').click(); await page.keyboard.type('READ');
+ await page.locator('#agent-attach-menu .agent-attach-item', {hasText: 'README.md'}).click();
+ assert.deepEqual(await page.locator('#agent-chips .agent-chip-label').allTextContents(), ['tela.png', 'README.md']);
+ // Clicar na ficha da imagem abre a prévia.
+ await page.locator('#agent-chips .agent-chip-label', {hasText: 'tela.png'}).click();
+ await page.waitForSelector('dialog.agent-image-preview[open] img');
+ await shot(page, 'attachments-image-preview');
+ await page.keyboard.press('Escape');
+ await page.locator('#agent-prompt').fill('O que há nesta tela?'); await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.api.calls.some(c => c[0] === 'agentPrompt'));
+ const extras = await page.evaluate(() => window.api.calls.find(c => c[0] === 'agentPrompt')[3]);
+ assert.deepEqual(extras.attachments.map(a => a.type), ['image', 'file']);
+ assert.equal(extras.attachments[0].data, PNG.toString('base64'));
+ await shot(page, 'attachments-sent');
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 const page_ = page;
 try {
  await server.listen();
