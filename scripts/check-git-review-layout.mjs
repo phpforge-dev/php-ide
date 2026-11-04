@@ -37,7 +37,17 @@ const bootstrap=`
   const editor=monaco.editor.create(document.getElementById('editor'),{value:${JSON.stringify(userPhp)},language:'php',automaticLayout:true,theme:'vs-dark'});
   editorPreviewLayout(editor);mountEditorChrome(editor);window.statuses=[];
   window.opened=[];
-  const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'}]}),
+  // Changelists kept in memory with the native semantics: unique names, active list receives moves with "Set active".
+  window.lists=[{id:'default',name:'Changes',comment:'',active:true,files:['app/DTOs/Payment/SaveCreditCardTokenDTO.php','src/User.php']}];
+  const changelists=input=>{const lists=window.lists;const byId=id=>lists.find(l=>l.id===id);
+   if(input.action==='move'){let target=input.target&&byId(input.target);if(!target){target={id:'cl'+lists.length,name:input.name,comment:input.comment??'',active:false,files:[]};lists.push(target);}
+    for(const l of lists)l.files=l.files.filter(f=>!input.paths.includes(f));target.files.push(...input.paths);if(input.setActive)lists.forEach(l=>l.active=l===target);}
+   if(input.action==='set-active')lists.forEach(l=>l.active=l.id===input.id);
+   if(input.action==='create'){lists.push({id:'cl'+lists.length,name:input.name,comment:input.comment??'',active:false,files:[]});}
+   if(input.action==='delete'){const gone=byId(input.id);window.lists=lists.filter(l=>l!==gone);window.lists.find(l=>l.active).files.push(...gone.files);}
+   window.changelistCalls=(window.changelistCalls??[]).concat([input]);return {lists:structuredClone(window.lists)};};
+  const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
+   gitChangelists:async input=>changelists(input),
    gitEditorBase:async()=>({text:${JSON.stringify(userPhp)},label:'HEAD → editor'}),
    gitBlame:async input=>{window.blameCalls=(window.blameCalls??[]).concat([input]);return ${JSON.stringify(blame)};},
    gitDiff:async()=>({before:${JSON.stringify(before)},after:${JSON.stringify(after)},beforeLabel:'HEAD',afterLabel:'Disco',token:'t'}),
@@ -112,7 +122,34 @@ try{
  await numbers(9).click();assert.equal(await shown,H.rename,'click opens the commit in the Log');
  await numbers(1).click({button:'right'});await page.locator('.git-menu-item',{hasText:'Fechar anotações'}).click();
  assert.equal(await page.locator('.git-blame-on').count(),0);
- assert.equal((await numbers(1).textContent()).trim(),'1','closing restores plain line numbers');
+ await page.waitForFunction(()=>![...document.querySelectorAll('.margin-view-overlays .line-numbers')].some(n=>/Fixture/.test(n.textContent)));
+ assert.equal((await numbers(1).first().textContent()).trim(),'1','closing restores plain line numbers');
  console.log('WebKit: Annotate with Git Blame — gutter menu, columns, age colors, popup, menu, Log link and close passed.');
+ // 2. Changelists: Move to Another Changelist… with a new name and "Set active", then drag back and delete.
+ const group=name=>page.locator('#git-changes details.git-changelist',{has:page.locator('summary strong',{hasText:name})});
+ assert.equal(await group('Alterações').evaluate(el=>el.classList.contains('git-changelist-active')),true,'default list is active');
+ await page.locator('.git-file-row[data-path="src/User.php"]').click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Mover para outra changelist…','Mostrar diff','Ir para o código-fonte','Nova changelist…','Editar changelist…']);
+ await page.locator('.git-menu-item',{hasText:'Mover para outra changelist'}).click();
+ const dialog=page.locator('.git-changelist-dialog');await dialog.locator('input[name=name]').fill('Refactor');
+ await dialog.locator('textarea').fill('Renomear usuário');await dialog.locator('input[name=active]').check();
+ await page.screenshot({path:'.artifacts/git-changelist-move.png'});
+ await dialog.locator('button[value=ok]').click();
+ await group('Refactor').waitFor();
+ assert.equal(await group('Refactor').evaluate(el=>el.classList.contains('git-changelist-active')),true,'Set active makes the new list active (bold)');
+ assert.equal(await group('Alterações').evaluate(el=>el.classList.contains('git-changelist-active')),false);
+ assert.deepEqual(await group('Refactor').locator('.git-file-row').evaluateAll(rows=>rows.map(r=>r.dataset.path)),['src/User.php']);
+ assert.equal(await group('Refactor').locator('summary').getAttribute('title'),'Renomear usuário','comment is the tooltip');
+ assert.equal(await group('Refactor').locator('summary strong').evaluate(el=>getComputedStyle(el).fontWeight),'600');
+ assert.equal(await group('Alterações').locator('summary strong').evaluate(el=>getComputedStyle(el).fontWeight),'400');
+ await page.screenshot({path:'.artifacts/git-changelists.png'});
+ await group('Alterações').locator('summary').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Definir como changelist ativa'}).click();
+ await page.waitForFunction(()=>document.querySelector('details.git-changelist-active summary strong')?.textContent==='Alterações');
+ await group('Refactor').locator('summary').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Excluir changelist'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('details.git-changelist').length===1);
+ assert.equal(await group('Alterações').locator('.git-file-row').count(),2,'files of a deleted list return to the active one');
+ console.log('WebKit: changelists — move with Set active, bold active list, comment, set active and delete passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}

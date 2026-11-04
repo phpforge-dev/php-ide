@@ -115,6 +115,7 @@ pub fn service_permission(method:&str)->Option<&'static str>{
   "gitApplyHunk"=>Some("process"),
   "gitBlame"=>Some("process"),
   "gitBranches"=>Some("process"),
+  "gitChangelists"=>Some("process"),
   "gitCommit"=>Some("process"),
   "gitCommitMessage"=>Some("process"),
   "gitConflict"=>Some("process"),
