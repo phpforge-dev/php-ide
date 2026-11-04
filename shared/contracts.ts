@@ -60,6 +60,7 @@ export type AgentEvent =
   { type: 'mode'; current: string } |
   { type: 'permission'; id: string; title: string; kind?: string; options: { id: string; name: string; kind: string }[] } |
   { type: 'changes'; changes: AgentChange[] } |
+  { type: 'commands'; commands: { name: string; description: string; hint?: string | null }[] } |
   { type: 'done'; stopReason: string; error?: string };
 export type Event = { type: 'language'; message: string } | { type: 'acp'; event: AgentEvent } |
   { type: 'agent'; text: string; done?: boolean; error?: boolean };

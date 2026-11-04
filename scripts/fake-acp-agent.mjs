@@ -15,6 +15,8 @@ new AgentSideConnection(connection => {
   async authenticate() {},
   async newSession({ cwd }) {
    const id = `fake-${sessions.size + 1}`; sessions.set(id, { cwd, cancelled: false });
+   // Comandos "/" anunciados depois da criação da sessão (ACP available_commands_update).
+   setTimeout(() => void update(id, { sessionUpdate: 'available_commands_update', availableCommands: [{ name: 'explain', description: 'Explica o código mencionado' }, { name: 'tests', description: 'Gera testes', input: { hint: 'classe ou método' } }] }), 20);
    return { sessionId: id, modes: { currentModeId: 'default', availableModes: [{ id: 'default', name: 'Padrão' }, { id: 'plan', name: 'Planejar' }] } };
   },
   async setSessionMode({ sessionId, modeId }) { await update(sessionId, { sessionUpdate: 'current_mode_update', currentModeId: modeId }); },
@@ -34,6 +36,8 @@ new AgentSideConnection(connection => {
    const received = prompt.filter(b => b.type === 'resource' || b.type === 'resource_link' || b.type === 'image')
     .map(b => b.type === 'image' ? `imagem ${b.mimeType} ${Buffer.from(b.data, 'base64').length}B` : b.type === 'resource_link' ? `link ${b.name}` : `${b.resource.uri.split('/').pop()} (${b.resource.text.split('\n').length} linhas)`);
    if (received.length > 1 || (received.length && !resource)) await say(sessionId, `Anexos: ${received.join('; ')}. `);
+   const command = prompt.filter(b => b.type === 'text').map(b => b.text.match(/^\/(\w+)\s*(.*)/)).find(Boolean);
+   if (command) await say(sessionId, `Comando /${command[1]} recebido com argumento "${command[2]}". `);
    const restored = prompt.find(b => b.type === 'text' && b.text.startsWith('Conversa anterior restaurada'));
    if (restored) await say(sessionId, `Histórico restaurado com ${restored.text.split('\n').length - 1} linhas. `);
    if (text.includes('editar')) {

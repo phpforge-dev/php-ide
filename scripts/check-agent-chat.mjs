@@ -107,6 +107,23 @@ scenario('mentions', async () => {
  await page.close();
 });
 
+scenario('commands', async () => {
+ const {page, errors} = await page_({commands: [{name: 'explain', description: 'Explica o código mencionado'}, {name: 'tests', description: 'Gera testes', hint: 'classe ou método'}, {name: 'compact', description: 'Resume a conversa para liberar contexto'}]});
+ await startAgent(page);
+ await page.locator('#agent-prompt').click(); await page.keyboard.type('/');
+ await page.waitForSelector('#agent-popup:not([hidden]) .agent-popup-item');
+ assert.deepEqual(await page.locator('.agent-popup-label').allTextContents(), ['/explain', '/tests', '/compact']);
+ await shot(page, 'commands-popup');
+ await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter');
+ assert.equal(await page.locator('#agent-prompt').inputValue(), '/tests ');
+ assert.equal(await page.locator('#agent-command-hint').textContent(), '/tests classe ou método');
+ await page.keyboard.type('User'); await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.api.calls.some(c => c[0] === 'agentPrompt'));
+ assert.equal(await page.evaluate(() => window.api.calls.find(c => c[0] === 'agentPrompt')[1]), '/tests User');
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 const page_ = page;
 try {
  await server.listen();
