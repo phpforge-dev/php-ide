@@ -425,6 +425,22 @@ mountProblems(editor, {
  pathOf: uri => [...buffers].find(([, b]) => !b.virtual && b.model.uri.toString() === uri.toString())?.[0],
  open: async (path, line, column) => { const previous = place(); await open(path, false); const target = { lineNumber: line, column }; editor.setPosition(target); editor.revealPositionInCenterIfOutsideViewport(target); remember(previous); },
  status,
+ // Inspect Code (Problems › Project Errors): project files without vendor, the same diagnostic channel as open files.
+ files: () => api.listFiles('', false),
+ read: path => api.read(path),
+ language: (path, text) => languageFor(path, text),
+ isOpen: model => [...buffers.values()].some(b => b.model === model),
+ diagnose: async (path, text) => {
+  const input = { path, text, version: 1, position: { line: 0, character: 0 } };
+  const out: any[] = [];
+  try { out.push(...((await api.language({ ...input, method: 'textDocument/diagnostic' })) as any[] ?? [])); } catch { /* no provider */ }
+  if (/\.php$/i.test(path)) for (let attempt = 0; attempt < 3; attempt++) {
+   let r: any; try { r = await api.language({ ...input, method: 'php/diagnostics' as LanguageMethod }); } catch { break; }
+   if (!r || r.current || attempt === 2) { out.push(...(r?.diagnostics ?? []).map((d: any) => ({ ...d, source: 'Phpactor' }))); break; }
+   await new Promise(resolve => setTimeout(resolve, 600));
+  }
+  return out;
+ },
 });
 await mountPluginManager(api).ready;
 const toolPlugins=mountToolPlugins(api,{path:()=>active,editor,status,changed:()=>{window.dispatchEvent(new Event('ide-plugin-languages-refresh'))},open:async(path,line)=>{const previous=place();await open(path,false);if(line!==undefined){editor.setPosition({lineNumber:line+1,column:1});editor.revealLineInCenter(line+1);}editor.focus();remember(previous);}});

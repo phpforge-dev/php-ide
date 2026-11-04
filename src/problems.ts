@@ -4,6 +4,7 @@ import { keymap } from './keymap';
 import { dockWindow, resizeToolWindow } from './tool-window';
 import { fileIcon } from './file-icons';
 import { openMenu, type MenuItem } from './context-menu';
+import { inspectProject, type InspectHooks, type InspectionProblem } from './inspect-code';
 import './problems.css';
 // UI-PROBLEMS-001 — Problems tool window. Observed on PhpStorm 2026.1.4 (captures 50–52, 2026-11-03): clicking the
 // inspection widget counts opens it on the "File" tab (title "File 6"), a file node (icon, name, dimmed path) over
@@ -12,14 +13,17 @@ import './problems.css';
 // Show (Warning, Weak Warning, Server Problem, Show Other Problems) / Sort By (Severity, Name) / Group by Inspection.
 // Public help: Alt+6 (⌘6 on macOS), double-click/Enter/F4 opens the problem in the editor. Our own drawing.
 // Not reproduced: Server Problem (no server-side inspections here), Vulnerable Dependencies, Qodana, AI tabs.
+// Round 2: "Inspect Code…" under the empty Project Errors message (capture 51) runs inspect-code.ts over the project;
+// its results stay listed for closed files (open files show their live markers). The preview toggle of the toolbar
+// (capture 50/51: third button) shows the code of the selected problem beside the tree, read-only.
 
-type Hooks = {
+type Hooks = InspectHooks & {
  /** Project-relative path of a model URI, or undefined for buffers that are not project files. */
  pathOf(uri: monaco.Uri): string | undefined;
  open(path: string, line: number, column: number): Promise<void>;
  status(text: string): void;
 };
-type Options = { warning: boolean; weak: boolean; other: boolean; sort: 'severity' | 'name'; group: boolean };
+type Options = { warning: boolean; weak: boolean; other: boolean; sort: 'severity' | 'name'; group: boolean; preview: boolean };
 type Tab = 'file' | 'project';
 const STORAGE = 'php-ide-problems';
 const S = monaco.MarkerSeverity;
@@ -36,11 +40,13 @@ const TOOL_ICONS: Record<string, string> = {
  expand: '<svg viewBox="0 0 16 16"><path d="M4.5 6.5L8 3l3.5 3.5M4.5 9.5L8 13l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  collapse: '<svg viewBox="0 0 16 16"><path d="M4.5 3L8 6.5 11.5 3M4.5 13L8 9.5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  open: '<svg viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5L7.5 8.5M12 9.5v4H2.5V4h4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ preview: '<svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M9 3.5v9M10.5 6h2M10.5 8h2M10.5 10h2" stroke="currentColor" stroke-width="1"/></svg>',
+ inspect: '<svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M10.2 10.2l3.6 3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5.2 7l1.3 1.3L9 5.8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 const icon = (kind: string) => { const span = document.createElement('span'); span.className = 'problem-icon problem-' + kind; span.setAttribute('aria-hidden', 'true'); span.innerHTML = ICONS[kind === 'weak' ? 'warning' : kind]; return span; };
 
 export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks: Hooks) {
- let options: Options = { warning: true, weak: true, other: true, sort: 'severity', group: false };
+ let options: Options = { warning: true, weak: true, other: true, sort: 'severity', group: false, preview: false };
  try { options = { ...options, ...JSON.parse(localStorage.getItem(STORAGE) ?? '{}') }; } catch { /* defaults */ }
  const saveOptions = () => { try { localStorage.setItem(STORAGE, JSON.stringify(options)); } catch { /* kept for this session */ } };
  let tab: Tab = 'file';
@@ -62,7 +68,20 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
  const tool = (action: string, label: string, run: (button: HTMLButtonElement) => void) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.problemsAction = action; b.title = label; b.setAttribute('aria-label', label); b.innerHTML = TOOL_ICONS[action]; b.onclick = () => run(b); toolbar.append(b); return b; };
  const list = document.createElement('div'); list.className = 'problems-list'; list.setAttribute('role', 'tree'); list.tabIndex = 0; list.setAttribute('aria-label', t('Problemas'));
  const empty = document.createElement('div'); empty.className = 'problems-empty'; empty.hidden = true;
- body.append(toolbar, list, empty); panel.append(resize, head, body);
+ const emptyText = document.createElement('span'); const inspectLink = document.createElement('button'); inspectLink.type = 'button'; inspectLink.className = 'problems-link'; inspectLink.textContent = t('Inspecionar código…'); inspectLink.onclick = () => void inspect();
+ empty.append(emptyText, inspectLink);
+ const progress = document.createElement('div'); progress.className = 'problems-progress'; progress.hidden = true; progress.setAttribute('role', 'status');
+ const progressText = document.createElement('span'); const progressBar = document.createElement('progress'); progressBar.max = 1; progressBar.value = 0;
+ const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'problems-link'; cancel.textContent = t('Cancelar'); cancel.onclick = () => running?.abort();
+ progress.append(progressText, progressBar, cancel);
+ const main = document.createElement('div'); main.className = 'problems-main';
+ const preview = document.createElement('div'); preview.className = 'problems-preview'; preview.hidden = true;
+ const previewTitle = document.createElement('div'); previewTitle.className = 'problems-preview-title';
+ const previewHost = document.createElement('div'); previewHost.className = 'problems-preview-editor';
+ const previewEmpty = document.createElement('div'); previewEmpty.className = 'problems-preview-empty'; previewEmpty.textContent = t('Selecione um problema para ver o código.');
+ preview.append(previewTitle, previewHost, previewEmpty);
+ main.append(progress, list, empty);
+ body.append(toolbar, main, preview); panel.append(resize, head, body);
  document.querySelector('.code')!.append(panel);
  resizeToolWindow(panel, resize, 'php-ide-problems-height', 140);
 
@@ -84,12 +103,17 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
  const compare = (a: Problem, b: Problem) => options.sort === 'name'
   ? a.marker.message.localeCompare(b.marker.message) || a.marker.startLineNumber - b.marker.startLineNumber
   : b.marker.severity - a.marker.severity || a.marker.startLineNumber - b.marker.startLineNumber || a.marker.startColumn - b.marker.startColumn;
+ /** Results of the last Inspect Code, as markers; files with a live model show the live markers instead. */
+ let inspected: InspectionProblem[] = []; let running: AbortController | undefined;
+ const snapshot = (): monaco.editor.IMarker[] => inspected.filter(p => !monaco.editor.getModel(monaco.Uri.parse(p.uri)))
+  .map(p => ({ owner: 'inspect-code', resource: monaco.Uri.parse(p.uri), severity: p.severity, message: p.message, source: p.source, code: p.code, startLineNumber: p.line, startColumn: p.column, endLineNumber: p.endLine, endColumn: p.endColumn }));
+ const pathFor = (uri: monaco.Uri) => hooks.pathOf(uri) ?? inspected.find(p => p.uri === uri.toString())?.path;
  function groups(): Group[] {
-  const all = tab === 'file' ? (editor.getModel() ? monaco.editor.getModelMarkers({ resource: editor.getModel()!.uri }) : []) : monaco.editor.getModelMarkers({}).filter(m => m.severity === S.Error);
+  const all = tab === 'file' ? (editor.getModel() ? monaco.editor.getModelMarkers({ resource: editor.getModel()!.uri }) : []) : [...monaco.editor.getModelMarkers({}).filter(m => !!monaco.editor.getModel(m.resource)), ...snapshot()].filter(m => m.severity === S.Error);
   const byFile = new Map<string, Group>();
   for (const marker of all) {
    const kind = severityKind(marker.severity); if (!visibleKind(kind)) continue;
-   const path = hooks.pathOf(marker.resource); if (!path && tab === 'project') continue;
+   const path = pathFor(marker.resource); if (!path && tab === 'project') continue;
    const id = marker.resource.toString();
    const group = byFile.get(id) ?? { key: id, path: path ?? marker.resource.path.split('/').pop() ?? id, uri: marker.resource, problems: [] };
    group.problems.push({ key: keyOf(marker), marker, kind }); byFile.set(id, group);
@@ -105,6 +129,7 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
   for (const item of list.querySelectorAll('[aria-selected=true]')) item.setAttribute('aria-selected', 'false');
   row.setAttribute('aria-selected', 'true'); list.setAttribute('aria-activedescendant', row.id); row.scrollIntoView({ block: 'nearest' });
   if (focus) list.focus();
+  void showPreview(row);
  };
  let rowId = 0;
  function problemRow(problem: Problem, path: string, level: number) {
@@ -116,6 +141,7 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
   row.title = t(severityLabel[problem.kind]) + ': ' + problem.marker.message + (problem.marker.source ? ' · ' + problem.marker.source : '');
   row.onmousedown = event => { if (event.detail > 1) event.preventDefault(); };
   row.onclick = () => select(row); row.ondblclick = () => void navigate(row);
+  row.dataset.uri = problem.marker.resource.toString(); row.dataset.endLine = String(problem.marker.endLineNumber); row.dataset.endColumn = String(problem.marker.endColumn);
   return row;
  }
  function fileRow(group: Group) {
@@ -150,11 +176,14 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
    list.append(children);
   }
   const fileName = editor.getModel() ? hooks.pathOf(editor.getModel()!.uri)?.split('/').pop() ?? editor.getModel()!.uri.path.split('/').pop() : undefined;
-  empty.hidden = all.length > 0; list.hidden = !empty.hidden;
-  empty.textContent = tab === 'project' ? t('Nenhum erro encontrado pela IDE.') : fileName ? msg`Nenhum problema em ${fileName}` : t('Nenhum arquivo aberto');
+  empty.hidden = all.length > 0 || !!running; list.hidden = all.length === 0;
+  emptyText.textContent = tab === 'project' ? t('Nenhum erro encontrado pela IDE.') : fileName ? msg`Nenhum problema em ${fileName}` : t('Nenhum arquivo aberto');
+  inspectLink.hidden = tab !== 'project';
+  if (!all.length) void showPreview(undefined);
   const wanted = rows().find(row => row.dataset.key === selected) ?? rows().find(row => row.classList.contains('problem-row'));
   if (wanted) select(wanted, false);
-  toolbar.querySelectorAll<HTMLElement>('[data-problems-action=expand],[data-problems-action=collapse]').forEach(b => { b.hidden = tab !== 'project'; });
+  toolbar.querySelectorAll<HTMLElement>('[data-problems-action=expand],[data-problems-action=collapse],[data-problems-action=inspect]').forEach(b => { b.hidden = tab !== 'project'; });
+  previewButton.setAttribute('aria-pressed', String(options.preview)); preview.hidden = !options.preview; body.classList.toggle('with-preview', options.preview);
  }
  function updateCounts() {
   const files = count('file');
@@ -186,9 +215,55 @@ export function mountProblems(editor: monaco.editor.IStandaloneCodeEditor, hooks
   ], r.left, r.bottom + 2, { restore: list, label: t('Opções de exibição') });
  });
  tool('fix', t('Mostrar correções rápidas') + ' (⌥↩)', () => void quickFix());
+ const previewButton = tool('preview', t('Abrir pré-visualização'), () => { options.preview = !options.preview; saveOptions(); render(); void showPreview(list.querySelector<HTMLElement>('.problem-row[aria-selected=true]') ?? undefined); });
+ previewButton.setAttribute('aria-pressed', 'false');
  tool('expand', t('Expandir tudo'), () => { collapsed.clear(); render(); });
  tool('collapse', t('Recolher tudo'), () => { for (const g of groups()) collapsed.add(g.key); render(); });
+ tool('inspect', t('Inspecionar código…'), () => void inspect());
  tool('open', t('Abrir no editor') + ' (F4)', () => void navigate(list.querySelector<HTMLElement>('[aria-selected=true]') ?? undefined));
+ // --- Inspect Code ---------------------------------------------------------------------------
+ async function inspect() {
+  if (running) return;
+  const controller = new AbortController(); running = controller;
+  tab = 'project'; if (panel.hidden) show('project'); else render();
+  progress.hidden = false; progressText.textContent = t('Inspecionando código…'); progressBar.value = 0; empty.hidden = true;
+  try {
+   const found = await inspectProject(hooks, { signal: controller.signal, progress: (done, total, path) => { progressBar.max = Math.max(1, total); progressBar.value = done; progressText.textContent = total ? msg`Inspecionando código… ${done}/${total}` + (path ? ' · ' + path : '') : t('Inspecionando código…'); } });
+   if (controller.signal.aborted) { hooks.status(t('Inspeção de código cancelada.')); return; }
+   inspected = found;
+   const errors = found.filter(p => p.severity === S.Error);
+   hooks.status(errors.length ? msg`Inspeção de código: ${errors.length} erro(s) em ${new Set(errors.map(p => p.path)).size} arquivo(s).` : t('Inspeção de código: nenhum erro encontrado.'));
+  } catch (error) { hooks.status(msg`Inspeção de código falhou: ${String((error as Error)?.message ?? error)}`); }
+  finally { running = undefined; progress.hidden = true; render(); }
+ }
+ keymap.registerAction({ id: 'code.inspect', label: 'Inspecionar código…', category: 'Código', aliases: 'inspect code inspections project errors análise', defaults: {}, run: () => inspect() });
+
+ // --- preview ------------------------------------------------------------------------------
+ let previewEditor: monaco.editor.IStandaloneCodeEditor | undefined; let previewModel: monaco.editor.ITextModel | undefined; let previewToken = 0;
+ const previewDecorations = () => previewEditor!.createDecorationsCollection();
+ let decorations: monaco.editor.IEditorDecorationsCollection | undefined;
+ async function showPreview(row: HTMLElement | undefined) {
+  const token = ++previewToken;
+  if (!options.preview || !row?.dataset.uri) { previewTitle.textContent = ''; previewHost.hidden = true; previewEmpty.hidden = false; return; }
+  const uri = monaco.Uri.parse(row.dataset.uri); const path = row.dataset.path!; const line = Number(row.dataset.line), column = Number(row.dataset.column);
+  let model = monaco.editor.getModel(uri);
+  if (!model) {
+   const key = uri.with({ scheme: 'php-ide-problem-preview' });
+   if (previewModel?.uri.toString() !== key.toString()) {
+    let text: string; try { text = (await hooks.read(path)).text; } catch (error) { if (token === previewToken) { previewEmpty.textContent = String((error as Error)?.message ?? error); previewEmpty.hidden = false; previewHost.hidden = true; } return; }
+    if (token !== previewToken) return;
+    previewModel?.dispose(); previewModel = monaco.editor.createModel(text, hooks.language(path, text), key);
+   }
+   model = previewModel!;
+  }
+  previewTitle.replaceChildren(fileIcon(path, false, model.getValue()), Object.assign(document.createElement('span'), { textContent: path.split('/').pop()! }), Object.assign(document.createElement('span'), { className: 'problem-line', textContent: ' :' + line }));
+  previewEmpty.hidden = true; previewHost.hidden = false;
+  previewEditor ??= monaco.editor.create(previewHost, { readOnly: true, domReadOnly: true, minimap: { enabled: false }, automaticLayout: true, scrollBeyondLastLine: false, folding: false, glyphMargin: false, contextmenu: false, lineNumbersMinChars: 3, renderLineHighlight: 'all', fontSize: editor.getOption(monaco.editor.EditorOption.fontSize), lineHeight: editor.getOption(monaco.editor.EditorOption.lineHeight), fontFamily: editor.getOption(monaco.editor.EditorOption.fontFamily) });
+  if (previewEditor.getModel() !== model) previewEditor.setModel(model);
+  decorations ??= previewDecorations();
+  decorations.set([{ range: new monaco.Range(line, column, Number(row.dataset.endLine) || line, Number(row.dataset.endColumn) || column + 1), options: { className: 'problem-preview-range', isWholeLine: false } }]);
+  previewEditor.setPosition({ lineNumber: line, column }); previewEditor.revealLineInCenter(line);
+ }
  async function quickFix() {
   const row = list.querySelector<HTMLElement>('.problem-row[aria-selected=true]'); if (!row) { hooks.status(t('Selecione um problema.')); return; }
   await navigate(row); editor.trigger('problems', 'editor.action.quickFix', {});

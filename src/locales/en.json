@@ -1567,7 +1567,16 @@
     "Configurações do editor…": "Editor Settings…",
     "Editor…": "Editor…",
     "Não mostrar": "Don't Show",
-    "Configurar breadcrumbs…": "Configure Breadcrumbs…"
+    "Configurar breadcrumbs…": "Configure Breadcrumbs…",
+    "Inspecionar código…": "Inspect Code…",
+    "Selecione um problema para ver o código.": "Select a problem to see its code.",
+    "Abrir pré-visualização": "Open Preview",
+    "Inspecionando código…": "Inspecting code…",
+    "Inspecionando código… {0}/{1}": "Inspecting code… {0}/{1}",
+    "Inspeção de código cancelada.": "Code inspection canceled.",
+    "Inspeção de código: {0} erro(s) em {1} arquivo(s).": "Code inspection: {0} error(s) in {1} file(s).",
+    "Inspeção de código: nenhum erro encontrado.": "Code inspection: no errors found.",
+    "Inspeção de código falhou: {0}": "Code inspection failed: {0}"
   },
   "Plugins padrão": "Default plugins",
   "Instalados do GitHub com versão verificada. A primeira instalação precisa de internet e Git; depois funcionam offline.": "Installed from GitHub with verified versions. Initial installation requires internet and Git; afterwards they work offline.",
