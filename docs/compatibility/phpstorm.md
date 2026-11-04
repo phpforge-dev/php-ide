@@ -117,6 +117,7 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 | DB-SQLITE-001 | Teste Rust ponta a ponta aprovado | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
 | Diálogo de fontes de dados (abas, URL, SSL, SSH, schemas, sem senha em disco) | Fluxo na janela Tauri real aprovado com PostgreSQL | Não observado; layout a partir da documentação pública |
 | DB-ORACLE-001 | Oracle Free 23: conexão, metadados, prévia, console PL/SQL e DDL aprovados em integração ([recorte 26](../research/implementation-slice-26.md)) | Pendente; [extração em plugins](../research/parallel-plugin-extraction.md) |
+| DB-*: Stop/⌘F2, somente leitura por driver, Oracle TNS/TCPS, DDL SQL Server completo, Redis (nova chave, stream, binários) e grade WHERE/ORDER BY/Submit | Integração com containers descartáveis (PG, MySQL, MariaDB, SQL Server, Oracle, Redis) e harness WebKit aprovados ([fidelidade Database](../research/database-fidelity.md)) | Não observado; critérios pela documentação pública; formato do DDL SQL Server é hipótese |
 | AI-CODEX-001: handshake/autenticação | Aprovado; streaming/conclusão também aprovados; interrupção pendente | Não mede equivalência de agente |
 | AI-ACP-001: sessão, permissão, pendências, manter/descartar, escrita externa recusada | Teste nativo com agente ACP falso: RESULTADO_NATIVO | Referência observada só na interface, sem conversa ([recorte 17](../research/implementation-slice-17.md)) |
 | AI-ACP-001: motivo de falha na inicialização (stderr do agente) | Teste Rust aprovado | Sem comparação |
