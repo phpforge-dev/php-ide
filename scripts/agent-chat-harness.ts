@@ -2,6 +2,7 @@
 // @ts-nocheck
 import * as monaco from 'monaco-editor';
 import {installEditorWorkers} from '/src/editor-workers.ts';
+import {guardFileDrops} from '/src/file-drop.ts';
 import '/src/style.css'; import '/src/workbench.css'; import '/src/theme-surfaces.css'; import '/src/tool-windows.css';
   
       const {plugin, user: USER} = window.harness;
@@ -9,6 +10,7 @@ const link = document.createElement('link'); link.rel = 'stylesheet'; link.href 
 const {fakeApi} = await import(/* @vite-ignore */ `/@fs${plugin}/tests/fake-api.mjs`);
 const {activate} = await import(/* @vite-ignore */ `/@fs${plugin}/workbench.js`);
 installEditorWorkers?.();
+guardFileDrops();
   document.documentElement.dataset.theme = 'dark';
   document.body.innerHTML = '<div id="app"><div class="harness" style="display:flex;height:100vh;width:100vw"><div class="harness-code" style="width:calc(100vw - 460px);flex:none;height:100vh"><div id="editor" style="height:100%"></div></div><aside class="tools" style="width:460px;flex:none;max-width:none;min-width:0;display:flex;flex-direction:column;padding:10px;min-height:0;height:100vh;box-sizing:border-box"><div id="agent" style="flex:1;min-height:0"></div></aside></div><footer><span id="status"></span></footer></div>';
   const model = monaco.editor.createModel(USER, 'php', monaco.Uri.file('/project/src/User.php'));
@@ -30,6 +32,16 @@ installEditorWorkers?.();
     emit({type: 'terminal', id: 't1', status: 'exited', exitCode: 0, signal: null});
     emit({type: 'terminal', id: 't2', command: 'git push --force', cwd: '', status: 'waiting'});
     if (!(await api.waitTerminal('t2'))) { emit({type: 'terminal', id: 't2', status: 'rejected'}); emit({type: 'message', text: 'Ok, não vou enviar.'}); }
+   },
+   allowlist: async (text, extras, emit, api) => {
+    for (const [i, command] of text.split(' && ').entries()) {
+     const id = `${Date.now()}-${i}`;
+     if (!(await api.terminal(id, command))) continue;
+     emit({type: 'terminal-output', id, text: `$ ${command}\nok\n`}); emit({type: 'terminal', id, status: 'exited', exitCode: 0, signal: null});
+    }
+   },
+   snippets: async (text, extras, emit) => {
+    emit({type: 'message', text: 'Crie o teste:\n\n```php\n<?php\n\nnamespace Tests;\n\nfinal class UserTest extends \\PHPUnit\\Framework\\TestCase\n{\n}\n```\n\nE rode:\n\n```bash\n$ php vendor/bin/phpunit --testdox\n```\n'});
    },
    echo: async (text, extras, emit) => { emit({type: 'message', text: 'Resposta a: ' + text}); },
   };

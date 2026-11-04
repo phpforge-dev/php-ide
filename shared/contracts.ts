@@ -52,6 +52,7 @@ export type AgentChange = { path: string; before: string | null; after: string }
 /** Resumo de uma conversa do histórico do agente (por projeto, fora do repositório). */
 export type AgentHistorySummary = { id: string; title: string; agent: string; created: number; updated: number; renamed?: boolean };
 /** Dados extras do pedido: conversa restaurada, menções/anexos resolvidos. */
+export type AgentTerminalPolicy = { allowAll: boolean; rules: { kind: 'exact' | 'similar'; pattern: string }[] };
 export type AgentPromptExtras = { history?: string; attachments?: Record<string, unknown>[] };
 export type AgentInfo = { id: string; name: string; available: boolean; detail: string };
 /** Eventos de uma sessão de agente (ACP ou Codex) para o painel. */
@@ -194,8 +195,15 @@ export interface IdeApi {
   agentStart(agent: string): Promise<void>;
   agentPrompt(text: string, context?: { path: string; text: string; selection?: string }, extras?: AgentPromptExtras): Promise<void>;
   /** Aprova (true) ou recusa o comando que o agente quer rodar no terminal; cada comando é decidido uma vez. */
-  agentTerminalDecision(id: string, allow: boolean): Promise<void>;
+  agentTerminalDecision(id: string, allow: boolean, remember?: 'exact' | 'similar'): Promise<void>;
   agentTerminalKill(id: string): Promise<void>;
+  /** Allowlist do terminal (por projeto) e "Permitir tudo" (só na sessão atual). */
+  agentTerminalPolicy(): Promise<AgentTerminalPolicy>;
+  agentTerminalPolicySet(change: { allowAll?: boolean; add?: { kind: 'exact' | 'similar'; command: string }; remove?: { kind: 'exact' | 'similar'; pattern: string } }): Promise<AgentTerminalPolicy>;
+  /** "Executar trecho": roda o bloco (shell ou PHP) na raiz do projeto; chamado só após confirmação. */
+  agentRunSnippet(code: string, lang: string): Promise<string>;
+  /** Sugestões de `@commit:` e `@rule:`. */
+  agentMentions(kind: 'commit' | 'rule', query: string): Promise<unknown[]>;
   agentHistory(): Promise<AgentHistorySummary[]>;
   agentHistoryLoad(id: string): Promise<AgentHistorySummary & { items: unknown[] }>;
   agentHistorySave(conversation: { id: string; agent: string; items: unknown[] }): Promise<AgentHistorySummary>;

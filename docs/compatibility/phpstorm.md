@@ -122,6 +122,7 @@ Baseline: 21/10/2026. Referência local: PhpStorm 2026.1.4, macOS 26.3.1 (a); bu
 | AI-ACP-001: sessão, permissão, pendências, manter/descartar, escrita externa recusada | Teste nativo com agente ACP falso: RESULTADO_NATIVO | Referência observada só na interface, sem conversa ([recorte 17](../research/implementation-slice-17.md)) |
 | AI-ACP-001: motivo de falha na inicialização (stderr do agente) | Teste Rust aprovado | Sem comparação |
 | AI-ACP-001: histórico por projeto, menções @, comandos /, anexos com imagem, terminal com aprovação por comando, Aplicar com prévia | Plugin (18 testes), Rust (11), janela Tauri com agente ACP falso (4 checagens) e harness WebKit (6 cenários) aprovados | OBS da interface sem conversa real; sem equivalência declarada ([agents-fidelity](../research/agents-fidelity.md)) |
+| AI-ACP-001: @commit:/@localChanges/@problems/@projectStructure/@rule:, Find in Chat, allowlist e Permitir tudo por sessão, arrastar do sistema, Criar arquivo/Executar trecho | Plugin (25 testes), Rust (16), harness WebKit (11 cenários) e janela Tauri com agente ACP falso (5 checagens) aprovados | Só DOC + captura do botão Allow All; sem comparação lado a lado ([rodada 2](../research/agents-fidelity.md#rodada-2--cinco-lacunas-2026-11-04)) |
 
 Não há medidas de latência ou precisão em projetos grandes. Nenhuma conclusão de “indexação perfeita”. Evidências e comandos no [relatório do recorte](../research/implementation-slice-01.md).
 
