@@ -247,6 +247,16 @@ try {
   await finished(page, before);
   check(calls.filter(c => c[0] === 'testRun').length === before + 1, 'auto-test repete a execução depois de salvar um arquivo PHP');
   await page.locator('#test-auto').click();
+  // 4. Menu de contexto da árvore Run: um data set isolado (PHPUnit seleciona exatamente).
+  { const n = runs(); await gutter(page, 10, 'run'); await finished(page, n); }
+  await showPassed(page);
+  await page.locator('#test-tree .pt-row', { hasText: 'testSums with data set "zero"' }).click({ button: 'right' });
+  await page.waitForSelector('#test-tree-menu');
+  check((await page.locator('#test-tree-menu [data-action=run]').textContent()).includes(`Executar 'testSums with data set "zero"'`) && await page.locator('#test-tree-menu [data-action=coverage]').count() === 1 && await page.locator('#test-tree-menu [data-action=navigate]').count() === 1, 'menu de contexto do teste: Executar, Executar com cobertura, Ir para o código');
+  await page.screenshot({ path: join(shots, '04b-tree-context-menu.png') });
+  { const n = runs(); await page.locator('#test-tree-menu [data-action=run]').click(); await finished(page, n); }
+  check(calls.at(-1)[0] === 'testRun' && calls.at(-1)[4] === '/(?:Tests\\\\Unit\\\\CalculatorTest::testSums with data set "zero")$/', 'PHPUnit: "Executar" num data set envia a identidade exata do data set');
+  check((await page.locator('#test-summary').textContent()).includes('1 teste no total') || (await page.locator('#test-summary').textContent()).includes('1 teste aprovado'), 'PHPUnit: só o data set "zero" roda: ' + await page.locator('#test-summary').textContent());
   // 5. Cobertura sem driver e com PCOV.
   await gutter(page, 10, 'coverage');
   await page.waitForFunction(() => document.querySelector('#test-summary')?.textContent.includes('Cobertura indisponível'));
@@ -258,13 +268,53 @@ try {
    await openFile(page, 'tests/Unit/ComparisonTest.php');
    { const n = runs(); await gutter(page, 9, 'coverage'); await finished(page, n); }
    await page.waitForFunction(() => !document.querySelector('#coverage-panel').hidden);
-   const cov = await page.$$eval('#coverage-table .pt-cov-row', r => r.map(e => e.textContent));
-   check(cov.some(t => t.includes('Formatter.php') && t.includes('50% (1/2)') && t.includes('33% (1/3)')), 'janela Coverage: Formatter.php com métodos 50% e linhas 33%');
+   const cov = await page.$$eval('#coverage-table .pt-cov-row', r => r.map(e => [e.dataset.path ?? 'head', e.querySelector('[data-column=statistics]')?.textContent ?? e.textContent]));
+   check(cov[0][1].includes('Elemento') && cov[0][1].includes('Estatísticas, %') && cov.some(([p, t]) => p === 'src' && /^\d+% arquivos, \d+% linhas$/.test(t)) && cov.some(([p, t]) => p === 'src/Formatter.php' && t === '40% linhas'), 'janela Coverage: "Elemento" × "Estatísticas, %", src "N% arquivos, N% linhas", Formatter.php "40% linhas": ' + JSON.stringify(cov));
+   check(!cov.some(([, t]) => /Todas as classes|Class, %/.test(t)), 'sem colunas Class/Method nem nó "Todas as classes" (PHP na referência)');
+   // 2. Árvore Project com a mesma estatística em cinza.
+   await page.evaluate(() => document.querySelector('#tree details[data-path="src"]').open = true);
+   await page.waitForSelector('#tree button[data-path="src/Formatter.php"] .resource-decoration');
+   const decorated = await page.$$eval('#tree [data-path] > .resource-decoration', r => r.map(e => [e.parentElement.dataset.path, e.textContent]));
+   check(decorated.some(([p, t]) => p === 'src' && /^50% arquivos, 22% linhas$/.test(t)) && decorated.some(([p, t]) => p === 'src/Formatter.php' && t === '40% linhas') && !decorated.some(([p]) => p === 'tests'), 'árvore Project: "N% arquivos, N% linhas" em src e "40% linhas" em Formatter.php, nada em tests/ (Calculator.php 0%): ' + JSON.stringify(decorated));
+   check(await page.$eval('#tree [data-path="src"] > .resource-decoration', e => getComputedStyle(e).color !== getComputedStyle(e.previousElementSibling).color), 'estatística da árvore em cor secundária');
+   // Ordenação pelo cabeçalho e "Navegar com um clique".
+   await page.locator('#coverage-table [data-sort=name]').click();
+   check((await page.$$eval('#coverage-table .pt-cov-row[data-kind=file]', r => r.map(e => e.dataset.path))).join() === 'src/Formatter.php,src/Calculator.php', 'clicar em "Elemento" inverte a ordem');
+   await page.locator('#coverage-table [data-sort=name]').click();
+   await page.locator('#coverage-single-click').click();
+   await page.locator('#coverage-table .pt-cov-row[data-path="src/Formatter.php"]').click();
+   await page.waitForFunction(() => window.__sdk.host.path() === 'src/Formatter.php');
+   check(true, '"Navegar com um clique" abre o arquivo com um clique');
+   await page.locator('#coverage-single-click').click();
+   await page.locator('#coverage-select-opened').click();
+   await openFile(page, 'src/Calculator.php');
+   check(await page.locator('#coverage-table .pt-cov-row[aria-selected=true]').getAttribute('data-path') === 'src/Calculator.php', '"Sempre selecionar o elemento aberto" segue o editor');
+   await page.locator('#coverage-select-opened').click();
+   await page.screenshot({ path: join(shots, '05a-coverage-window-tree.png') });
    await page.locator('#coverage-table .pt-cov-row[data-path="src/Formatter.php"]').dblclick();
    await page.waitForFunction(() => window.__sdk.host.path() === 'src/Formatter.php'); await page.waitForTimeout(300);
    const marks = await page.evaluate(() => window.__sdk.host.editor.getModel().getAllDecorations().filter(d => String(d.options.linesDecorationsClassName).includes('pt-cov')).map(d => [d.range.startLineNumber, d.options.linesDecorationsClassName.includes('uncovered') ? 'n' : 'c']));
-   check(JSON.stringify(marks) === JSON.stringify([[10, 'c'], [15, 'n'], [16, 'n']]), 'gutter de cobertura: linha 10 coberta, 15–16 não cobertas');
+   check(JSON.stringify(marks) === JSON.stringify([[8, 'c'], [10, 'c'], [13, 'n'], [15, 'n'], [16, 'n']]), 'gutter de cobertura: declarações e linhas 8/10 cobertas, 13/15/16 não cobertas (como na referência)');
+   check(await page.evaluate(() => window.__sdk.host.editor.getModel().getAllDecorations().filter(d => String(d.options.linesDecorationsClassName).includes('pt-cov')).every(d => !d.options.linesDecorationsTooltip && !d.options.hoverMessage)), 'marca de cobertura sem dica ao passar o mouse (referência: só o clique mostra)');
    await page.screenshot({ path: join(shots, '05-coverage.png') });
+   // 1. Contagem de execuções: clique na marca abre o popup "Execuções: N" com ↑/↓ e "Ocultar cobertura".
+   const mark = async line => { await page.evaluate(l => window.__sdk.host.editor.revealLineInCenter(l), line); await page.waitForTimeout(150); return page.evaluate(l => { const ed = window.__sdk.host.editor; const r = ed.getDomNode().getBoundingClientRect(); const top = r.top + ed.getTopForLineNumber(l) - ed.getScrollTop(); const el = [...document.querySelectorAll('.pt-cov')].find(e => Math.abs(e.getBoundingClientRect().top - top) < 3); const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, line); };
+   { const p = await mark(10); await page.mouse.click(p.x, p.y); }
+   await page.waitForSelector('#coverage-hits');
+   check((await page.locator('#coverage-hits .pt-hits-count').textContent()) === 'Execuções: 1' && await page.locator('#coverage-hits').getAttribute('data-line') === '10', 'clique na marca da linha 10 mostra "Execuções: 1"');
+   check(await page.locator('#coverage-hits-previous').isDisabled() && (await page.locator('#coverage-hits-next').getAttribute('title')).includes('Próxima não coberta'), 'popup: ↑ desativado (nenhuma não coberta antes), ↓ "Próxima não coberta"');
+   await page.screenshot({ path: join(shots, '05b-coverage-hits.png') });
+   await page.keyboard.press('Alt+Shift+ArrowDown');
+   await page.waitForFunction(() => document.querySelector('#coverage-hits')?.dataset.line === '13');
+   check(await page.evaluate(() => window.__sdk.host.editor.getPosition().lineNumber) === 13 && (await page.locator('#coverage-hits .pt-hits-count').textContent()) === 'Execuções: 0', '⌥⇧↓ leva à próxima não coberta (13) e mostra "Execuções: 0"');
+   await page.locator('#coverage-hits-next').click();
+   check(await page.evaluate(() => window.__sdk.host.editor.getPosition().lineNumber) === 15, '↓ de novo vai ao trecho 15–16');
+   await page.keyboard.press('Escape');
+   check(await page.locator('#coverage-hits').count() === 0, 'Esc fecha o popup');
+   { const p = await mark(8); await page.mouse.click(p.x, p.y); }
+   await page.locator('#coverage-hits-hide').click();
+   check(await page.evaluate(() => window.__sdk.host.editor.getModel().getAllDecorations().filter(d => String(d.options.linesDecorationsClassName).includes('pt-cov')).length) === 0 && await page.locator('#coverage-panel').isHidden(), '"Ocultar cobertura" tira as marcas do editor e fecha a janela Coverage');
+   check(await page.locator('#tree .resource-decoration').count() === 0, 'sem cobertura, a árvore Project volta sem estatísticas');
   } else console.warn('Docker indisponível: cenário com PCOV ignorado');
   check(!errors.length, 'sem erros de página (PHPUnit): ' + errors.join('; '));
   await page.close(); service.current.stop();
@@ -284,6 +334,13 @@ try {
   const all = await rows(page);
   check(all.some(([n]) => n === '`datasets` → it sums'), 'Pest: suíte de data set com o nome do teste');
   check(/pt-g-all-passed/.test(await glyph(page, 17)) && /pt-g-passed/.test(await glyph(page, 18)), 'Pest: gutter ✓ no describe e no teste');
+  // 4. Pest: o menu da árvore num data set repete o teste inteiro e avisa (o Pest 3.8 não isola data set).
+  await page.locator('#test-tree .pt-row', { hasText: 'with data set "(0, 0, 0)"' }).first().click({ button: 'right' });
+  await page.waitForSelector('#test-tree-menu');
+  { const n = runs(); await page.locator('#test-tree-menu [data-action=run]').click(); await finished(page, n); }
+  check(calls.at(-1)[4] === '`datasets` → it sums', 'Pest: data set isolado vira o filtro do teste (`datasets` → it sums)');
+  check((await page.locator('#test-console').textContent()).includes('Pest não seleciona um data set isolado'), 'Pest: console avisa que todos os data sets foram repetidos');
+  check(/2 testes aprovados|2 testes no total/.test(await page.locator('#test-summary').textContent()), 'Pest: os 2 data sets de "it sums" rodam: ' + await page.locator('#test-summary').textContent());
   { const n = runs(); await gutter(page, 13, 'run'); await finished(page, n); }
   check(/pt-g-failed/.test(await glyph(page, 13)), 'Pest: falha marcada no gutter');
   await page.locator('#test-tree .pt-row', { hasText: 'it fails on purpose' }).click();
@@ -309,6 +366,30 @@ try {
   check(members.some(m => m.includes('toBe') && m.includes('Expectation<int>')), 'expect($a)-> (int $a) oferece toBe com tipo Expectation<int>');
   await page.screenshot({ path: join(shots, '07-pest-expect-types.png') });
   await page.keyboard.press('Escape');
+  // 3. Inferência de retorno, uses()->in() e expect()->extend (fixture tests/Feature/HelpersTest.php + tests/Pest.php).
+  await openFile(page, 'tests/Feature/HelpersTest.php');
+  /** Insere `code` numa linha nova depois de `after`, abre o completar e devolve as linhas da lista. */
+  const suggest = async (after, code, filter) => {
+   await page.evaluate(([a, c]) => { const e = window.__sdk.host.editor; const m = e.getModel(); const r = m.findMatches(a, false, false, false, null, false)[0].range; const line = r.startLineNumber; const col = m.getLineMaxColumn(line); e.executeEdits('t', [{ range: { startLineNumber: line, startColumn: col, endLineNumber: line, endColumn: col }, text: '\n    ' + c }]); e.setPosition({ lineNumber: line + 1, column: 5 + c.length + 1 }); e.focus(); e.trigger('t', 'editor.action.triggerSuggest', {}); }, [after, code]);
+   await page.waitForSelector('.suggest-widget.visible .monaco-list-row', { timeout: 20000 });
+   if (filter) { await page.keyboard.type(filter); await page.waitForTimeout(400); }
+   const list = await page.$$eval('.suggest-widget.visible .monaco-list-row', r => r.map(e => e.textContent));
+   await page.keyboard.press('Escape'); await page.evaluate(() => window.__sdk.host.editor.trigger('t', 'undo', {}));
+   return list;
+  };
+  const returned = await suggest("it('infers returned types', function () {", 'expect(formatter())->', 'mon');
+  check(returned.some(m => m.includes('money') && m.includes('Expectation<string>')), 'expect(formatter())-> infere o retorno App\\Formatter de tests/Pest.php e oferece money → Expectation<string>');
+  const custom = await suggest("it('infers returned types', function () {", 'expect(formatter())->', 'toBeC');
+  check(custom.some(m => m.includes('toBeCurrency') && m.includes('string $code')), 'expectativa customizada expect()->extend(\'toBeCurrency\') no completar, com parâmetros');
+  await page.screenshot({ path: join(shots, '08-pest-custom-expectation.png') });
+  const self = await suggest("it('infers returned types', function () {", '$this->cur');
+  check(self.some(m => m.includes('currency') && m.includes('App\\Money\\Currency')), '$this-> no tests/Feature (uses(Tests\\TestCase)->in(\'Feature\')) oferece currency() → App\\Money\\Currency');
+  const chained = await suggest("it('infers returned types', function () {", 'expect($this->currency())->', 'cod');
+  check(chained.some(m => m.includes('code') && m.includes('Expectation<string>')), 'expect($this->currency())-> resolve o retorno do método e oferece code (higher order)');
+  await page.evaluate(`(()=>{const e=${ed};const m=e.getModel();const l=m.findMatches("toBeOne",false,false,false,null,false)[0].range;e.setPosition({lineNumber:l.startLineNumber,column:l.startColumn+3});e.focus();})()`);
+  await page.keyboard.press('Meta+b');
+  await page.waitForFunction(() => /(^|\/)tests\/Pest\.php$/.test(window.__sdk.host.path() ?? ''), null, { timeout: 15000 });
+  check(await page.evaluate(`${ed}.getPosition().lineNumber`) === 9, 'ir para declaração de ->toBeOne() abre expect()->extend em tests/Pest.php:9');
   check(!errors.length, 'sem erros de página (Pest): ' + errors.join('; '));
   await page.close(); service.current.stop();
   await rm(root, { recursive: true, force: true });
