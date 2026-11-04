@@ -9,6 +9,8 @@ export type WorkspaceInfo = { root: string; name: string };
 export type GitChange = { path: string; originalPath?: string; index: string; worktree: string };
 export type GitState = { branch: string; head: string | null; mergeHead: string | null; operation?: 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'conflict' | null; changes: GitChange[]; indexToken: string };
 export type GitDiff = { path: string; before: string; after: string; beforeLabel: string; afterLabel: string; token: string };
+export type GitBlameCommit = { hash: string; author?: string; email?: string; authorTime?: number; commitTime?: number; summary?: string; message?: string; previous?: { hash: string; path: string }; path?: string; uncommitted: boolean };
+export type GitBlame = { path: string; revision: string | null; content?: string | null; lines: { hash: string; original: number }[]; commits: Record<string, GitBlameCommit> };
 export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string };
 export type GitBranch = { name: string; current: boolean; remote: boolean; upstream: string; tracking: string };
 export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[] };
@@ -128,6 +130,8 @@ export interface IdeApi {
   gitStatus(): Promise<GitState>;
   gitEditorBase(path: string): Promise<{text: string; label: string}>;
   gitLineInfo(path: string, line: number, text: string): Promise<{hash: string; author: string; date: string; summary: string; uncommitted: boolean}>;
+  /** Annotate with Git Blame: buffer (`text`) ou revisão; opções -w/-M/-C do menu Options. */
+  gitBlame(input: { path: string; text?: string; revision?: string; ignoreWhitespace?: boolean; movesWithin?: boolean; movesAcross?: boolean }): Promise<GitBlame>;
   gitDiff(path: string, staged: boolean): Promise<GitDiff>;
   gitStage(path: string, staged: boolean, token: string): Promise<void>;
   gitCommitMessage(): Promise<string>;
