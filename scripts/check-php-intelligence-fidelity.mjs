@@ -179,12 +179,84 @@ scenario('rename-conflict', { 'src/Invoice.php': same, 'src/Receipt.php': `<?php
  await page.locator('.refactor-preview .cancel').click();
 });
 
+// ── Inline Method / Change Signature ─────────────────────────────────────────────────────────
+// Method family simulated from text: `function NAME` declarations and `->NAME(`/`::NAME(` calls.
+const methodServer = `window.languageMock=(method,input,newName)=>{
+ const pos=(t,o)=>{const b=t.slice(0,o).split('\\n');return {line:b.length-1,character:b.at(-1).length};};
+ const t=input.text;const off=t.split('\\n').slice(0,input.position.line).reduce((n,l)=>n+l.length+1,0)+input.position.character;
+ let a=off;while(a>0&&/\\w/.test(t[a-1]))a--;const word=/^\\w+/.exec(t.slice(a))?.[0];if(!word)return null;
+ const texts={...window.files};for(const m of window.monacoApi.editor.getModels()){const p=m.uri.path.replace('/fixture/','');if(p in texts)texts[p]=m.getValue();}
+ const decl=Object.entries(texts).flatMap(([p,x])=>[...x.matchAll(new RegExp('function\\\\s+('+word+')\\\\s*\\\\(','g'))].map(m=>({path:p,text:x,o:m.index+m[0].indexOf(word)})));
+ if(!decl.length||!/->|::/.test(t.slice(Math.max(0,a-3),a))&&!decl.some(d=>d.path===input.path&&d.o===a))return null;
+ const loc=d=>({path:d.path,uri:'file:///fixture/'+d.path,range:{start:pos(d.text,d.o),end:pos(d.text,d.o+word.length)}});
+ if(method==='phpMethodFamily')return {name:word,from:'call',owner:'App\\\\Cart',ownerName:'Cart',current:[loc(decl[0])],bases:[],members:decl.map(loc),implementations:[]};
+ if(method==='phpMethodRename'){const changes={};for(const d of decl)(changes['file:///fixture/'+d.path]??=[]).push({range:loc(d).range,newText:newName,category:'declaration'});
+  for(const [p,x] of Object.entries(texts))for(const m of x.matchAll(new RegExp('(->|::)\\\\s*('+word+')\\\\s*\\\\(','g'))){const o=m.index+m[0].indexOf(word,m[1].length);(changes['file:///fixture/'+p]??=[]).push({range:{start:pos(x,o),end:pos(x,o+word.length)},newText:newName,category:'call'});}
+  return {changes};}
+ return null;};`;
+const cart = `<?php\n\nnamespace App;\n\nclass Cart\n{\n    public function total(int $qty): int\n    {\n        $price = $this->price();\n        return $price * $qty;\n    }\n\n    public function checkout(): int\n    {\n        $price = 3;\n        return $this->total($price) + 1;\n    }\n\n    private function price(): int\n    {\n        return 10;\n    }\n}\n`;
+const shop = `<?php\n\nnamespace App;\n\n$cart = new Cart();\necho $cart->total(2);\n`;
+scenario('inline-method', { 'src/Cart.php': cart, 'src/shop.php': shop }, async (page, h) => {
+ await page.evaluate(methodServer);
+ await h.open('src/Cart.php'); await h.caretAt('function total', 10);
+ await page.keyboard.press('Alt+Meta+N'); await page.waitForSelector('.refactor-dialog');
+ const radios = await page.locator('.refactor-dialog .refactor-radios label').allTextContents();
+ assert.deepEqual(radios, ['Incorporar todas as chamadas e remover o método', 'Incorporar todas as chamadas e manter o método'], 'options on the declaration');
+ await h.shot('inline-dialog');
+ await page.locator('.refactor-dialog footer button[value=ok]').click();
+ await page.waitForFunction(() => !window.monacoApi.editor.getModels().find(m => m.uri.path.endsWith('Cart.php')).getValue().includes('function total'), null, { timeout: 8000 });
+ const after = await h.text();
+ assert.ok(after.includes('        $price1 = $this->price();\n        return ($price1 * $price) + 1;'), 'call replaced by the body, colliding local renamed:\n' + after);
+ const shopAfter = await page.evaluate(() => window.files['src/shop.php']);
+ assert.ok(shopAfter.includes('$price = $cart->price();') || shopAfter === shop, 'outside call handled: ' + shopAfter);
+ // On a call: the third option inlines only that occurrence.
+ await h.caretAt('$this->price()', 8); await page.keyboard.press('Alt+Meta+N'); await page.waitForSelector('.refactor-dialog');
+ assert.equal(await page.locator('.refactor-dialog .refactor-radios input:checked').getAttribute('value'), 'single');
+ await page.locator('.refactor-dialog footer button[value=ok]').click(); await page.waitForTimeout(600);
+ const single = await h.text(); assert.ok(single.includes('$price1 = 10;') && single.includes('function price'), 'single occurrence, method kept:\n' + single);
+ await page.keyboard.press('Meta+z'); await page.waitForTimeout(200); assert.ok((await h.text()).includes('$price1 = $this->price();'), 'Cmd+Z undoes the single-file inline');
+});
+const greet = `<?php\n\nnamespace App;\n\nclass Greeter\n{\n    /**\n     * @param string $name who\n     */\n    public function greet(string $name, int $times = 1): string\n    {\n        return str_repeat("Hi $name", $times);\n    }\n\n    public function run(): string\n    {\n        return $this->greet('Ana', 2) . $this->greet('Bia');\n    }\n}\n`;
+scenario('change-signature', { 'src/Greeter.php': greet }, async (page, h) => {
+ await page.evaluate(methodServer);
+ await h.open('src/Greeter.php'); await h.caretAt("greet('Ana'", 2);
+ await page.keyboard.press('Meta+F6'); await page.waitForSelector('.refactor-signature');
+ assert.equal(await page.locator('.refactor-signature input[name=name]').inputValue(), 'greet');
+ assert.equal(await page.locator('.refactor-signature input[name=returnType]').inputValue(), 'string');
+ assert.deepEqual(await page.locator('.refactor-signature .param-name').evaluateAll(i => i.map(x => x.value)), ['$name', '$times = 1']);
+ assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'greet(string $name, int $times = 1): string');
+ // Rename the method and $name → $who, add bool $loud = false with call value true.
+ await page.locator('.refactor-signature input[name=name]').fill('salute');
+ await page.locator('.refactor-signature .param-name').first().fill('$who');
+ await page.locator('.refactor-params-toolbar button[aria-label="Adicionar parâmetro"]').click();
+ await page.locator('.refactor-signature .param-type').nth(2).fill('bool'); await page.locator('.refactor-signature .param-name').nth(2).fill('$loud'); await page.locator('.refactor-signature .param-call').nth(2).fill('true');
+ assert.match(await page.locator('.refactor-signature .project-dialog-error').textContent(), /obrigatório depois de um opcional/, 'validation like the dialog');
+ await page.locator('.refactor-signature .param-name').nth(2).fill('$loud = false');
+ assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'salute(string $who, int $times = 1, bool $loud = false): string');
+ await h.shot('change-signature');
+ await page.locator('.refactor-signature footer button[value=ok]').click(); await page.waitForTimeout(800);
+ const after = await h.text();
+ assert.ok(after.includes('public function salute(string $who, int $times = 1, bool $loud = false): string'), after);
+ assert.ok(after.includes('str_repeat("Hi $who", $times)') && after.includes('@param string $who who'), 'body and PHPDoc follow the rename:\n' + after);
+ assert.ok(after.includes("$this->salute('Ana', 2, true) . $this->salute('Bia', 1, true)"), 'call sites: Default written, skipped optional filled with its default:\n' + after);
+ await page.keyboard.press('Meta+z'); await page.waitForTimeout(200); assert.equal(await h.text(), greet, 'Cmd+Z restores');
+ // Moving a required parameter behind a call that omitted it: conflict in the preview.
+ await h.caretAt('function greet', 10); await page.keyboard.press('Meta+F6'); await page.waitForSelector('.refactor-signature');
+ await page.locator('.refactor-signature .param-name').nth(1).fill('$times'); await page.locator('.refactor-signature .param-name').nth(1).click();
+ await page.locator('.refactor-params-toolbar button[aria-label="Mover para cima"]').click();
+ await page.locator('.refactor-signature footer button[value=ok]').click(); await page.waitForSelector('.refactor-preview', { timeout: 8000 });
+ assert.match(await page.locator('.refactor-conflict').first().textContent(), /sem valor para \$times/);
+ await page.locator('.refactor-preview .cancel').click(); await page.waitForTimeout(200); assert.equal(await h.text(), greet);
+});
+
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'pipe' });
 let browser; const results = {}; const failures = [];
 try {
  await new Promise((resolve, reject) => { server.stdout.on('data', d => { if (String(d).includes(String(port))) resolve(); }); server.once('exit', reject); });
  browser = process.argv.includes('--chromium') ? await chromium.launch({ headless: true, channel: 'chrome' }) : await webkit.launch({ headless: true });
  await mkdir(out, { recursive: true });
+ // Warm-up: the first load triggers Vite's dependency optimization and a reload of the deps.
+ { const warm = await browser.newPage(); await warm.goto(`http://127.0.0.1:${port}/node_modules/.vite/deps/monaco-editor.js`).catch(() => {}); await warm.goto(`http://127.0.0.1:${port}`).catch(() => {}); await warm.waitForTimeout(2500); await warm.close(); }
  for (const [name, s] of Object.entries(scenarios)) {
   if (only && !only.includes(name)) continue;
   const page = await browser.newPage({ viewport: { width: 1512, height: 949 }, deviceScaleFactor: 1 });
