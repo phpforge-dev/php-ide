@@ -5,7 +5,11 @@
 // são o texto-fonte (pt-BR) e quem exibe traduz com t().
 
 export type Platform = 'mac' | 'other';
-export type ProfileId = 'default-mac' | 'default-other' | 'jetbrains';
+export type BuiltinProfileId = 'default-mac' | 'default-other' | 'jetbrains';
+/** A bundled profile or a named copy (`custom-…`) made with duplicateProfile(). */
+export type ProfileId = BuiltinProfileId | `custom-${string}`;
+export type CustomProfile = { id: `custom-${string}`; name: string; parent: BuiltinProfileId };
+export type ProfileInfo = { id: ProfileId; label: string; builtin: boolean; parent?: BuiltinProfileId };
 /** Um ou mais atalhos por SO. String vazia/array vazio = sem atalho. */
 export type Strokes = string | string[];
 export type Binding = { mac?: Strokes; other?: Strokes };
@@ -30,11 +34,11 @@ export type ActionSpec = {
 export type KeyLike = { key: string; code?: string; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean; repeat?: boolean; isComposing?: boolean };
 export type Conflict = { stroke: string; actions: string[] };
 type StorageLike = { getItem(key: string): string | null; setItem(key: string, value: string): void };
-type Saved = { version: 1; profile?: ProfileId; overrides: Partial<Record<ProfileId, Record<string, string[]>>> };
+type Saved = { version: 1; profile?: ProfileId; overrides: Partial<Record<ProfileId, Record<string, string[]>>>; custom?: CustomProfile[] };
 
 export const DOUBLE_SHIFT = 'DoubleShift';
 export const STORAGE_KEY = 'php-ide-keymap';
-export const profiles: { id: ProfileId; label: string }[] = [
+export const profiles: { id: BuiltinProfileId; label: string }[] = [
  { id: 'default-mac', label: 'Padrão macOS' },
  { id: 'default-other', label: 'Padrão Windows/Linux' },
  { id: 'jetbrains', label: 'Inspirado no layout JetBrains' },
@@ -182,15 +186,56 @@ export class Keymap {
  // --- perfis e atalhos --------------------------------------------------------------------
  get profile(): ProfileId { return this.saved.profile ?? (this.platform === 'mac' ? 'default-mac' : 'default-other'); }
  setProfile(profile: ProfileId) {
-  if (!profiles.some(item => item.id === profile)) throw new Error(`Unknown keymap profile: ${profile}`);
+  if (!this.hasProfile(profile)) throw new Error(`Unknown keymap profile: ${profile}`);
   this.saved.profile = profile; this.save(); this.emit();
  }
+ private hasProfile(profile: string): profile is ProfileId { return profiles.some(item => item.id === profile) || !!this.customProfile(profile); }
+ customProfile(id: string): CustomProfile | undefined { return this.saved.custom?.find(item => item.id === id); }
+ /** Perfis embutidos (rótulo-fonte em pt-BR, traduzir com t()) seguidos das cópias nomeadas (nome do usuário). */
+ profileList(): ProfileInfo[] {
+  return [...profiles.map(item => ({ ...item, builtin: true })), ...(this.saved.custom ?? []).map(item => ({ id: item.id, label: item.name, builtin: false, parent: item.parent }))];
+ }
+ /** Perfil embutido do qual o perfil herda os atalhos padrão (ele mesmo, para os embutidos). */
+ baseProfile(profile: ProfileId = this.profile): BuiltinProfileId { return this.customProfile(profile)?.parent ?? (profile as BuiltinProfileId); }
+ /**
+  * Duplicate… (engrenagem da tela Keymap): cópia nomeada que herda os padrões do perfil embutido de origem e
+  * começa com as personalizações do perfil copiado. Passa a ser o perfil ativo. Devolve o id.
+  */
+ duplicateProfile(name: string, source: ProfileId = this.profile): ProfileId {
+  const label = this.checkName(name);
+  if (!this.hasProfile(source)) throw new Error(`Unknown keymap profile: ${source}`);
+  let id: `custom-${string}`; do id = `custom-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; while (this.customProfile(id));
+  (this.saved.custom ??= []).push({ id, name: label, parent: this.baseProfile(source) });
+  const copy = this.saved.overrides[source];
+  if (copy) this.saved.overrides[id] = Object.fromEntries(Object.entries(copy).map(([action, strokes]) => [action, [...strokes]]));
+  this.saved.profile = id; this.save(); this.emit();
+  return id;
+ }
+ renameProfile(id: ProfileId, name: string) {
+  const custom = this.customProfile(id); if (!custom) throw new Error('Só keymaps duplicados podem ser renomeados.');
+  custom.name = this.checkName(name, id); this.save(); this.emit();
+ }
+ /** Exclui uma cópia nomeada; se for a ativa, o perfil de origem volta a valer. */
+ deleteProfile(id: ProfileId) {
+  const custom = this.customProfile(id); if (!custom) throw new Error('Só keymaps duplicados podem ser excluídos.');
+  this.saved.custom = this.saved.custom!.filter(item => item !== custom); delete this.saved.overrides[id];
+  if (this.saved.profile === id) this.saved.profile = custom.parent;
+  this.save(); this.emit();
+ }
+ private checkName(name: string, except?: string): string {
+  const label = name.trim().replace(/\s+/g, ' ');
+  if (!label) throw new Error('Informe um nome para o keymap.');
+  if (label.length > 80) throw new Error('Nome de keymap muito longo.');
+  const taken = (this.saved.custom ?? []).some(item => item.id !== except && item.name.toLocaleLowerCase() === label.toLocaleLowerCase()) || profiles.some(item => item.label.toLocaleLowerCase() === label.toLocaleLowerCase());
+  if (taken) throw new Error('Já existe um keymap com esse nome.');
+  return label;
+ }
  /** Sistema cujos atalhos o perfil usa (o perfil JetBrains acompanha o SO atual). */
- profilePlatform(profile = this.profile): Platform { return profile === 'default-mac' ? 'mac' : profile === 'default-other' ? 'other' : this.platform; }
- defaultBindings(id: string, profile = this.profile): string[] {
+ profilePlatform(profile: ProfileId = this.profile): Platform { const base = this.baseProfile(profile); return base === 'default-mac' ? 'mac' : base === 'default-other' ? 'other' : this.platform; }
+ defaultBindings(id: string, profile: ProfileId = this.profile): string[] {
   const spec = this.specs.get(id); if (!spec) return [];
   const os = this.profilePlatform(profile);
-  const source = profile === 'jetbrains' && spec.jetbrains && os in spec.jetbrains ? spec.jetbrains : spec.defaults;
+  const source = this.baseProfile(profile) === 'jetbrains' && spec.jetbrains && os in spec.jetbrains ? spec.jetbrains : spec.defaults;
   return unique(list(source[os]));
  }
  bindings(id: string): string[] {
@@ -320,7 +365,8 @@ export class Keymap {
  /** Personalizações do perfil atual como JSON próprio (formato php-ide-keymap, versão 1). */
  exportProfile(): string {
   const profile = this.profile;
-  return JSON.stringify({ format: EXPORT_FORMAT, version: 1, profile, platform: this.profilePlatform(profile), overrides: this.saved.overrides[profile] ?? {} }, null, 2);
+  const custom = this.customProfile(profile);
+  return JSON.stringify({ format: EXPORT_FORMAT, version: 1, profile: custom ? custom.parent : profile, ...(custom ? { name: custom.name } : {}), platform: this.profilePlatform(profile), overrides: this.saved.overrides[profile] ?? {} }, null, 2);
  }
  /**
   * Aplica ao perfil atual um export nosso (JSON) ou um keymap do PhpStorm/IntelliJ (XML de
@@ -365,12 +411,15 @@ export class Keymap {
    const raw = this.storage?.getItem(STORAGE_KEY); if (!raw) return;
    const data = JSON.parse(raw) as Partial<Saved>;
    const overrides: Saved['overrides'] = {};
-   for (const { id } of profiles) {
+   const custom = (Array.isArray(data.custom) ? data.custom : []).filter((item): item is CustomProfile => !!item && typeof item.id === 'string' && /^custom-[\w-]+$/.test(item.id) && typeof item.name === 'string' && !!item.name.trim() && profiles.some(p => p.id === item.parent))
+    .filter((item, index, all) => all.findIndex(other => other.id === item.id) === index).map(item => ({ id: item.id, name: item.name.trim(), parent: item.parent }));
+   for (const { id } of [...profiles, ...custom]) {
     const entries = data.overrides?.[id]; if (!entries || typeof entries !== 'object') continue;
     // Ações ainda não registradas (de outros módulos) são preservadas; atalhos inválidos são descartados.
     overrides[id] = Object.fromEntries(Object.entries(entries).filter(([, value]) => Array.isArray(value)).map(([action, value]) => [action, unique((value as unknown[]).filter((item): item is string => typeof item === 'string').map(normalizeStroke).filter((stroke): stroke is string => !!stroke))]));
    }
-   this.saved = { version: 1, overrides, profile: profiles.some(item => item.id === data.profile) ? data.profile : undefined };
+   const known = (profile: unknown): profile is ProfileId => profiles.some(item => item.id === profile) || custom.some(item => item.id === profile);
+   this.saved = { version: 1, overrides, profile: known(data.profile) ? data.profile : undefined, ...(custom.length ? { custom } : {}) };
   } catch (error) { this.lastError = 'Configuração de atalhos inválida; usando o perfil padrão.'; console.warn(error); }
  }
  private save() {

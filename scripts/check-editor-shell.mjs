@@ -233,7 +233,7 @@ try {
    assert.ok(p.shortcut.length,'tool.problems has a shortcut');
    const m=results[theme+':menus'];
    assert.equal(m.monacoMenu,false,'Monaco context menu replaced');
-   assert.deepEqual(m.tab.filter(i=>i!=='—').map(i=>i.replace(/ \[.*\]/,'')),['Fechar','Fechar outras abas','Fechar todas as abas','Fechar abas à esquerda','Copiar caminho/referência…','Fixar aba','Abrir em','Histórico local','Renomear arquivo…'],'tab menu order (reference 53)');
+   assert.deepEqual(m.tab.filter(i=>i!=='—').map(i=>i.replace(/ \[.*\]/,'')),['Fechar','Fechar outras abas','Fechar todas as abas','Fechar abas à esquerda','Copiar caminho/referência…','Dividir à direita','Dividir para baixo','Fixar aba','Configurar abas do editor…','Marcadores','Abrir em','Histórico local','Renomear arquivo…'],'tab menu order (reference 53; round 2 items in check-editor-shell-2)');
    assert.ok(m.firstTab.some(i=>i.startsWith('Fechar abas à direita'))&&!m.firstTab.some(i=>i.startsWith('Fechar abas à esquerda')),'left/right closers only when tabs exist on that side');
    assert.deepEqual(m.editorMenu.filter(i=>i!=='—').map(i=>i.replace(/ \[.*\]/,'').replace(' (off)','')).slice(0,6),['Mostrar ações de contexto','Colar','Copiar/colar especial','Modo de seleção em coluna','Encontrar usos','Ir para'],'editor menu starts like reference 31');
    assert.ok(m.goTo.length>=3,'Go To submenu');

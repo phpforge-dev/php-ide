@@ -216,3 +216,31 @@ test('exporta e importa: JSON próprio e keymap XML do PhpStorm', () => {
  assert.deepEqual(keymap.bindings('editor.closeAllTabs'), ['Meta+K Meta+W']);
  assert.ok(JSON.parse(storage.getItem(STORAGE_KEY)!).overrides['default-mac']['nav.declaration'].length === 0, 'an empty action removes its shortcuts');
 });
+
+test('keymaps nomeados: Duplicar herda o perfil de origem, renomear, excluir e persistir', () => {
+ const storage = new MemoryStorage();
+ const { keymap } = sample('mac', storage);
+ keymap.setProfile('jetbrains'); keymap.addBinding('tool.terminal', 'Alt+T');
+ const id = keymap.duplicateProfile('  Meu   keymap ');
+ assert.match(id, /^custom-/); assert.equal(keymap.profile, id);
+ assert.deepEqual(keymap.profileList().at(-1), { id, label: 'Meu keymap', builtin: false, parent: 'jetbrains' });
+ assert.deepEqual(keymap.bindings('tool.project'), ['Meta+1'], 'padrões do perfil de origem');
+ assert.deepEqual(keymap.bindings('tool.terminal'), ['Alt+F12', 'Alt+T'], 'começa com as personalizações copiadas');
+ keymap.setBindings('tool.terminal', ['Alt+Y']);
+ keymap.setProfile('jetbrains'); assert.deepEqual(keymap.bindings('tool.terminal'), ['Alt+F12', 'Alt+T'], 'a origem não muda');
+ assert.throws(() => keymap.duplicateProfile('meu KEYMAP'), /Já existe/);
+ assert.throws(() => keymap.duplicateProfile('   '), /Informe/);
+ assert.throws(() => keymap.renameProfile('jetbrains', 'x'), /duplicados/);
+ const reloaded = sample('mac', storage).keymap;
+ reloaded.setProfile(id); assert.deepEqual(reloaded.bindings('tool.terminal'), ['Alt+Y'], 'cópia e personalização persistidas');
+ reloaded.renameProfile(id, 'Equipe'); assert.equal(reloaded.profileList().at(-1)!.label, 'Equipe');
+ assert.equal(JSON.parse(reloaded.exportProfile()).name, 'Equipe');
+ const second = reloaded.duplicateProfile('Equipe 2'); assert.equal(reloaded.customProfile(second)!.parent, 'jetbrains', 'cópia de cópia herda o embutido');
+ reloaded.deleteProfile(second); assert.equal(reloaded.profile, 'jetbrains', 'excluir o ativo volta à origem');
+ reloaded.deleteProfile(id); assert.equal(reloaded.profileList().length, 3);
+ assert.throws(() => reloaded.setProfile(id));
+ storage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, profile: 'custom-x', custom: [{ id: 'custom-x', name: 'X', parent: 'default-other' }, { id: 'bad', name: 'Y', parent: 'default-mac' }, { id: 'custom-z', name: 'Z', parent: 'vim' }], overrides: { 'custom-x': { 'tool.project': ['Alt+9'] } } }));
+ const restored = sample('mac', storage).keymap;
+ assert.equal(restored.profile, 'custom-x'); assert.equal(restored.profilePlatform(), 'other');
+ assert.deepEqual(restored.bindings('tool.project'), ['Alt+9']); assert.equal(restored.profileList().length, 4, 'entradas inválidas descartadas');
+});

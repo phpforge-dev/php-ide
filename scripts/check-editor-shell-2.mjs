@@ -104,7 +104,8 @@ export namespace Shop {
 const tree={'':['config','public','src','composer.json'],config:['config/services.yaml'],public:['public/index.html'],src:['src/Broken.php','src/Other.php','src/app.js','src/types.ts']};
 let browser;const results={};const failures=[];
 const brief=error=>{const lines=String(error?.message??error).split('\n');return [lines[0],...lines.slice(1).filter(l=>l.trim().startsWith('-')).slice(-3).map(l=>l.trim())].join(' — ');};
-const step=async(name,fn)=>{try{results[name]=await fn();}catch(error){failures.push(name+': '+brief(error));results[name]={error:brief(error)};}};
+let currentPage;
+const step=async(name,fn)=>{try{results[name]=await fn();}catch(error){failures.push(name+': '+brief(error));results[name]={error:brief(error)};await currentPage?.screenshot({path:`${out}/failed-${name.replace(':','-')}.png`}).catch(()=>{});}};
 try {
  await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes(String(port)))resolve();});server.once('exit',reject);});
  browser=process.argv.includes('--chromium')?await chromium.launch({headless:true,channel:'chrome'}):await webkit.launch({headless:true});
@@ -134,7 +135,7 @@ try {
   };
  }});`;
  for(const theme of themes){
-  const page=await browser.newPage({viewport:{width:1400,height:909},deviceScaleFactor:1});page.setDefaultTimeout(8000);
+  const page=await browser.newPage({viewport:{width:1400,height:909},deviceScaleFactor:1});page.setDefaultTimeout(8000);currentPage=page;
   await page.emulateMedia({colorScheme:theme});await fixture.route(page);if(process.env.STACK)page.on('pageerror',e=>console.log(e.stack));
   await page.addInitScript(([t,l])=>{try{localStorage.clear();localStorage.setItem('php-ide-appearance',JSON.stringify({theme:t}));if(l)localStorage.setItem('php-ide-language',l);}catch{}
    // The clipboard is stubbed: WebKit's headless clipboard needs a user gesture permission.

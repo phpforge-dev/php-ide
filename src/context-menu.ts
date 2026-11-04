@@ -49,7 +49,9 @@ export function popup(items: MenuItem[], x: number, y: number, onClose: () => vo
   else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(); }
   else if (e.key === 'Tab') e.preventDefault();
  });
- document.body.append(menu);
+ // Inside a modal dialog (Keymap gear) the menu must live in the dialog's top layer to be on top and clickable.
+ const modal = [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].filter(d => d.matches(':modal')).at(-1);
+ (modal ?? document.body).append(menu);
  const r = menu.getBoundingClientRect();
  menu.style.left = Math.max(4, x + r.width > innerWidth ? (depth ? x - r.width * 2 + 4 : innerWidth - r.width - 4) : x) + 'px';
  menu.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';

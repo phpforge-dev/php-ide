@@ -1,7 +1,7 @@
 // Tela "Keymap" (UI-KEYMAP-001): busca por nome e por tecla, edição, remoção, restauração e aviso de conflito.
 import { t, html, msg } from './i18n';
 import { confirmDialog } from './confirm-dialog';
-import { keymap, profiles, formatStroke, strokeFromEvent, DOUBLE_SHIFT, type ProfileId, type ActionSpec } from './keymap';
+import { keymap, formatStroke, strokeFromEvent, DOUBLE_SHIFT, type ProfileId, type ActionSpec } from './keymap';
 import { openMenu } from './context-menu';
 import './keymap.css';
 
@@ -33,14 +33,19 @@ export function mountKeymapSettings() {
  const $ = <T extends HTMLElement>(selector: string) => dialog.querySelector<T>(selector)!;
  const profile = $<HTMLSelectElement>('#keymap-profile'), search = $<HTMLInputElement>('#keymap-search'), byKey = $<HTMLButtonElement>('#keymap-by-key');
  const conflictsOnly = $<HTMLInputElement>('#keymap-conflicts-only'), list = $<HTMLElement>('#keymap-list'), status = $<HTMLElement>('#keymap-status');
- for (const item of profiles) profile.add(new Option(t(item.label), item.id));
+ const profileLabel = (item: { label: string; builtin: boolean }) => item.builtin ? t(item.label) : item.label;
+ const fillProfiles = () => {
+  const list = keymap.profileList();
+  if (profile.options.length !== list.length || list.some((item, i) => profile.options[i].value !== item.id || profile.options[i].text !== profileLabel(item))) profile.replaceChildren(...list.map(item => new Option(profileLabel(item), item.id)));
+ };
+ fillProfiles();
  let keyFilter = '', editing = '', previous: HTMLElement | null = null;
  const fmt = (stroke: string) => formatStroke(stroke, keymap.platform);
  const name = (id: string) => t(keymap.action(id)?.label ?? id);
 
  function render() {
   if (!dialog.open) return;
-  profile.value = keymap.profile;
+  fillProfiles(); profile.value = keymap.profile;
   const query = search.value.trim().toLocaleLowerCase();
   const conflicted = new Set(keymap.conflicts().flatMap(item => item.actions));
   const focused = (document.activeElement as HTMLElement | null)?.dataset.focusKey;
@@ -161,8 +166,38 @@ export function mountKeymapSettings() {
   box.addEventListener('cancel', event => { event.preventDefault(); done(); });
   box.showModal(); (kind === 'export' ? text : text).focus();
  }
+ // Named keymaps (capture 57: the gear of a bundled keymap offers Duplicate…; public help: duplicate, rename,
+ // remove or restore). A copy inherits the bundled keymap's defaults and starts with the current customizations.
+ function nameDialog(title: string, initial: string, accept: (name: string) => void) {
+  const box = document.createElement('dialog'); box.className = 'keymap-name-dialog'; box.setAttribute('aria-label', title);
+  const form = document.createElement('form'); form.method = 'dialog';
+  const heading = document.createElement('h3'); heading.textContent = title;
+  const label = document.createElement('label'); label.textContent = t('Nome:');
+  const input = document.createElement('input'); input.type = 'text'; input.value = initial; input.spellcheck = false; input.maxLength = 80; label.append(input);
+  const error = document.createElement('p'); error.className = 'keymap-name-error'; error.setAttribute('role', 'alert');
+  const actions = document.createElement('div'); actions.className = 'keymap-exchange-actions';
+  const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = t('Cancelar');
+  const ok = document.createElement('button'); ok.type = 'submit'; ok.className = 'primary'; ok.textContent = t('OK');
+  actions.append(cancel, ok); form.append(heading, label, error, actions); box.append(form); dialog.append(box);
+  const done = () => { box.close(); box.remove(); gear.focus(); };
+  cancel.onclick = done; box.addEventListener('cancel', event => { event.preventDefault(); done(); });
+  form.onsubmit = event => { event.preventDefault(); try { accept(input.value); done(); } catch (e) { error.textContent = t(String((e as Error)?.message ?? e)); input.focus(); } };
+  input.oninput = () => { error.textContent = ''; };
+  box.showModal(); input.focus(); input.select();
+ }
+ const currentName = () => { const item = keymap.profileList().find(p => p.id === keymap.profile)!; return profileLabel(item); };
+ function duplicate() {
+  const base = currentName(); let suggestion = msg`${base} cópia`; for (let n = 2; keymap.profileList().some(p => profileLabel(p).toLocaleLowerCase() === suggestion.toLocaleLowerCase()); n++) suggestion = msg`${base} cópia ${n}`;
+  nameDialog(t('Duplicar keymap'), suggestion, name => { keymap.duplicateProfile(name); status.dataset.auto = ''; status.textContent = msg`Keymap ${name.trim()} criado a partir de ${base}.`; });
+ }
  const gear = $<HTMLButtonElement>('#keymap-gear');
- gear.onclick = () => { const r = gear.getBoundingClientRect(); openMenu([
+ gear.onclick = () => { const r = gear.getBoundingClientRect(); const custom = keymap.customProfile(keymap.profile); openMenu([
+  { id: 'duplicate', label: t('Duplicar…'), run: duplicate },
+  ...(custom ? [
+   { id: 'rename', label: t('Renomear…'), run: () => nameDialog(t('Renomear keymap'), custom.name, name => { keymap.renameProfile(custom.id, name); status.dataset.auto = ''; status.textContent = msg`Keymap renomeado para ${name.trim()}.`; }) },
+   { id: 'delete', label: t('Excluir'), run: async () => { if (!await confirmDialog(msg`Excluir o keymap ${custom.name}? As personalizações dele serão perdidas.`, t('Excluir'))) return; keymap.deleteProfile(custom.id); status.dataset.auto = ''; status.textContent = msg`Keymap ${custom.name} excluído.`; } },
+  ] : []),
+  '-',
   { id: 'export', label: t('Exportar…'), run: () => exchange('export') },
   { id: 'import', label: t('Importar…'), run: () => exchange('import') },
   '-',
