@@ -91,6 +91,7 @@ try{
  dockerFixture.sqlDialectsOnly=sqlDialects;
  dockerFixture.sqlOnly=process.argv.includes('--sql-only');dockerFixture.sqlCapture=process.argv.includes('--capture');
  dockerFixture.markdownOnly=process.argv.includes('--markdown-only');
+ dockerFixture.agentsOnly=process.argv.includes('--agents-only');
  if(allFeatures||dockerFixture.markdownOnly||process.argv.includes('--svg-only'))dockerFixture.markdownSource=resolve('.tools/plugin-packages/markdown');
  dockerFixture.toolsOnly=process.argv.includes('--tools-only');
  if(dockerFixture.toolsOnly){const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));dockerFixture.toolPort=server.address().port;await new Promise(r=>server.close(r));}

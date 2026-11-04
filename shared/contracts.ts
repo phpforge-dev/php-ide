@@ -46,6 +46,10 @@ export type DatabasePage = { columns: DatabaseColumn[]; rows: (string | null)[][
 export type RedisEdit = { op: 'get' | 'set' | 'hset' | 'hdel' | 'lset' | 'ldel' | 'rpush' | 'sadd' | 'sreplace' | 'srem' | 'zadd' | 'zrem' | 'ttl' | 'rename' | 'delete';
   key: string; kind?: string; field?: string; newField?: string; member?: string; index?: number; value?: string; old?: string; score?: number; ttl?: number; to?: string };
 export type AgentChange = { path: string; before: string | null; after: string };
+/** Resumo de uma conversa do histórico do agente (por projeto, fora do repositório). */
+export type AgentHistorySummary = { id: string; title: string; agent: string; created: number; updated: number; renamed?: boolean };
+/** Dados extras do pedido: conversa restaurada, menções/anexos resolvidos. */
+export type AgentPromptExtras = { history?: string };
 export type AgentInfo = { id: string; name: string; available: boolean; detail: string };
 /** Eventos de uma sessão de agente (ACP ou Codex) para o painel. */
 export type AgentEvent =
@@ -177,7 +181,12 @@ export interface IdeApi {
   databasePickFile(kind: 'sqlite' | 'cert' | 'key'): Promise<string | null>;
   agents(): Promise<AgentInfo[]>;
   agentStart(agent: string): Promise<void>;
-  agentPrompt(text: string, context?: { path: string; text: string; selection?: string }): Promise<void>;
+  agentPrompt(text: string, context?: { path: string; text: string; selection?: string }, extras?: AgentPromptExtras): Promise<void>;
+  agentHistory(): Promise<AgentHistorySummary[]>;
+  agentHistoryLoad(id: string): Promise<AgentHistorySummary & { items: unknown[] }>;
+  agentHistorySave(conversation: { id: string; agent: string; items: unknown[] }): Promise<AgentHistorySummary>;
+  agentHistoryRename(id: string, title: string): Promise<AgentHistorySummary>;
+  agentHistoryDelete(id: string | null): Promise<void>;
   agentCancel(): Promise<void>;
   agentMode(mode: string): Promise<void>;
   agentPermission(id: string, optionId: string | null): Promise<void>;

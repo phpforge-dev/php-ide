@@ -52,6 +52,11 @@ pub fn service_permission(method:&str)->Option<&'static str>{
  match method {
   "agentCancel"=>Some("process"),
   "agentDiscard"=>Some("process"),
+  "agentHistory"=>Some("process"),
+  "agentHistoryDelete"=>Some("process"),
+  "agentHistoryLoad"=>Some("process"),
+  "agentHistoryRename"=>Some("process"),
+  "agentHistorySave"=>Some("process"),
   "agentKeep"=>Some("process"),
   "agentMode"=>Some("process"),
   "agentPermission"=>Some("process"),
