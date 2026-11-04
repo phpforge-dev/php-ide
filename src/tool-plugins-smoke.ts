@@ -72,6 +72,8 @@ async function xdebugSession({editor,wait,assert,call}:{editor:monaco.editor.ICo
  const shot=async(name:string)=>{await call('nativeSmokeProgress',`shot:${name}:0:0:1:1`);await new Promise(r=>setTimeout(r,1200));};
  const pause=(ms:number)=>new Promise(r=>setTimeout(r,ms));
  const input=(el:HTMLInputElement,value:string)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));};
+ // Only the Debug tool window stays open below the editor, as in the reference captures.
+ for(const id of ['composer-panel','test-panel'])document.getElementById(id)?.setAttribute('hidden','');
  // Clean slate: the toggle check above left a breakpoint in another file.
  document.querySelector<HTMLButtonElement>('#tree button[aria-label="debug-app.php"]')!.click();
  await wait(()=>editor.getModel()?.uri.path.endsWith('/debug-app.php')??false,'debug-app.php did not open');await pause(300);
@@ -114,7 +116,7 @@ async function xdebugSession({editor,wait,assert,call}:{editor:monaco.editor.ICo
  checks.push('Xdebug real: Evaluate (field and ⌥F8 window) against the paused frame');
  // Step over, then resume to the second checkout() and to the exception breakpoint.
  keymap.run('debug.stepOver');await wait(()=>!!$('#debug-frames')?.textContent?.includes('debug-app.php:22, checkout()'),'step over did not reach line 22');
- assert($('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('$total = {int} 60'),'variables not refreshed after step');
+ await wait(()=>!!$('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('$total = {int} 60'),'variables not refreshed after step: '+$('#debug-tree')?.textContent);
  keymap.run('debug.resume');await wait(()=>!!$('#debug-frames')?.textContent?.includes('debug-app.php:21, checkout()')&&!!$('#debug-frames')?.textContent?.includes(':34'),'second checkout() stop missing: '+$('#debug-frames')?.textContent);
  keymap.run('debug.resume');await wait(()=>!!$('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('Exception = {InvalidArgumentException}'),'exception stop missing: '+$('#debug-frames')?.textContent+' '+$('#debug-console')?.textContent?.slice(-300));
  await wait(()=>/debug-bp-exception/.test(number(23)?.className??''),'exception icon missing on line 23');
@@ -123,7 +125,8 @@ async function xdebugSession({editor,wait,assert,call}:{editor:monaco.editor.ICo
  // Stop listening first (the container retries), then stop the session.
  $<HTMLButtonElement>('#debug-listen')!.click();await wait(()=>$('#debug-listen')?.getAttribute('aria-pressed')==='false','listener did not stop');
  keymap.run('debug.stop');await wait(()=>!!$('#debug-frames')?.textContent?.includes('Sem sessão'),'session did not end: '+$('#debug-frames')?.textContent);
- assert(!document.querySelector('#editor .debug-exec-line')&&!document.querySelector('#editor .debug-inline-value'),'execution decorations leaked after stop');
+ await wait(()=>!document.querySelector('#editor .debug-exec-line')&&!document.querySelector('#editor .debug-inline-value'),'execution decorations leaked after stop');
+ await shot('xdebug-05-stopped');
  checks.push('Xdebug real: stop ends the session and clears execution decorations');
  return checks;
 }

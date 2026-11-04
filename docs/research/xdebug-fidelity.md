@@ -66,12 +66,21 @@ Não se inferiu arquitetura interna do PhpStorm; nada da JetBrains foi copiado (
 | 4.8 | Linha de execução: fundo azul (seleção) em toda a linha; o ícone do breakpoint permanece no número. | [O] p18 |
 | 4.9 | Console: saída do script (stdout/stderr via DBGp) e mensagens do depurador. | [D] |
 
-## 5. Validação
+## 5. Validação (04/11/2026)
 
-- Plugin: `cargo test` (motor DBGp simulado: breakpoints de exceção, estados, pausa) e testes ignorados com Xdebug
-  3.4.5 real em container descartável (`scripts/check-xdebug.mjs`, `--ignored`).
-- Host (este worktree): `scripts/check-debug-ui.mjs` — harness WebKit/Chromium sobre Monaco real com IPC simulado,
-  apontando para o plugin local via `PHP_IDE_DEBUGGER_PLUGIN`.
-- Janela Tauri real: `scripts/check-debug-native.mjs` (ver resultado no catálogo).
+| Verificação | Resultado |
+|---|---|
+| `npm test` no plugin (Rust: motor DBGp simulado com exceções, estados e pausa assíncrona; node:test das regras de UI) | 7 + 5 testes OK |
+| Integração com Xdebug 3.4.5 real em container descartável (`PHP_IDE_DEBUGGER_PLUGIN=… node scripts/check-xdebug.mjs`) | 3 testes OK: mapeamento de caminhos, "Debug script", exceção `App\Boom` com namespace + pausa recusada (`supports_async = 0`) |
+| `scripts/check-debug-ui.mjs` (Monaco real, IPC simulado), Chromium e `--webkit`, tema escuro | 65 verificações OK; capturas em `.artifacts/debugger-fidelity/` |
+| Janela Tauri real: `PHP_IDE_DEBUGGER_PLUGIN=<cópia com binário> node scripts/check-native.mjs --production-ui --no-db --tools-only --xdebug` | OK: clique no número cria o breakpoint, exceção pelo diálogo, parada real em `debug-app.php:21` com ✓, frames, variáveis, valores inline, Evaluate (campo e ⌥F8), step over, resume, parada na exceção (raio no número) e stop; ciclo desativar/remover do plugin preservado. Capturas da janela em `.artifacts/debugger-native/` |
+
+Notas da execução:
+- O teste nativo usa uma cópia local do plugin com o binário `aarch64-macos` recompilado e o SHA-256 registrado só na
+  cópia; o repositório do plugin não muda `bin/` nem os hashes (a coordenação publica pelo CI).
+- A imagem `php-ide-xdebug-test:8.3` foi montada sobre uma imagem PHP 8.3 local (o Docker Hub não respondia); o
+  `scripts/check-xdebug.mjs` continua construindo a partir de `php:8.3-cli`.
+- Xdebug: o contexto 1 (Superglobals) também traz as globais do script; como no PhpStorm, a árvore mostra só `$_*`
+  não vazias e omite variáveis `uninitialized`.
 
 Nada aqui promove `TOOL-XDEBUG-001` a “Validada”: a comparação foi por observação de um caso sintético.
