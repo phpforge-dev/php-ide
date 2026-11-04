@@ -68,3 +68,4 @@ Continuação Git: [observações e contrato](phpstorm-git.md), [recorte 03 impl
 [Connection-aware SQL intelligence — SPEC-14: implementation, native acceptance and limits](sql-intelligence.md).
 
 - [Markdown como plugin independente](markdown-plugin.md): extração e validação de implementação, sem promoção comparativa.
+- [Depurador PHP / Xdebug — fidelidade ao PhpStorm (04/11/2026)](xdebug-fidelity.md): breakpoints no número da linha, exceções, janela Debug, Evaluate, valores inline e pausa; observação de um caso.
