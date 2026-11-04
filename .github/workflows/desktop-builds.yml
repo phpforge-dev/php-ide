@@ -231,6 +231,40 @@ jobs:
           rm -rf src-tauri/target/release/bundle
           npm run tauri -- build --config src-tauri/tauri.release.conf.json --bundles '${{ matrix.bundles }}'
 
+      - name: Notarize and verify the macOS DMG
+        if: runner.os == 'macOS'
+        env:
+          MACOS_SIGNING: ${{ steps.signing.outputs.macos }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          apps=(src-tauri/target/release/bundle/macos/*.app)
+          dmgs=(src-tauri/target/release/bundle/dmg/*.dmg)
+          app=${apps[0]}
+          dmg=${dmgs[0]}
+          codesign --verify --deep --strict --verbose=2 "$app"
+          if [ "$MACOS_SIGNING" = ad-hoc ]; then
+            codesign -dv "$app" 2>&1 | grep -q 'Signature=adhoc'
+            echo 'Ad hoc signature kept: no Developer ID secrets configured'
+            exit 0
+          fi
+          case "$MACOS_SIGNING" in
+            developer-id-api-key)
+              key="$RUNNER_TEMP/notary.p8"
+              printf '%s\n' "$APPLE_API_PRIVATE_KEY" > "$key"
+              xcrun notarytool submit "$dmg" --key "$key" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" --wait --timeout 30m
+              rm -f "$key" ;;
+            developer-id-apple-id)
+              xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait --timeout 30m ;;
+          esac
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=2 "$app"
+          spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
       - name: Check Linux package and startup
         if: runner.os == 'Linux'
         run: |
