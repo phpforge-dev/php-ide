@@ -1,12 +1,15 @@
-name: Windows and Linux installers
+name: Desktop installers
 
+# Builds the installers for an existing release tag. Every signing step is driven by
+# scripts/release-signing.mjs and only runs when its secrets exist; without them the build keeps
+# the previous behaviour (ad hoc macOS signature, unsigned NSIS installer, no updater manifest).
+# docs/specs/release-signing.md lists the secrets and variables.
 on:
   workflow_dispatch:
     inputs:
       release_tag:
         description: Existing release tag to build (must match the app version)
         required: true
-        default: v0.2.8
         type: string
       source_ref:
         description: Optional source ref for validation before tagging
@@ -16,6 +19,32 @@ on:
         description: Attach installers to the release (source must match its tag)
         default: true
         type: boolean
+      macos:
+        description: Also build the macOS DMG (do not upload a locally built DMG for the same tag)
+        default: false
+        type: boolean
+      updater:
+        description: Updater signatures and latest.json (auto = only when the signing key exists and macOS is built)
+        default: auto
+        type: choice
+        options: [auto, required, 'off']
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      source_ref:
+        default: ''
+        type: string
+      publish:
+        default: true
+        type: boolean
+      macos:
+        default: true
+        type: boolean
+      updater:
+        default: required
+        type: string
 
 permissions:
   contents: read
@@ -25,22 +54,81 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      updater: ${{ steps.signing.outputs.updater }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref || inputs.release_tag }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Validate signing configuration
+        id: signing
+        env:
+          MACOS: ${{ inputs.macos }}
+          UPDATER_INPUT: ${{ inputs.updater }}
+          PHP_IDE_UPDATER_PUBLIC_KEY: ${{ vars.PHP_IDE_UPDATER_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ vars.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+          AZURE_TRUSTED_SIGNING_ACCOUNT: ${{ vars.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          AZURE_TRUSTED_SIGNING_PROFILE: ${{ vars.AZURE_TRUSTED_SIGNING_PROFILE }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          mode="$UPDATER_INPUT"
+          # latest.json must list every platform, so it needs the macOS build of the same run.
+          if [ "$MACOS" != true ] && [ "$mode" != off ]; then
+            if [ "$mode" = required ]; then echo '::error::Signed updates need the macOS build (macos = true)'; exit 1; fi
+            mode=off
+          fi
+          UPDATER_MODE="$mode" node scripts/release-signing.mjs plan
+      - name: Build matrix
+        id: matrix
+        env:
+          MACOS: ${{ inputs.macos }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFile } from 'node:fs/promises';
+          const include = [
+            { os: 'windows-latest', platform: 'windows-x86_64', bundles: 'nsis' },
+            { os: 'ubuntu-22.04', platform: 'linux-x86_64', bundles: 'deb,appimage' },
+          ];
+          if (process.env.MACOS === 'true') include.push({ os: 'macos-latest', platform: 'darwin-aarch64', bundles: 'app,dmg' });
+          await appendFile(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify({ include })}\n`);
+          JS
+
   build:
+    needs: plan
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            platform: windows-x64
-            bundles: nsis
-          - os: ubuntu-22.04
-            platform: linux-x64
-            bundles: deb,appimage
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         shell: bash
+    env:
+      # Compiled into the binary: installers built here trust only this updater key.
+      PHP_IDE_UPDATER_PUBLIC_KEY: ${{ needs.plan.outputs.updater == 'true' && vars.PHP_IDE_UPDATER_PUBLIC_KEY || '' }}
+      UPDATER_MODE: ${{ needs.plan.outputs.updater == 'true' && 'required' || 'off' }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -48,7 +136,6 @@ jobs:
           fetch-depth: 0
       - name: Verify source and version
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
           PUBLISH: ${{ inputs.publish }}
         run: |
           node -e 'const p = require("./package.json"); if (!/^v\d+\.\d+\.\d+$/.test(process.env.RELEASE_TAG) || process.env.RELEASE_TAG !== "v" + p.version) throw Error("Release tag must match package version");'
@@ -83,10 +170,67 @@ jobs:
       - run: npm run test:locales
       - name: Rust tests on target OS
         run: cargo test --release --locked --manifest-path src-tauri/Cargo.toml
+
+      - name: Write signing configuration
+        id: signing
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ vars.AZURE_TRUSTED_SIGNING_ENDPOINT }}
+          AZURE_TRUSTED_SIGNING_ACCOUNT: ${{ vars.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          AZURE_TRUSTED_SIGNING_PROFILE: ${{ vars.AZURE_TRUSTED_SIGNING_PROFILE }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: node scripts/release-signing.mjs overlay '${{ matrix.platform }}' src-tauri/tauri.release.conf.json
       - name: Build native installers
         env:
           NO_STRIP: 'true'
-        run: npm run tauri -- build --bundles '${{ matrix.bundles }}'
+          MACOS_SIGNING: ${{ steps.signing.outputs.macos }}
+          WINDOWS_SIGNING: ${{ steps.signing.outputs.windows }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          # The Tauri CLI treats a present-but-empty variable as configured, so only the
+          # credentials of the selected signing mode reach it.
+          apple=(APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_API_KEY APPLE_API_ISSUER APPLE_API_PRIVATE_KEY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID)
+          azure=(AZURE_CLIENT_ID AZURE_CLIENT_SECRET AZURE_TENANT_ID)
+          if [ "$MACOS_SIGNING" = ad-hoc ] || [ "$RUNNER_OS" != macOS ]; then unset "${apple[@]}"; fi
+          if [ "$MACOS_SIGNING" = developer-id-api-key ]; then
+            export APPLE_API_KEY_PATH="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY.p8"
+            printf '%s\n' "$APPLE_API_PRIVATE_KEY" > "$APPLE_API_KEY_PATH"
+            unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+          fi
+          unset APPLE_API_PRIVATE_KEY
+          if [ "$WINDOWS_SIGNING" != azure-trusted-signing ]; then unset "${azure[@]}"; fi
+          for name in TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD; do
+            if [ "$UPDATER_MODE" = off ] || [ -z "${!name}" ]; then unset "$name"; fi
+          done
+          rm -rf src-tauri/target/release/bundle
+          npm run tauri -- build --config src-tauri/tauri.release.conf.json --bundles '${{ matrix.bundles }}'
+
       - name: Check Linux package and startup
         if: runner.os == 'Linux'
         run: |
@@ -106,8 +250,6 @@ jobs:
           if ($app.HasExited) { throw "Application exited during startup: $($app.ExitCode)" }
           Stop-Process -Id $app.Id
       - name: Collect installers and checksums
-        env:
-          PLATFORM: ${{ matrix.platform }}
         run: |
           node --input-type=module <<'JS'
           import { readdir, mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
@@ -116,10 +258,10 @@ jobs:
           const out = 'installers';
           await mkdir(out, { recursive: true });
           let count = 0;
-          for (const kind of ['nsis', 'deb', 'appimage']) {
+          for (const kind of ['nsis', 'deb', 'appimage', 'dmg']) {
             const dir = join('src-tauri/target/release/bundle', kind);
             for (const file of await readdir(dir).catch(() => [])) {
-              if (!/\.(exe|deb|AppImage)$/.test(file)) continue;
+              if (!/\.(exe|deb|AppImage|dmg)$/.test(file)) continue;
               const name = basename(file).replaceAll(' ', '.');
               await copyFile(join(dir, file), join(out, name));
               const digest = createHash('sha256').update(await readFile(join(out, name))).digest('hex');
@@ -129,29 +271,61 @@ jobs:
           }
           if (!count) throw Error('No installers produced');
           JS
+      - name: Collect signed updater artifact
+        if: needs.plan.outputs.updater == 'true'
+        run: node scripts/collect-update.mjs '${{ matrix.platform }}' src-tauri/target/release/bundle updates "$RELEASE_TAG"
       - uses: actions/upload-artifact@v4
         with:
           name: installers-${{ matrix.platform }}
           path: installers/*
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: needs.plan.outputs.updater == 'true'
+        with:
+          name: updates-${{ matrix.platform }}
+          path: updates/*
+          if-no-files-found: error
 
   publish:
-    needs: build
+    needs: [plan, build]
     if: inputs.publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
       - uses: actions/download-artifact@v4
         with:
           pattern: installers-*
           path: installers
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        if: needs.plan.outputs.updater == 'true'
+        with:
+          pattern: updates-*
+          path: updates
+          merge-multiple: true
+      - name: Build the updater manifest
+        if: needs.plan.outputs.updater == 'true'
+        run: node scripts/merge-update-manifest.mjs updates "${RELEASE_TAG#v}"
       - name: Attach packages to existing release
         env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          UPDATER: ${{ needs.plan.outputs.updater }}
         run: |
           gh release view "$RELEASE_TAG"
           gh release upload "$RELEASE_TAG" installers/*
+          if [ "$UPDATER" = true ]; then
+            # Same-named AppImage/NSIS files are already uploaded as installers.
+            gh release upload "$RELEASE_TAG" updates/*.sig updates/*.app.tar.gz
+            # The manifest goes last, so clients never see it before its packages exist.
+            gh release upload "$RELEASE_TAG" updates/latest.json
+          fi

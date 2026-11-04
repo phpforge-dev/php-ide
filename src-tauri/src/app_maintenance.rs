@@ -19,6 +19,27 @@ const RELEASES: &str = "https://api.github.com/repos/phpforge-dev/php-ide/releas
 const RELEASE_PAGE: &str = "https://github.com/phpforge-dev/php-ide/releases/latest";
 const UPDATE_ENDPOINT: &str =
     "https://github.com/phpforge-dev/php-ide/releases/latest/download/latest.json";
+/// Build-time loopback endpoint for the local updater acceptance harness only. It is ignored
+/// unless it is plain HTTP on the loopback interface, and the updater plugin additionally refuses
+/// HTTP unless the build overlay sets `dangerousInsecureTransportProtocol`. Release builds never
+/// set it, so they consult only the official HTTPS endpoint.
+const TEST_ENDPOINT: Option<&str> = option_env!("PHP_IDE_UPDATER_TEST_ENDPOINT");
+fn loopback_http(url: &url::Url) -> bool {
+    url.scheme() == "http" && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
+}
+fn update_endpoint(test: Option<&str>) -> Res<url::Url> {
+    if let Some(url) = test
+        .filter(|url| !url.trim().is_empty())
+        .and_then(|url| url.parse::<url::Url>().ok())
+        .filter(loopback_http)
+    {
+        return Ok(url);
+    }
+    UPDATE_ENDPOINT.parse().map_err(err)
+}
+fn trusted_download(url: &url::Url, endpoint: &url::Url) -> bool {
+    url.scheme() == "https" || (loopback_http(endpoint) && loopback_http(url))
+}
 fn signing_key() -> Option<&'static str> {
     option_env!("PHP_IDE_UPDATER_PUBLIC_KEY").filter(|key| !key.trim().is_empty())
 }
@@ -627,10 +648,11 @@ async fn check_ide(
     app: &tauri::AppHandle,
 ) -> Res<(Option<Value>, Option<tauri_plugin_updater::Update>)> {
     if let Some(key) = signing_key().filter(|_| signed_updater_available()) {
+        let endpoint = update_endpoint(TEST_ENDPOINT)?;
         let update = app
             .updater_builder()
             .pubkey(key)
-            .endpoints(vec![UPDATE_ENDPOINT.parse().map_err(err)?])
+            .endpoints(vec![endpoint.clone()])
             .map_err(err)?
             .timeout(Duration::from_secs(20))
             .build()
@@ -639,7 +661,7 @@ async fn check_ide(
             .await
             .map_err(err)?;
         if let Some(update) = update {
-            if update.download_url.scheme() != "https" {
+            if !trusted_download(&update.download_url, &endpoint) {
                 return Err("Update download must use HTTPS".into());
             }
             return Ok((
@@ -873,6 +895,28 @@ mod tests {
         assert!(config.require_signed_version);
         assert!(!config.allow_downgrades);
         assert!(!config.dangerous_insecure_transport_protocol);
+    }
+    #[test]
+    fn only_a_loopback_http_endpoint_can_replace_the_official_update_channel() {
+        let official = update_endpoint(None).unwrap();
+        assert_eq!(official.as_str(), UPDATE_ENDPOINT);
+        for rejected in [
+            "",
+            "http://example.com/latest.json",
+            "https://127.0.0.1/latest.json",
+            "file:///tmp/latest.json",
+            "not a url",
+        ] {
+            assert_eq!(update_endpoint(Some(rejected)).unwrap(), official);
+        }
+        let local = update_endpoint(Some("http://127.0.0.1:8123/latest.json")).unwrap();
+        assert_eq!(local.as_str(), "http://127.0.0.1:8123/latest.json");
+        let remote_http: url::Url = "http://example.com/app.tar.gz".parse().unwrap();
+        let local_http: url::Url = "http://127.0.0.1:8123/app.tar.gz".parse().unwrap();
+        assert!(trusted_download(&"https://github.com/a".parse().unwrap(), &official));
+        assert!(!trusted_download(&local_http, &official));
+        assert!(!trusted_download(&remote_http, &local));
+        assert!(trusted_download(&local_http, &local));
     }
     #[test]
     fn failed_preference_write_does_not_change_the_live_automation_policy() {

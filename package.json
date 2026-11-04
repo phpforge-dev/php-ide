@@ -37,7 +37,8 @@
     "test:plugins:ui": "node scripts/check-default-plugins.mjs",
     "test:images": "node scripts/check-image-preview.mjs",
     "test:plugins:native": "npm run test:native -- --no-db --plugins-only",
-    "test:maintenance:ui": "node scripts/check-app-maintenance.mjs"
+    "test:maintenance:ui": "node scripts/check-app-maintenance.mjs",
+    "test:updater:local": "node scripts/check-updater-local.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

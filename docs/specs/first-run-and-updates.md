@@ -40,22 +40,25 @@ IDE downloads use `tauri-plugin-updater` through restricted host commands; no up
 
 The implementation follows the [official Tauri updater documentation](https://v2.tauri.app/plugin/updater/). The public key is compiled from `PHP_IDE_UPDATER_PUBLIC_KEY`. The distribution overlay `src-tauri/tauri.updater.conf.json` creates updater signatures/artifacts; the normal developer build does not require a private key.
 
-The **Signed IDE updates** workflow builds from an existing version-matching tag for macOS ARM64, Windows x64/NSIS and Linux x64/AppImage. It publishes `latest.json` only after all three targets have built and tested successfully. Artifact signatures must exist; partial/mismatched platform manifests are rejected. Release assets are immutable rather than silently overwritten.
+Distribution runs through one build workflow, `desktop-builds.yml` (**Desktop installers**), reused by `signed-updates.yml` (**Signed IDE updates**). A first `plan` job runs `scripts/release-signing.mjs`, which only looks at which secrets/variables exist: each group (updater key, Apple Developer ID + notarization, Windows Azure Trusted Signing or `.pfx`) is enabled only when complete, a partial group stops the run before any build, and the job summary records the chosen modes. Without secrets the output is unchanged from before: ad hoc macOS signature, unsigned NSIS, no `latest.json`.
 
-Before publishing an operational signed channel, configure:
+**Signed IDE updates** requires the updater key and builds macOS ARM64 (app + DMG), Windows x64/NSIS and Linux x64 (deb + AppImage) from an existing version-matching tag. Every installer of that run is compiled with `PHP_IDE_UPDATER_PUBLIC_KEY`, so the installed IDE trusts the key. `latest.json` is merged only after all three platforms built, tested and produced a Tauri `.sig`; it is uploaded last, after the archives and signatures. Partial or mismatched manifests are rejected and release assets are not overwritten. **Desktop installers** keeps the previous manual flow (Windows + Linux, macOS DMG opt-in) and emits the manifest only when the key exists and macOS is part of the run.
 
-1. A Tauri updater key pair kept by the release owner.
-2. Repository variable `PHP_IDE_UPDATER_PUBLIC_KEY` with the public key.
-3. Repository secrets `TAURI_SIGNING_PRIVATE_KEY` and, if used, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
-4. A tagged release built with the signed-update workflow. Existing unconfigured installers cannot bootstrap signature trust automatically.
+What the release owner must create — the updater key pair, Apple and Windows certificates and the exact secret/variable names — is in [release-signing.md](release-signing.md). Existing installers built without a public key cannot bootstrap trust: their users install the first signed release manually once.
 
-Private keys are only injected into the signing build step. This implementation does not generate a release identity, change repository secrets or publish an installer implicitly. Signing configuration was absent in the connected repository when this work began. OS signing/notarization and the real install/restart experience require separate distribution validation.
+Private keys are only injected into the signing build step, and empty secrets are unset before the Tauri CLI runs. This implementation does not generate a release identity, change repository secrets or publish an installer implicitly.
+
+### Local update acceptance (test endpoint)
+
+`npm run test:updater:local` (macOS) validates the real flow without the release identity or repository. It generates a throwaway updater key in a temp folder and makes two release builds with a separate bundle identifier (`dev.php-ide.updater-test`, so the developer's profile and installed IDE are untouched): the "installed" current version and a newer `0.2.99` signed by the Tauri CLI. A loopback HTTP server serves `latest.json` and the archive. The loopback endpoint is compiled in through `PHP_IDE_UPDATER_TEST_ENDPOINT`; the host accepts only `http://127.0.0.1|localhost|[::1]` there and otherwise uses the official HTTPS endpoint, and the updater plugin still refuses HTTP unless the test overlay sets `dangerousInsecureTransportProtocol`. Release builds set neither.
+
+With **Download IDE updates automatically** on, the installed app checks at launch, downloads the package and applies it when its window closes normally. The harness first serves a valid signature of other content (correct key, wrong file): the download is rejected and the app stays at the current version. It then serves the real signature: the app is replaced by `0.2.99` and `codesign --verify` passes. Evidence is written to `.artifacts/updater-local.json`. Windows (NSIS) and Linux (AppImage) installation, Developer ID/notarization and Authenticode are not covered locally; they need the first real signed release.
 
 ## Validation boundaries
 
 Rust tests cover fresh profiles, migration, persistence, interrupted jobs, permission growth, user permission decisions, source/version eligibility, invalid preferences and automation defaults. Headless WebKit drives the actual UI with a synthetic service: search and selection, background progress/failure/retry, continue without waiting, one-time setup, default notification-only behavior, explicit permission review, staged updates, unsaved-work protection and preference persistence.
 
-Release tooling tests require a signed artifact for every platform and reject incomplete or version-mismatched manifests. Synthetic signature strings in those tooling tests are not cryptographic evidence. Signature verification and actual installer execution must be validated with a configured signed release; no test replaces or restarts the developer's current IDE.
+Release tooling tests require a signed artifact for every platform and reject incomplete or version-mismatched manifests. Synthetic signature strings in those tooling tests are not cryptographic evidence. Cryptographic verification and installation are covered on macOS by the local acceptance above with a throwaway key; Windows/Linux installation still needs a configured signed release. No test replaces or restarts the developer's current IDE.
 
 Real Tauri fixture acceptance must run with an unlocked macOS session. Headless WebKit, compiled Rust tests and native-window validation remain distinct evidence layers.
 
@@ -69,3 +72,10 @@ Real Tauri fixture acceptance must run with an unlocked macOS session. Headless 
 - `npm run test:native -- --no-db --extraction-only`: production frontend and Rust application compiled; the runner stopped before window launch because the macOS session remained locked.
 
 Structured evidence is `.artifacts/app-maintenance-validation.json`; UI evidence is `.artifacts/app-maintenance-ui.json`, `.artifacts/first-run-plugins.png` and `.artifacts/app-maintenance.png`. No native-window, signed-distribution, Windows installer or notarized macOS update acceptance is inferred from the headless tests. Close/update orchestration has separate tests for concurrent close requests, unsaved buffers before and during installation, and installation failure decisions.
+
+## Local evidence — 4 November 2026 (signed distribution)
+
+- `npm run test:updater:local` passed twice on macOS ARM64 (`.artifacts/updater-local.json`): throwaway key, installed 0.2.19 build, signed 0.2.99 package on a loopback endpoint. A valid signature of other content was downloaded in full and rejected (app stayed 0.2.19); the real signature was verified and installed when the window closed (app became 0.2.99, `codesign --verify` passed). Nothing was published and no repository setting was used.
+- One earlier run got no request in 120 s and was not reproduced; the harness now waits up to 5 minutes and saves a screenshot on timeout. Launching the app through `/var/folders/...` (the `/var` → `/private/var` symlink) panics at setup with "unknown path"; the harness uses the real path. That startup issue is outside this change.
+- `actionlint` 1.7.12 passed for every workflow. `tests/release-signing.test.mjs` covers the no-secret behaviour (ad hoc macOS, unsigned NSIS, no manifest), partial groups, required updater and the per-platform overlays. `npm run check` passed (202 unit tests, 42 Rust tests, Clippy).
+- Not run: the GitHub workflows themselves, Developer ID/notarization, Authenticode/Azure signing and Windows/Linux in-app installation. They need the release owner's identities ([release-signing.md](release-signing.md)).
