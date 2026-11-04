@@ -75,8 +75,23 @@ function normalizeKey(raw: string): string | undefined {
  return named;
 }
 
-/** Converte "cmd+shift+o", "⌘⇧O" ou "Ctrl+Alt+Left" na forma canônica "Alt+Shift+Meta+O". */
+/** Separa um atalho de duas teclas ("⌘K, ⌘C", "Meta+K Meta+C"); a vírgula logo após "+" é a tecla vírgula. */
+export function chordParts(input: string): string[] {
+ return input.trim().split(/(?<=[^+\s])\s*,\s*(?=\S)|(?<=[^+\s,])\s+(?=[^+\s])/).filter(Boolean);
+}
+/** Converte "cmd+shift+o", "⌘⇧O" ou "Ctrl+Alt+Left" na forma canônica "Alt+Shift+Meta+O". Atalhos de duas
+ *  teclas (chords) ficam "Meta+K Meta+C"; o Shift duplo não participa de chords. */
 export function normalizeStroke(input: string): string | undefined {
+ const text = input.trim();
+ if (!text) return undefined;
+ if (text.toLowerCase().replace(/[\s+]/g, '') !== 'doubleshift' && !/^shift\s+shift$/i.test(text)) {
+  const parts = chordParts(text);
+  if (parts.length === 2) { const [first, second] = parts.map(singleStroke); return first && second && first !== DOUBLE_SHIFT && second !== DOUBLE_SHIFT ? first + ' ' + second : undefined; }
+  if (parts.length > 2) return undefined;
+ }
+ return singleStroke(text);
+}
+function singleStroke(input: string): string | undefined {
  const text = input.trim();
  if (!text) return undefined;
  if (text.toLowerCase().replace(/[\s+]/g, '') === 'doubleshift' || text === '⇧⇧' || /^shift\s+shift$/i.test(text)) return DOUBLE_SHIFT;
@@ -114,6 +129,7 @@ export function strokeFromEvent(event: KeyLike): string | undefined {
 }
 
 export function formatStroke(stroke: string, platform: Platform): string {
+ if (stroke.includes(' ')) return stroke.split(' ').map(part => formatStroke(part, platform)).join(', ');
  if (stroke === DOUBLE_SHIFT) return platform === 'mac' ? '⇧⇧' : 'Shift Shift';
  const parts = stroke.split(/\+(?!$)/);
  if (platform === 'mac') return parts.map(part => MAC_GLYPHS[part] ?? part).join('');
@@ -207,7 +223,7 @@ export class Keymap {
  /** Valor para aria-keyshortcuts (sintaxe WAI-ARIA: Control+Alt+Shift+Meta+Key). */
  ariaShortcuts(id: string): string {
   const aria: Record<string, string> = { Ctrl: 'Control', Left: 'ArrowLeft', Right: 'ArrowRight', Up: 'ArrowUp', Down: 'ArrowDown', Space: 'Space' };
-  return this.bindings(id).filter(stroke => stroke !== DOUBLE_SHIFT).map(stroke => stroke.split(/\+(?!$)/).map(part => aria[part] ?? part).join('+')).join(' ');
+  return this.bindings(id).filter(stroke => stroke !== DOUBLE_SHIFT && !stroke.includes(' ')).map(stroke => stroke.split(/\+(?!$)/).map(part => aria[part] ?? part).join('+')).join(' ');
  }
  isReserved(stroke: string): boolean { const normalized = normalizeStroke(stroke); return !!normalized && RESERVED[this.platform].includes(normalized); }
 
@@ -217,7 +233,9 @@ export class Keymap {
  conflictingActions(stroke: string, id: string): string[] {
   const normalized = normalizeStroke(stroke); const spec = this.specs.get(id);
   if (!normalized) return [];
-  return this.actions().filter(other => other.id !== id && (!spec || this.overlaps(spec, other)) && this.bindings(other.id).includes(normalized)).map(other => other.id);
+  // Um chord conflita também com o atalho simples igual à sua primeira tecla (um encobre o outro).
+  const clash = (other: string) => other === normalized || other.startsWith(normalized + ' ') || normalized.startsWith(other + ' ');
+  return this.actions().filter(other => other.id !== id && (!spec || this.overlaps(spec, other)) && this.bindings(other.id).some(clash)).map(other => other.id);
  }
  conflicts(): Conflict[] {
   const byStroke = new Map<string, Set<string>>();
@@ -231,8 +249,17 @@ export class Keymap {
  // --- despacho ----------------------------------------------------------------------------
  /** Ação que o atalho executaria no elemento focado: contexto específico vence 'global'; empate = primeira registrada. */
  resolve(stroke: string, target: Element | null): ActionSpec | undefined {
+  return this.resolveAll(stroke, target)[0];
+ }
+ /** Todas as ações disponíveis para o atalho no nível de contexto que vence (específico antes de 'global'). */
+ resolveAll(stroke: string, target: Element | null): ActionSpec[] {
   const candidates = this.actions().filter(spec => this.bindings(spec.id).includes(stroke) && (this.contexts.get(spec.context ?? 'global')?.(target) ?? false) && (spec.enabled?.() ?? true));
-  return candidates.find(spec => (spec.context ?? 'global') !== 'global') ?? candidates[0];
+  const specific = candidates.filter(spec => (spec.context ?? 'global') !== 'global');
+  return specific.length ? specific : candidates;
+ }
+ /** Há chord disponível que começa com este atalho? */
+ private startsChord(stroke: string, target: Element | null) {
+  return this.actions().some(spec => this.bindings(spec.id).some(binding => binding.startsWith(stroke + ' ')) && (this.contexts.get(spec.context ?? 'global')?.(target) ?? false) && (spec.enabled?.() ?? true));
  }
  /** A ação pode rodar agora a partir deste elemento (contexto e enabled)? Usado por listas de ações. */
  available(id: string, target: Element | null): boolean {
@@ -250,10 +277,31 @@ export class Keymap {
  /** Executa a ação do evento; true quando consumiu (o chamador deve impedir o padrão). */
  dispatch(event: KeyLike, target: Element | null): boolean {
   if (event.isComposing) return false;
-  const stroke = strokeFromEvent(event); if (!stroke || !allowedIn(stroke, target)) return false;
-  const spec = this.resolve(stroke, target); if (!spec) return false;
-  return this.run(spec.id, { event, target });
+  const stroke = strokeFromEvent(event); if (!stroke) return false;
+  if (this.pending) {
+   const first = this.pending; this.pending = undefined; this.onPending(undefined);
+   const chord = first + ' ' + stroke;
+   if (this.runFor(chord, event, target)) return true;
+   if (stroke === 'Escape') return true;
+   // Segunda tecla sem chord: a primeira vale sozinha (se tiver ação) e esta segue o fluxo normal.
+   this.runFor(first, event, target);
+  }
+  if (!allowedIn(stroke, target)) return false;
+  if (this.startsChord(stroke, target)) { this.pending = stroke; this.onPending(stroke); return true; }
+  return this.runFor(stroke, event, target);
  }
+ /** Executa a ação do atalho; com várias empatadas, pergunta qual (seletor de conflito, como no PhpStorm). */
+ private runFor(stroke: string, event: KeyLike | undefined, target: Element | null): boolean {
+  const specs = this.resolveAll(stroke, target); if (!specs.length) return false;
+  if (specs.length > 1 && this.chooser) { this.chooser(specs, stroke, id => this.run(id, { event, target })); return true; }
+  return this.run(specs[0].id, { event, target });
+ }
+ /** Atalho de duas teclas esperando a segunda (para a barra de status). */
+ pending: string | undefined;
+ onPending: (stroke: string | undefined) => void = () => {};
+ /** Interface que escolhe entre ações com o mesmo atalho; ausente, vence a primeira registrada. */
+ chooser: ((actions: ActionSpec[], stroke: string, run: (id: string) => void) => void) | undefined;
+ cancelPending() { if (this.pending) { this.pending = undefined; this.onPending(undefined); } }
 
  /** Instala o despacho único em captura, antes do Monaco/xterm. */
  install(root: Document = document): () => void {
@@ -263,8 +311,52 @@ export class Keymap {
    if (target?.closest('[data-keymap-capture]') || root.querySelector('dialog[open]:modal')) return;
    if (this.dispatch(event, target)) { event.preventDefault(); event.stopImmediatePropagation(); }
   };
-  root.addEventListener('keydown', listener, true);
-  return () => root.removeEventListener('keydown', listener, true);
+  const cancel = () => this.cancelPending();
+  root.addEventListener('keydown', listener, true); root.addEventListener('mousedown', cancel, true); root.defaultView?.addEventListener('blur', cancel);
+  return () => { root.removeEventListener('keydown', listener, true); root.removeEventListener('mousedown', cancel, true); root.defaultView?.removeEventListener('blur', cancel); };
+ }
+
+ // --- importar/exportar ------------------------------------------------------------------
+ /** Personalizações do perfil atual como JSON próprio (formato php-ide-keymap, versão 1). */
+ exportProfile(): string {
+  const profile = this.profile;
+  return JSON.stringify({ format: EXPORT_FORMAT, version: 1, profile, platform: this.profilePlatform(profile), overrides: this.saved.overrides[profile] ?? {} }, null, 2);
+ }
+ /**
+  * Aplica ao perfil atual um export nosso (JSON) ou um keymap do PhpStorm/IntelliJ (XML de
+  * `keymaps/*.xml`, formato público): ações conhecidas são mapeadas, as demais voltam em `skipped`.
+  * O JSON substitui as personalizações do perfil; o XML acrescenta por cima delas.
+  */
+ importProfile(text: string): ImportReport {
+  const report: ImportReport = { format: 'json', applied: [], skipped: [], invalid: [] };
+  const source = text.trim();
+  if (source.startsWith('<')) {
+   report.format = 'xml';
+   const entries = parseJetBrainsKeymap(source);
+   if (!entries) throw new Error('Keymap XML inválido.');
+   const overrides = this.saved.overrides[this.profile] ??= {};
+   for (const [action, strokes] of entries) {
+    const id = JETBRAINS_ACTIONS[action];
+    if (!id) { report.skipped.push(action); continue; }
+    const valid = strokes.map(normalizeStroke).filter((stroke): stroke is string => !!stroke);
+    if (valid.length < strokes.length) report.invalid.push(action);
+    overrides[id] = unique(valid); report.applied.push(id);
+   }
+  } else {
+   let data: { format?: unknown; version?: unknown; overrides?: unknown };
+   try { data = JSON.parse(source); } catch { throw new Error('Arquivo de atalhos inválido: não é JSON nem XML.'); }
+   if (data.format !== EXPORT_FORMAT || data.version !== 1 || !data.overrides || typeof data.overrides !== 'object') throw new Error('Arquivo de atalhos de outro formato ou versão.');
+   const overrides: Record<string, string[]> = {};
+   for (const [id, value] of Object.entries(data.overrides as Record<string, unknown>)) {
+    if (!/^[\w.-]+$/.test(id) || !Array.isArray(value)) { report.invalid.push(id); continue; }
+    const strokes = value.filter((item): item is string => typeof item === 'string').map(normalizeStroke).filter((stroke): stroke is string => !!stroke);
+    if (strokes.length < value.length) report.invalid.push(id);
+    overrides[id] = unique(strokes); (this.specs.has(id) ? report.applied : report.skipped).push(id);
+   }
+   this.saved.overrides[this.profile] = overrides;
+  }
+  this.save(); this.emit();
+  return report;
  }
 
  // --- persistência ---------------------------------------------------------------------
@@ -284,6 +376,48 @@ export class Keymap {
  private save() {
   try { this.storage?.setItem(STORAGE_KEY, JSON.stringify(this.saved)); } catch (error) { this.lastError = 'Não foi possível salvar os atalhos.'; console.warn(error); }
  }
+}
+
+export const EXPORT_FORMAT = 'php-ide-keymap';
+export type ImportReport = { format: 'json' | 'xml'; applied: string[]; skipped: string[]; invalid: string[] };
+/** Ids públicos de ações do IntelliJ/PhpStorm (keymaps open source) → ações desta IDE. */
+export const JETBRAINS_ACTIONS: Record<string, string> = {
+ ActivateProjectToolWindow: 'tool.project', ActivateProblemsViewToolWindow: 'tool.problems', ActivateVersionControlToolWindow: 'tool.git',
+ ActivateCommitToolWindow: 'tool.commit', ActivateServicesToolWindow: 'tool.docker', ActivateTerminalToolWindow: 'tool.terminal', ActivateDatabaseToolWindow: 'tool.database',
+ GotoDeclaration: 'nav.declaration', GotoImplementation: 'nav.implementations', FindUsages: 'nav.usages', Back: 'nav.back', Forward: 'nav.forward',
+ ShowSettings: 'ide.settings', SearchEverywhere: 'search.everywhere', GotoAction: 'search.actions', GotoFile: 'search.files', GotoClass: 'search.classes',
+ GotoSymbol: 'search.symbols', FindInPath: 'search.text', SaveAll: 'file.save', ReformatCode: 'code.reformat',
+ CloseContent: 'editor.closeTab', CloseAllEditors: 'editor.closeAllTabs', CloseAllEditorsButActive: 'editor.closeOtherTabs', CloseAllUnpinnedEditors: 'editor.closeUnpinnedTabs',
+ CloseAllToTheLeft: 'editor.closeTabsLeft', CloseAllToTheRight: 'editor.closeTabsRight', PinActiveEditorTab: 'editor.pinTab', PinActiveTabToggle: 'editor.pinTab',
+ CopyReference: 'editor.copyReference', EditorToggleColumnMode: 'editor.columnSelection', ShowPopupMenu: 'editor.contextMenu', 'Git.Branches': 'git.branches',
+};
+const JAVA_KEYS: Record<string, string> = {
+ BACK_SPACE: 'Backspace', PAGE_UP: 'PageUp', PAGE_DOWN: 'PageDown', OPEN_BRACKET: '[', CLOSE_BRACKET: ']', BACK_SLASH: '\\', SEMICOLON: ';', QUOTE: "'",
+ BACK_QUOTE: '`', MINUS: '-', EQUALS: '=', COMMA: ',', PERIOD: '.', SLASH: '/', CONTEXT_MENU: 'ContextMenu', ESCAPE: 'Escape', ENTER: 'Enter', SPACE: 'Space',
+};
+/** "meta shift O" (javax.swing.KeyStroke) → "Shift+Meta+O". */
+export function jetbrainsStroke(text: string): string | undefined {
+ const words = text.trim().split(/\s+/); const key = words.pop(); if (!key) return undefined;
+ const mods = words.map(word => ({ meta: 'Meta', ctrl: 'Ctrl', control: 'Ctrl', alt: 'Alt', shift: 'Shift' } as Record<string, string>)[word.toLowerCase()]);
+ if (mods.some(mod => !mod)) return undefined;
+ return singleStroke([...mods, JAVA_KEYS[key] ?? key].join('+'));
+}
+function parseJetBrainsKeymap(xml: string): [string, string[]][] | undefined {
+ if (!/<keymap\b/.test(xml)) return undefined;
+ const decode = (value: string) => value.replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" } as Record<string, string>)[e]);
+ const attr = (tag: string, name: string) => { const m = new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`).exec(tag); return m ? decode(m[1]) : undefined; };
+ const out: [string, string[]][] = [];
+ for (const match of xml.matchAll(/<action\b([^>]*?)(?:\/>|>([\s\S]*?)<\/action>)/g)) {
+  const id = attr(match[1], 'id'); if (!id) continue;
+  const strokes: string[] = [];
+  for (const shortcut of (match[2] ?? '').matchAll(/<keyboard-shortcut\b[^>]*>/g)) {
+   const first = attr(shortcut[0], 'first-keystroke'); const second = attr(shortcut[0], 'second-keystroke');
+   const a = first ? jetbrainsStroke(first) : undefined; const b = second ? jetbrainsStroke(second) : undefined;
+   strokes.push(a && (!second || b) ? (b ? a + ' ' + b : a) : '#invalid');
+  }
+  out.push([id, strokes]);
+ }
+ return out;
 }
 
 /**

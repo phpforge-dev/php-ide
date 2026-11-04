@@ -42,3 +42,22 @@
 #appearance-dialog .keymap-open{margin-top:16px;border:0;background:transparent;color:var(--ij-link);padding:4px 0;font-size:var(--ij-font-size-small);height:auto}
 .tool-context-menu kbd,.menu-shortcut{margin-left:auto;padding-left:18px;color:var(--ij-text-secondary);font:11px var(--ij-font-ui);background:transparent;border:0}
 .tool-context-menu button:has(>kbd){display:flex;align-items:center}
+/* UI-KEYMAP-001 additions: gear menu, second stroke (capture 58), import/export, conflict chooser. */
+#keymap-gear{width:28px;padding:0!important;display:inline-flex;align-items:center;justify-content:center}
+#keymap-gear::before{content:'';width:16px;height:16px;background:var(--ij-text-secondary);-webkit-mask:url("./assets/jetbrains-icons/general/settings_dark.svg") center/16px no-repeat;mask:url("./assets/jetbrains-icons/general/settings_dark.svg") center/16px no-repeat}
+.keymap-second{display:inline-flex;align-items:center;gap:4px;font-size:var(--ij-font-size-small);color:var(--ij-text);margin:0}
+.keymap-second input{width:auto;margin:0;accent-color:var(--ij-focus)}
+.keymap-recorder[aria-disabled=true]{opacity:.45;border-color:var(--ij-control-border)}
+.keymap-exchange{width:min(560px,86vw);padding:16px;border-radius:var(--ij-popup-radius)}
+.keymap-exchange h3{margin:0 0 6px;font-size:13px;font-weight:600}
+.keymap-exchange p{margin:0 0 8px;font-size:var(--ij-font-size-small);color:var(--ij-text-secondary)}
+.keymap-exchange textarea{box-sizing:border-box;width:100%;font:11px/1.45 var(--ij-font-mono);padding:8px;resize:vertical}
+.keymap-exchange-result{min-height:14px;margin-top:6px!important;color:var(--ij-text)!important}
+.keymap-exchange-actions{display:flex;justify-content:flex-end;gap:8px}
+#keymap-dialog .keymap-exchange-actions button{border:1px solid var(--ij-control-border)}
+.keymap-chooser{position:fixed;z-index:2100;min-width:220px;max-width:420px;padding:4px;background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);color:var(--ij-text);font-size:var(--ij-font-size)}
+.keymap-chooser-title{padding:4px 8px 6px;color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
+.keymap-chooser [role=option]{display:flex;align-items:center;gap:12px;height:24px;padding:0 8px;border-radius:var(--ij-tab-radius,4px);outline:none;cursor:pointer}
+.keymap-chooser [role=option] small{margin-left:auto;color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
+.keymap-chooser [role=option][aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
+.keymap-chooser [role=option][aria-selected=true] small{color:inherit;opacity:.8}

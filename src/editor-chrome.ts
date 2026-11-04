@@ -122,7 +122,7 @@ export function mountEditorChrome(editor: monaco.editor.IStandaloneCodeEditor) {
    widget.append(summary); return;
   }
   const labels = counts.map(s => tr(s.count === 1 ? s.one : s.many, s.count));
-  widget.setAttribute('aria-label', labels.join(', ')); summary.title = labels.join(', ') + ' · ' + tr('Próximo problema') + ' (F2)';
+  widget.setAttribute('aria-label', labels.join(', ')); summary.title = labels.join(', ') + ' · ' + tr('Abrir Problemas');
   for (const s of counts) {
    const item = document.createElement('span'); item.className = 'inspection-count inspection-' + s.kind;
    item.innerHTML = s.kind === 'error'
@@ -130,7 +130,8 @@ export function mountEditorChrome(editor: monaco.editor.IStandaloneCodeEditor) {
     : '<svg viewBox="0 0 16 16"><path d="M8 1.8l6.6 11.7H1.4z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="M8 6v3.6M8 11.6v.2" stroke="var(--ij-island)" stroke-width="1.5" stroke-linecap="round"/></svg>';
    item.append(String(s.count)); summary.append(item);
   }
-  summary.onclick = () => go(1);
+  // Observed (capture 50): clicking the counts opens the Problems tool window on the current file.
+  summary.onclick = () => window.dispatchEvent(new CustomEvent('ide-show-problems', { detail: { tab: 'file' } }));
   const arrow = (action: 'previous' | 'next', label: string, path: string) => { const button = document.createElement('button'); button.type = 'button';
    button.className = 'inspection-arrow'; button.dataset.action = action; button.title = label; button.setAttribute('aria-label', label);
    button.innerHTML = `<svg viewBox="0 0 16 16"><path d="${path}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

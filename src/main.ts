@@ -10,7 +10,7 @@ import { registerDotenvLanguage } from './dotenv-language';
 import { isEnvPath } from '../shared/env-document';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
-import { showTabMenu } from './tab-menu';
+import { showTabMenu, configureTabs } from './tab-menu';
 
 import { mountRecentProjects } from './recent-projects';
 const isPhpDeclaration=(text:string,offset:number)=>pluginService('phpIntelligence')?.isPhpDeclaration(text,offset)??false;
@@ -21,6 +21,9 @@ import { mountSearchEverywhere } from './search-everywhere';
 
 import { editorColors, editorFont, editorRules } from './editor-theme';
 import { mountEditorChrome } from './editor-chrome';
+import { mountCodeBreadcrumbs } from './code-breadcrumbs';
+import { mountProblems } from './problems';
+import { mountEditorMenu } from './editor-menu';
 
 import { mountProjectActions } from './project-actions';
 
@@ -118,6 +121,12 @@ window.addEventListener('ide-autosave-changed', () => {
 const dirty = (b: Buffer) => !b.virtual && b.model.getValue() !== b.saved;
 let active: string | undefined;
 const gitPanel = optionalPluginService('git',p=>p.mount(api, () => [...buffers.values()].some(dirty), async () => { editor.setModel(null); buffers.forEach(b => b.model.dispose()); buffers.clear(); active = undefined; opened.clear(); views.clear(); backStack.length=0;forwardStack.length=0;navigationButtons(); tabs(); await tree(); }));
+// UI-BREADCRUMBS-001: code path at the bottom of the editor and in the status-bar navigation bar.
+let projectName = '';
+const codeBreadcrumbs: { refresh(): void } | undefined = mountCodeBreadcrumbs(editor, {
+ path: () => active, isFile: path => !buffers.get(path)?.virtual, project: () => projectName || $('project').textContent || '',
+ tree: path => api.tree(path), open: path => open(path), status,
+});
 type Place = { path: string; line: number; column: number };
 const backStack: Place[] = []; const forwardStack: Place[] = [];
 const views = new Map<string, monaco.editor.ICodeEditorViewState>();
@@ -136,8 +145,8 @@ function tabs() {
  $<HTMLButtonElement>('definition').disabled = !navigable.includes(language);
  $<HTMLButtonElement>('references').disabled=!(phpLike.includes(language)||webLanguage(language));
  $<HTMLButtonElement>('implementations').disabled=!(phpLike.includes(language)||language==='vue');
- $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
- $('tabs').replaceChildren(...[...opened].filter(path => buffers.has(path)).map(path => {
+ if (codeBreadcrumbs) codeBreadcrumbs.refresh(); else $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
+ $('tabs').replaceChildren(...tabOrder().map(path => {
   const b = buffers.get(path)!; const tab = document.createElement('div'); tab.className = 'file-tab';
   const text = b.model.getValue(); const icon = fileIcon(path,false,text);
   const button = document.createElement('button');
@@ -146,24 +155,31 @@ function tabs() {
   const entry = treeButtons.get(path);
   if(entry?.firstElementChild?.getAttribute('data-icon')!==icon.dataset.icon)entry?.firstElementChild?.replaceWith(icon.cloneNode(true));
   const close = document.createElement('button'); close.textContent = '×'; close.className = 'close-tab'; close.setAttribute('aria-label', tr('Fechar ') + path); close.onclick = () => closeFile(path);
+  // Pinned tabs come first and show a pin in place of ×; clicking it unpins (UI-CONTEXT-001, Pin Tab).
+  if (pinned.has(path)) { tab.classList.add('pinned'); const pin = document.createElement('button'); pin.className = 'pin-tab'; pin.setAttribute('aria-label', tr('Desafixar aba') + ' ' + path); pin.title = tr('Desafixar aba'); pin.onclick = () => { pinned.delete(path); tabs(); }; close.hidden = true; tab.append(pin); }
   // Prevent WebView autoscroll; close only on release, through the same dirty-buffer guard.
   tab.onmousedown = event => { if (event.button === 1) event.preventDefault(); };
   tab.onauxclick = event => { if (event.button === 1) { event.preventDefault(); closeFile(path); } };
   tab.oncontextmenu = event => {
    event.preventDefault();
    const rect = tab.getBoundingClientRect();
-   showTabMenu(tab, event.clientX || rect.left, event.clientY || rect.bottom, scope => {
-    const targets = scope === 'this' ? [path] : [...opened].filter(item => scope === 'all' || item !== path);
-    for (const target of targets) closeFile(target);
-   });
+   showTabMenu(tab, path, event.clientX || rect.left, event.clientY || rect.bottom);
   };
-  tab.append(button, close); return tab;
+  tab.prepend(button, close); return tab;
  }));
 }
+const pinned = new Set<string>();
+const tabOrder = () => { const paths = [...opened].filter(path => buffers.has(path)); return [...paths.filter(p => pinned.has(p)), ...paths.filter(p => !pinned.has(p))]; };
+configureTabs({
+ order: tabOrder, active: () => active, isPinned: path => pinned.has(path),
+ setPinned: (path, value) => { if (value) pinned.add(path); else pinned.delete(path); tabs(); },
+ close: paths => { for (const path of paths) closeFile(path); },
+ fileItems: path => { const b = buffers.get(path); if (!b || b.virtual) return undefined; const items = projectActions.fileItems(path); return { copyPath: items['copy-path'], openIn: items['open-in'], history: items['local-history'], rename: () => projectActions.rename(path) }; },
+});
 function closeFile(path: string) {
  const b = buffers.get(path); if (!b) return;
  if (dirty(b)) { status(tr('Salve as alterações antes de fechar esta aba.')); return; }
- opened.delete(path);
+ opened.delete(path); pinned.delete(path);
  if (active === path) { const next = [...opened].at(-1); if (next) activate(next); else { editor.setModel(null); active = undefined; } }
  if(!webProject.retain(b.model))b.model.dispose(); buffers.delete(path); views.delete(path); tabs();
 }
@@ -392,7 +408,7 @@ keymap.registerAction({id:'file.save',label:'Salvar arquivo',category:'Arquivo',
 $('references').onclick=()=>run(()=>usages.show());
 // ⌘B em PHP: Declaration or Usages (declaração leva aos usos; uso único navega direto).
 for(const [id,action] of [['definition','editor.action.revealDefinition'],['implementations','editor.action.goToImplementation']]) $(id).onclick=()=>run(async()=>{editor.focus();const model=editor.getModel(),position=editor.getPosition();if(id==='definition'&&model&&position&&phpLike.includes(model.getLanguageId())){await navigateDefinition(position);return;}if(id==='implementations'&&model&&position&&model.getLanguageId()==='php'&&await phpImplementations(model,position))return;editor.trigger('navigation-toolbar',action,{});});
-async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=info.name;await tree();showPlugins();return true;} return false; }
+async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=projectName=info.name;await tree();showPlugins();return true;} return false; }
 /** Opens Plugins on the plugin behind a feature: its card when installed (state + fix), the Marketplace otherwise. */
 const showPluginFor=(id:string)=>window.dispatchEvent(new CustomEvent('ide-show-plugins',{detail:{id}}));
 $('show-agent').onclick=()=>{if(!pluginService('agents')){status('Ative o plugin Agents em Plugins.');showPluginFor('phpforge.agents');return;}$('agent').hidden=false;$('db').hidden=true;};
@@ -404,6 +420,12 @@ const agentPanel = optionalPluginService('agents',p=>p.mount(api,$('agent'),{
 }));
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
 mountWorkbench(api);
+// UI-PROBLEMS-001: Problems tool window (current file and project errors), opened by the inspection widget too.
+mountProblems(editor, {
+ pathOf: uri => [...buffers].find(([, b]) => !b.virtual && b.model.uri.toString() === uri.toString())?.[0],
+ open: async (path, line, column) => { const previous = place(); await open(path, false); const target = { lineNumber: line, column }; editor.setPosition(target); editor.revealPositionInCenterIfOutsideViewport(target); remember(previous); },
+ status,
+});
 await mountPluginManager(api).ready;
 const toolPlugins=mountToolPlugins(api,{path:()=>active,editor,status,changed:()=>{window.dispatchEvent(new Event('ide-plugin-languages-refresh'))},open:async(path,line)=>{const previous=place();await open(path,false);if(line!==undefined){editor.setPosition({lineNumber:line+1,column:1});editor.revealLineInCenter(line+1);}editor.focus();remember(previous);}});
 await toolPlugins.ready();
@@ -441,6 +463,12 @@ const projectActions = mountProjectActions(api, {
  findUsages: async (path, line, column) => { await open(path); const position = new monaco.Position(line, column); editor.setPosition(position); editor.revealPositionInCenter(position); await usages.show(position); },
  terminal: cwd => terminalPanel.open(cwd),
 });
+// UI-CONTEXT-001: editor context menu (PhpStorm order) reusing the project tree's file submenus.
+mountEditorMenu(editor, {
+ path: () => active && !buffers.get(active)?.virtual ? active : undefined,
+ fileItems: path => { const items = projectActions.fileItems(path); return { copyPath: items['copy-path'], openIn: items['open-in'], history: items['local-history'] }; },
+ status,
+});
 const dockerPanel=optionalPluginService('docker',p=>p.mount(api,terminalPanel));
 mountPluginLanguages(api, { status, path: m => [...buffers.values()].find(b => b.model === m)?.file.path });
 
@@ -453,7 +481,7 @@ monaco.languages.registerCodeLensProvider('php',pluginLenses);
 window.addEventListener('ide-plugins-changed',()=>pluginLensChanges.fire(pluginLenses));
 window.addEventListener('beforeunload',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();event.returnValue='';}});
 const showPlugins = () => run(async () => { renderPluginStatus($('plugins'), await api.plugins()); });
-export const ready=(async()=>{$('project').textContent=(await api.workspace()).name;await tree();showPlugins();})();
+export const ready=(async()=>{$('project').textContent=projectName=(await api.workspace()).name;await tree();showPlugins();})();
 const closeProjectButton=document.createElement('button');closeProjectButton.id='close-project';closeProjectButton.textContent=tr('Fechar projeto');document.querySelector('header')!.append(closeProjectButton);closeProjectButton.onclick=()=>run(async()=>{if([...buffers.values()].some(dirty))throw Error(tr('Salve os arquivos alterados antes de fechar o projeto.'));await api.closeProject();location.reload();});
 
 window.addEventListener('ide-before-language-change',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();status(tr('Salve os arquivos alterados antes de aplicar o idioma.'));}});

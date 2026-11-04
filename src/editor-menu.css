@@ -1,0 +1,8 @@
+/* UI-CONTEXT-001: tab under a context menu keeps a hover background; pinned tabs show a pin in place of ×. */
+.editor-strip .file-tab.tab-context{background:var(--ij-hover)}
+.editor-strip .file-tab .pin-tab{width:16px;height:16px;padding:0;border:0;background:transparent!important;color:var(--ij-text-secondary);display:inline-flex;cursor:pointer}
+.editor-strip .file-tab .pin-tab::before{content:'';width:16px;height:16px;background:currentColor;
+ -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 2.5h4M7 2.5v4L4.5 9h7L9 6.5v-4M8 9v4.5" fill="none" stroke="black" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/14px no-repeat;
+ mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M6 2.5h4M7 2.5v4L4.5 9h7L9 6.5v-4M8 9v4.5" fill="none" stroke="black" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/14px no-repeat}
+.editor-strip .file-tab .pin-tab:hover{color:var(--ij-text)}
+.editor-strip .file-tab .close-tab[hidden]{display:none!important}

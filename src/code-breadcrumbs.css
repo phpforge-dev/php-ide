@@ -1,0 +1,28 @@
+/* UI-BREADCRUMBS-001: editor breadcrumbs (bottom of the editor island) and the status-bar navigation bar.
+   Sizes measured on captures 54/55 (1400 logical px wide window); colors are Islands tokens. */
+.code-breadcrumbs{display:flex;align-items:center;gap:0;height:26px;min-height:26px;padding:0 6px;box-sizing:border-box;overflow:hidden;
+ background:var(--ij-editor-bg,var(--ij-island));color:var(--ij-breadcrumb,var(--ij-text-secondary));font:var(--ij-font-size) var(--ij-font-ui);white-space:nowrap}
+.code-breadcrumbs[hidden]{display:none}
+.code-breadcrumbs .crumb{display:inline-flex;align-items:center;width:auto;min-width:0;height:20px;padding:0 5px;border:0;border-radius:var(--ij-control-radius-compact,4px);background:transparent;color:inherit;font:inherit;cursor:pointer;flex:none}
+.code-breadcrumbs .crumb:hover{background:var(--ij-hover);color:var(--ij-text)}
+.code-breadcrumbs .crumb[aria-current]{background:var(--ij-hover);color:var(--ij-breadcrumb-current,var(--ij-text))}
+.code-breadcrumbs .crumb-after{opacity:.6}
+.crumb-separator,.nav-separator{flex:none;width:12px;height:12px;background:currentColor;opacity:.55;
+ -webkit-mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/12px no-repeat;mask:url("./assets/jetbrains-icons/general/chevronRight_dark.svg") center/12px no-repeat}
+.monaco-editor .breadcrumb-range{background:var(--ij-hover)}
+/* Navigation bar in the status bar: project › dirs › file › class › member. */
+footer #breadcrumbs{display:flex;align-items:center;gap:0;padding:0;min-width:0;overflow:hidden;white-space:nowrap}
+footer #breadcrumbs:hover{background:transparent}
+footer #breadcrumbs .nav-crumb{width:auto;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 4px;border:0;border-radius:var(--ij-control-radius-compact,4px);background:transparent;color:var(--ij-text-secondary);font:inherit;cursor:pointer;flex:none}
+footer #breadcrumbs .nav-crumb:hover,footer #breadcrumbs .nav-crumb.nav-open{background:var(--ij-hover);color:var(--ij-text)}
+footer #breadcrumbs .resource-icon,.nav-popup .resource-icon{display:inline-flex;width:16px;height:16px}
+footer #breadcrumbs .nav-crumb:last-child{color:var(--ij-text)}
+.symbol-icon{position:relative;box-sizing:border-box;border:1px solid currentColor;border-radius:50%;width:13px!important;height:13px!important;margin:1.5px;color:var(--ij-text-secondary)}
+.symbol-icon::after{content:attr(data-letter);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 8px/1 var(--ij-font-ui);padding-bottom:1px}
+.symbol-icon[data-icon="symbol/method"],.symbol-icon[data-icon="symbol/function"]{color:#c75450}
+.nav-popup{position:fixed;z-index:2000;min-width:110px;max-width:420px;max-height:50vh;overflow:auto;padding:4px;box-sizing:border-box;outline:none;
+ background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);color:var(--ij-text);font-size:var(--ij-font-size)}
+.nav-popup-row{display:flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:var(--ij-tab-radius,4px);cursor:pointer;white-space:nowrap;outline:none}
+.nav-popup-row[aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
+.nav-popup-row small{color:var(--ij-text-info)}
+.nav-popup-query{padding:2px 8px 4px;color:var(--ij-link,#548af7);font-size:var(--ij-font-size-small)}
