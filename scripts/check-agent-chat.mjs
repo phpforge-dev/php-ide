@@ -107,6 +107,65 @@ scenario('mentions', async () => {
  await page.close();
 });
 
+scenario('context-mentions', async () => {
+ const {page, errors} = await page_();
+ await startAgent(page);
+ // Marcadores reais do Monaco no arquivo aberto (os mesmos da janela Problemas).
+ await page.evaluate(() => window.monaco.editor.setModelMarkers(window.editor.getModel(), 'php', [{severity: 8, message: "Undefined variable '$missing'", startLineNumber: 9, startColumn: 16, endLineNumber: 9, endColumn: 24}]));
+ const prompt = page.locator('#agent-prompt');
+ await prompt.click(); await page.keyboard.type('Revise @');
+ await page.waitForSelector('#agent-popup:not([hidden]) .agent-popup-item');
+ assert.deepEqual((await page.locator('.agent-popup-label').allTextContents()).slice(5, 10), ['@commit:', '@localChanges', '@problems', '@projectStructure', '@rule:']);
+ await page.keyboard.type('commit:'); await page.waitForFunction(() => document.querySelector('.agent-popup-label')?.textContent === 'a1b2c3d Add User fixture');
+ await shot(page, 'context-commit-popup');
+ await page.keyboard.press('Enter');
+ for (const [typed, label] of [['@localC', '@localChanges'], ['@probl', '@problems'], ['@projectS', '@projectStructure'], ['@rule:php', 'php-style']]) {
+  await page.keyboard.type(typed); await page.waitForFunction(l => document.querySelector('.agent-popup-label')?.textContent === l, label);
+  await page.keyboard.press('Enter');
+ }
+ assert.equal(await prompt.inputValue(), 'Revise @commit:a1b2c3d @localChanges @problems @projectStructure @rule:php-style ');
+ assert.deepEqual(await page.locator('.agent-highlight mark').allTextContents(), ['@commit:a1b2c3d', '@localChanges', '@problems', '@projectStructure', '@rule:php-style']);
+ assert.deepEqual(await page.locator('#agent-chips .agent-chip-label').allTextContents(), ['a1b2c3d', 'Alterações locais', 'Problemas: User.php (1)', 'Estrutura do projeto', 'php-style']);
+ await shot(page, 'context-chips');
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.api.calls.some(c => c[0] === 'agentPrompt'));
+ const extras = await page.evaluate(() => window.api.calls.find(c => c[0] === 'agentPrompt')[3]);
+ assert.deepEqual(extras.attachments.map(a => a.type), ['commit', 'localChanges', 'problems', 'projectStructure', 'rule']);
+ assert.equal(extras.attachments[2].text, "ERRO src/User.php:9:16 Undefined variable '$missing'");
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
+scenario('find', async () => {
+ const {page, errors} = await page_({script: 'apply'});
+ await startAgent(page);
+ await ask(page, 'Melhore o método name da classe User');
+ await ask(page, 'E o name em minúsculas?');
+ await page.locator('#agent-prompt').focus();
+ await page.keyboard.press('Meta+f');
+ await page.waitForSelector('.agent-find:not([hidden]) .agent-find-input:focus');
+ await page.keyboard.type('name');
+ await page.waitForFunction(() => document.querySelector('.agent-find-count').textContent.endsWith('/' + document.querySelectorAll('mark.agent-find-match').length) && document.querySelectorAll('mark.agent-find-match').length > 2);
+ const total = await page.locator('mark.agent-find-match').count();
+ assert.equal(await page.locator('.agent-find-count').textContent(), `1/${total}`);
+ await page.keyboard.press('Enter'); await page.keyboard.press('Enter');
+ assert.equal(await page.locator('.agent-find-count').textContent(), `3/${total}`);
+ // A ocorrência atual fica visível na área da conversa.
+ const [mark, log] = await Promise.all([page.locator('mark.agent-find-current').boundingBox(), page.locator('#agent-transcript').boundingBox()]);
+ assert.ok(mark.y >= log.y && mark.y + mark.height <= log.y + log.height, 'ocorrência atual fora da área visível');
+ await shot(page, 'find');
+ await page.keyboard.press('Shift+Enter');
+ assert.equal(await page.locator('.agent-find-count').textContent(), `2/${total}`);
+ await page.keyboard.press('Escape');
+ await page.waitForSelector('.agent-find', {state: 'hidden'});
+ assert.equal(await page.locator('mark.agent-find-match').count(), 0);
+ assert.equal(await page.evaluate(() => document.activeElement.id), 'agent-prompt');
+ // Botões de código seguem funcionando depois da busca (os realces não quebram os blocos).
+ assert.equal(await page.locator('.agent-code-apply').count(), 4);
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 scenario('commands', async () => {
  const {page, errors} = await page_({commands: [{name: 'explain', description: 'Explica o código mencionado'}, {name: 'tests', description: 'Gera testes', hint: 'classe ou método'}, {name: 'compact', description: 'Resume a conversa para liberar contexto'}]});
  await startAgent(page);
@@ -172,6 +231,108 @@ scenario('terminal', async () => {
  assert.equal(await page.locator('.agent-terminal[data-id="t2"] .agent-terminal-status').textContent(), 'Recusado');
  assert.deepEqual(await page.evaluate(() => window.api.calls.filter(c => c[0] === 'agentTerminalDecision').map(c => c.slice(1))), [['t1', true], ['t2', false]]);
  await shot(page, 'terminal-done');
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
+scenario('terminal-allowlist', async () => {
+ const {page, errors} = await page_({script: 'allowlist'});
+ await startAgent(page);
+ assert.equal(await page.locator('#agent-allow-all').getAttribute('aria-pressed'), 'false');
+ await page.locator('#agent-prompt').fill('git log --oneline -2'); await page.keyboard.press('Enter');
+ await page.waitForSelector('.agent-terminal[data-status="waiting"] .agent-terminal-more');
+ await page.locator('.agent-terminal-more').click();
+ await page.waitForSelector('.agent-terminal-menu');
+ assert.deepEqual(await page.locator('.agent-terminal-menu button span').allTextContents(), ['Executar e permitir este comando', 'Executar e permitir comandos semelhantes']);
+ await shot(page, 'terminal-remember-menu');
+ await page.locator('.agent-terminal-menu button[data-kind="similar"]').click();
+ await page.waitForFunction(() => !document.querySelector('#agent-send').disabled);
+ await page.locator('#agent-prompt').fill('git log --oneline -10 && git push --force'); await page.keyboard.press('Enter');
+ await page.waitForSelector('.agent-terminal[data-status="waiting"]');
+ assert.deepEqual(await page.locator('.agent-terminal').evaluateAll(els => els.map(e => e.dataset.status)), ['exited', 'exited', 'waiting']);
+ assert.match(await page.locator('.agent-terminal').nth(1).locator('.agent-terminal-cwd').textContent(), /permitido pela allowlist/);
+ await page.locator('.agent-terminal[data-status="waiting"] .agent-terminal-reject').click();
+ await page.waitForFunction(() => !document.querySelector('#agent-send').disabled);
+ // Permitir tudo: só nesta sessão.
+ await page.locator('#agent-allow-all').click();
+ await page.waitForFunction(() => document.querySelector('#agent-allow-all').getAttribute('aria-pressed') === 'true');
+ await ask(page, 'git push --force');
+ await page.waitForFunction(() => [...document.querySelectorAll('.agent-terminal')].at(-1).dataset.status === 'exited');
+ assert.match(await page.locator('.agent-terminal').last().locator('.agent-terminal-cwd').textContent(), /Permitir tudo/);
+ await shot(page, 'terminal-allow-all');
+ await page.locator('#agent-options').click();
+ await page.locator('.agent-menu button', {hasText: 'Allowlist do terminal'}).click();
+ await page.waitForSelector('dialog.agent-allowlist[open] .agent-allowlist-rules code');
+ assert.deepEqual(await page.locator('.agent-allowlist-rules code').allTextContents(), ['git log --oneline …']);
+ await shot(page, 'terminal-allowlist-dialog');
+ await page.locator('.agent-allowlist-rules button', {hasText: 'Remover'}).click();
+ await page.waitForSelector('.agent-allowlist-empty');
+ await page.keyboard.press('Escape');
+ await page.locator('#agent-new').click();
+ await page.waitForFunction(() => document.querySelector('#agent-allow-all').getAttribute('aria-pressed') === 'false');
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
+scenario('drop', async () => {
+ const {page, errors} = await page_();
+ await startAgent(page);
+ // Drop HTML5 como o WebView entrega com dragDropEnabled: false (arquivos sem caminho, só conteúdo).
+ const dropOn = (selector, files) => page.evaluate(({selector, files}) => {
+  const target = document.querySelector(selector); const dt = new DataTransfer();
+  for (const f of files) dt.items.add(new File([f.text], f.name, {type: f.type}));
+  const results = {};
+  for (const type of ['dragenter', 'dragover', 'drop']) { const e = new DragEvent(type, {bubbles: true, cancelable: true, dataTransfer: dt}); target.dispatchEvent(e); results[type] = e.defaultPrevented; }
+  results.dropEffect = dt.dropEffect; return results;
+ }, {selector, files});
+ const before = await page.evaluate(() => window.editor.getModel().getValue());
+ const onEditor = await dropOn('#editor .view-lines', [{name: 'notas.md', type: 'text/markdown', text: '# Notas'}]);
+ assert.equal(onEditor.drop, true, 'host bloqueia o drop fora do chat');
+ assert.equal(await page.evaluate(() => window.editor.getModel().getValue()), before, 'editor intacto');
+ assert.equal(await page.locator('#agent-chips .agent-chip').count(), 0);
+ const onChat = await dropOn('#agent-transcript', [{name: 'User.php', type: 'text/x-php', text: '<?php // src/User.php\n'}, {name: 'notas.md', type: 'text/markdown', text: '# Notas\nfora do projeto'}]);
+ assert.deepEqual([onChat.dragover, onChat.drop], [true, true]);
+ await page.waitForFunction(() => document.querySelectorAll('#agent-chips .agent-chip').length === 2);
+ assert.deepEqual(await page.locator('#agent-chips .agent-chip').evaluateAll(els => els.map(e => [e.dataset.kind, e.querySelector('.agent-chip-label').textContent])), [['file', 'User.php'], ['dropped', 'notas.md']]);
+ await shot(page, 'drop-chips');
+ await page.locator('#agent-prompt').fill('Resuma'); await page.keyboard.press('Enter');
+ await page.waitForFunction(() => window.api.calls.some(c => c[0] === 'agentPrompt'));
+ const extras = await page.evaluate(() => window.api.calls.find(c => c[0] === 'agentPrompt')[3]);
+ assert.deepEqual(extras.attachments, [{type: 'file', path: 'src/User.php'}, {type: 'dropped', name: 'notas.md', text: '# Notas\nfora do projeto'}]);
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
+scenario('snippet-actions', async () => {
+ const {page, errors} = await page_({script: 'snippets'});
+ await startAgent(page);
+ await ask(page, 'Crie um teste para User');
+ assert.deepEqual(await page.locator('.agent-code-head').first().locator('button').allTextContents(), ['Aplicar', 'Inserir no cursor', 'Copiar', 'Criar arquivo', 'Executar']);
+ // Create File from Snippet: caminho sugerido, confirmação, criação pelo host e abertura no editor.
+ await page.locator('.agent-code-create').first().click();
+ await page.waitForSelector('dialog.agent-create-file[open]');
+ assert.equal(await page.locator('dialog.agent-create-file input').inputValue(), 'UserTest.php');
+ await shot(page, 'snippet-create-file');
+ await page.keyboard.press('Meta+ArrowLeft'); await page.keyboard.type('tests/');
+ await page.keyboard.press('Enter');
+ await page.waitForSelector('dialog.agent-create-file', {state: 'detached'});
+ assert.deepEqual(await page.evaluate(() => window.api.calls.find(c => c[0] === 'fileCreate').slice(1, 3)), ['tests/UserTest.php', 'file']);
+ assert.equal(await page.evaluate(() => window.opened), 'tests/UserTest.php');
+ assert.match(await page.locator('#status').textContent(), /Arquivo criado: tests\/UserTest\.php/);
+ // Run Snippet: comando exato e confirmação explícita.
+ await page.locator('.agent-code-run').nth(1).click();
+ await page.waitForSelector('dialog.agent-run-snippet[open]');
+ assert.equal(await page.locator('dialog.agent-run-snippet .agent-terminal-command').textContent(), '$ php vendor/bin/phpunit --testdox');
+ assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Cancelar');
+ await shot(page, 'snippet-run-confirm');
+ await page.keyboard.press('Escape');
+ await page.waitForSelector('dialog.agent-run-snippet', {state: 'detached'});
+ assert.equal(await page.evaluate(() => window.api.calls.filter(c => c[0] === 'agentRunSnippet').length), 0);
+ await page.locator('.agent-code-run').nth(1).click();
+ await page.locator('dialog.agent-run-snippet .agent-run-confirm').click();
+ await page.waitForSelector('.agent-terminal[data-status="exited"] .agent-terminal-output');
+ assert.equal(await page.locator('.agent-terminal strong').textContent(), 'Trecho executado');
+ await shot(page, 'snippet-run-output');
  assert.deepEqual(errors, []);
  await page.close();
 });

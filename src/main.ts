@@ -24,6 +24,7 @@ import { editorColors, editorFont, editorRules } from './editor-theme';
 import { mountEditorChrome } from './editor-chrome';
 import { mountCodeBreadcrumbs } from './code-breadcrumbs';
 import { mountProblems } from './problems';
+import { guardFileDrops } from './file-drop';
 import { mountEditorMenu } from './editor-menu';
 import { mountEditorSplit } from './editor-split';
 import { mountBookmarks } from './bookmarks';
@@ -56,6 +57,7 @@ import { isIgnorePath } from '../shared/plugin-document-associations';
 import { keymap } from './keymap';
 declare global { interface Window { ide: IdeApi; } }
 installEditorWorkers();
+guardFileDrops();
 const webLanguages=optionalPluginService('webLanguages',p=>p.installWebLanguages(),{locations:async()=>[]});
 const api = window.ide;
 document.querySelector('#app')!.innerHTML = html`<header><strong>PHP IDE</strong><span id="project"></span><button id="open">Abrir projeto</button><button id="appearance">Aparência</button><span class="muted">PHP IDE · prévia</span></header><main><aside><h3>Projeto</h3><nav id="tree"></nav></aside><section class="code"><div id="tabs"></div><div id="breadcrumbs" aria-label="Caminho do arquivo"></div><div id="navigation" role="toolbar" aria-label="Navegação de código"><button id="nav-back" disabled title="Voltar · Alt+←">←</button><button id="nav-forward" disabled title="Avançar · Alt+→">→</button><button id="definition" disabled>Declaração · F12</button><button id="references" disabled>Encontrar usos</button><button id="implementations" disabled>Implementações</button></div><div id="editor"></div></section><aside class="tools"><div class="switch"><button id="show-agent">Agente</button><button id="show-db">Bancos</button></div><div id="agent"></div><section id="db" hidden aria-label="Database"></section></aside></main><footer><span id="status">Abra um arquivo PHP para iniciar a análise.</span><span id="plugins" title="Plugins ativos neste projeto"></span><span id="cursor-position"></span></footer>`;
