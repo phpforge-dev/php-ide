@@ -64,7 +64,7 @@ const bootstrap=`
    if(kind==='updates')return {kind,command:'composer update --dry-run',exitCode:0,result:[{name:'symfony/console',from:'v7.1.3',to:'v7.1.9',downgrade:false}]};
    if(kind==='audit')return {kind,command:'composer audit',exitCode:1,result:{advisories:data.audit.advisories['guzzlehttp/guzzle'].map(a=>({name:'symfony/console',id:a.advisoryId,title:a.title,cve:a.cve,link:a.link,affected:a.affectedVersions,severity:a.severity})),abandoned:[]}};
    return {kind,command:'composer outdated',exitCode:0,result:[]};},
-  composerRun:async(id,runner,request)=>{window.calls.push('run:'+[request.action,...(request.packages??[]),request.script??'',request.lock?'--lock':''].filter(Boolean).join(' '));return {command:'composer '+request.action,exitCode:0,cancelled:false,timedOut:false,durationMs:5,output:'ok\\n'};},
+  composerRun:async(id,runner,request)=>{window.calls.push('run:'+[request.action,...(request.packages??[]),request.script??'',request.lock?'--lock':''].filter(Boolean).join(' '));return {command:['composer',request.action,...(request.packages??[]),'--no-interaction','--no-ansi'].join(' '),exitCode:0,cancelled:false,timedOut:false,durationMs:5,output:'All packages for ./composer.json have been updated.\\n'};},
   composerCancel:async()=>{},composerProbe:async()=>({version:'Composer version 2.11.1'}),composerSearch:async()=>[],composerVersions:async()=>[],
  };
  const editor=monaco.editor.create(document.getElementById('editor'),{automaticLayout:true,theme:'vs-dark',glyphMargin:true,lightbulb:{enabled:'on'}});
@@ -109,8 +109,14 @@ try{
  await page.evaluate(()=>openFile('composer.json','json'));
  await page.waitForFunction(()=>window.calls.includes('check:updates')&&window.calls.includes('check:audit'),null,{timeout:15000});
  await page.waitForSelector('.composer-update-glyph',{timeout:10000});
- const glyphLine=await page.evaluate(()=>editor.getModel().getAllDecorations().find(d=>d.options.glyphMarginClassName==='composer-update-glyph')?.range.startLineNumber);
+ const glyphLine=await page.evaluate(()=>editor.getModel().getAllDecorations().find(d=>d.options.glyphMarginClassName?.startsWith('composer-update-glyph'))?.range.startLineNumber);
  assert.equal(glyphLine,await page.evaluate(()=>editor.getModel().getValue().split('\n').findIndex(l=>l.includes('"symfony/console"'))+1),'update icon on the symfony/console line');
+ // PhpStorm 2026.1 (OBS 04/11): mesmo ícone para patch/minor/major; inlay "instalada, updates to X" depois da restrição.
+ assert.equal(await page.evaluate(()=>editor.getModel().getAllDecorations().find(d=>d.options.glyphMarginClassName?.startsWith('composer-update-glyph'))?.options.glyphMarginClassName),'composer-update-glyph composer-update-patch');
+ assert.match(await page.evaluate(()=>editor.getModel().getAllDecorations().find(d=>d.options.glyphMarginHoverMessage)?.options.glyphMarginHoverMessage.value),/v7\.1\.3 → v7\.1\.9 \(atualização de patch\)/);
+ await page.waitForFunction(()=>[...document.querySelectorAll('.composer-version-hint')].some(e=>e.textContent.replace(/\u00a0/g,' ').includes('updates to')),null,{timeout:10000});
+ const inlays=await page.$$eval('.composer-version-hint',els=>els.map(e=>e.textContent.replace(/\u00a0/g,' ')));
+ assert.ok(inlays.includes('v7.1.3, updates to v7.1.9'),'inlays: '+inlays);
  await page.waitForFunction(()=>monaco.editor.getModelMarkers({owner:'composer-audit'}).length>0);
  assert.deepEqual((await markers('composer-audit')).map(m=>[m[1],m[3]]),[['composer.vulnerable','symfony/console tem 2 aviso(s) de segurança na versão travada (composer audit):']]);
  await page.waitForFunction(()=>monaco.editor.getModelMarkers({owner:'php-ide-plugins',resource:editor.getModel().uri}).length>0,null,{timeout:15000});
@@ -119,8 +125,15 @@ try{
  // Clique no ícone do gutter atualiza o pacote, como o botão "Update Package".
  await page.locator('.composer-update-glyph').first().click();
  await page.waitForFunction(()=>window.calls.includes('run:update symfony/console'));
+ // O clique no gutter abre o Composer Log (janela própria) com a entrada do comando, dobrada no sucesso.
+ await page.waitForFunction(()=>document.querySelector('.composer-log-entry')?.dataset.state==='passed',null,{timeout:10000});
+ assert.equal(await page.locator('#composer-log-panel').isVisible(),true,'Composer Log visible after the gutter click');
+ assert.equal(await page.locator('.composer-log-entry .composer-log-command').first().textContent(),'update symfony/console --no-interaction --no-ansi');
+ assert.equal(await page.locator('.composer-log-entry').first().getAttribute('data-folded'),'true');
  // ⌥Enter no pacote vulnerável/desatualizado.
  await caret('"symfony/console"',3);
+ // Depois da execução as consultas automáticas recomeçam; ⌥Enter só depois que elas assentam.
+ await page.waitForFunction(()=>window.calls.filter(c=>c==='check:updates').length>=2&&!/Consultando/.test(document.getElementById('composer-insights')?.textContent??''),null,{timeout:15000});await page.waitForTimeout(300);
  let fixes=await quickFixes();
  assert.ok(fixes.some(f=>f.startsWith('Atualizar symfony/console para v7.1.9 (corrige avisos de segurança)')),'fixes: '+fixes);
  assert.ok(fixes.some(f=>f.startsWith('Mostrar por que symfony/console')),'why intention');
