@@ -82,3 +82,115 @@ test('Markdown: nested headings, fenced code ignored', () => {
  assert.deepEqual(names(markdownStructure(text)), [['heading Title', [['heading Part', ['heading Deep']], 'heading Other']], 'heading Next']);
  assert.deepEqual(symbolPath(markdownStructure(text), at(text, '### Deep', 4)).map(s => s.name), ['Title', 'Part', 'Deep']);
 });
+
+// --- Round 2: JavaScript/TypeScript, JSON, YAML and HTML ---------------------------------------------
+import { jsStructure, jsonStructure, yamlStructure, htmlStructure, structureOf, breadcrumbLanguage } from '../src/code-structure';
+const crumbsAt = (symbols: CodeSymbol[], text: string, needle: string, delta = 0) => symbolPath(symbols, at(text, needle, delta)).map(s => crumbLabel(s));
+
+test('JavaScript: classes, methods, functions and function variables; callbacks and calls are not declarations', () => {
+ const js = `import { api } from './api';
+// class Fake { nope() {} }
+export class Cart {
+  constructor(items) { this.items = items; }
+  total() {
+    return this.items.reduce((sum, item) => sum + item.price, 0);
+  }
+  static async load({ id } = {}) { return new Cart(await api.get(\`/cart/\${id}\`)); }
+  handler = async (event) => { if (event) { this.total(); } };
+}
+export function checkout(cart) { const re = /}{/g; return api.post('/checkout', cart); }
+const format = (value) => { return '{' + value; };
+`;
+ const tree = jsStructure(js);
+ assert.deepEqual(names(tree), [['class Cart', ['method constructor', 'method total', 'method load', 'method handler']], 'function checkout', 'function format']);
+ assert.deepEqual(crumbsAt(tree, js, 'sum + item'), ['Cart', 'total()']);
+ assert.deepEqual(crumbsAt(tree, js, 'this.total()'), ['Cart', 'handler()']);
+ assert.deepEqual(crumbsAt(tree, js, "api.post"), ['checkout()']);
+ assert.deepEqual(crumbsAt(tree, js, "'{' + value"), ['format()']);
+ assert.deepEqual(crumbsAt(tree, js, 'import'), []);
+});
+
+test('TypeScript: interfaces, enums, namespaces and typed methods', () => {
+ const ts = `export interface Item { price: number; }
+export enum Kind { A, B }
+export namespace Shop {
+  export function format(item: Item): string { return '$' + item.price; }
+  export class Basket<T> {
+    private items: T[] = [];
+    add<U extends T>(item: U): void { this.items.push(item); }
+  }
+}
+`;
+ const tree = jsStructure(ts);
+ assert.deepEqual(names(tree), ['interface Item', 'enum Kind', ['module Shop', ['function format', ['class Basket', ['method add']]]]]);
+ assert.deepEqual(crumbsAt(tree, ts, "'$'"), ['Shop', 'format()']);
+ assert.deepEqual(crumbsAt(tree, ts, 'this.items.push'), ['Shop', 'Basket', 'add()']);
+});
+
+test('JSON: key path, escaped keys, arrays transparent, bare values', () => {
+ const json = `{
+    "name": "fixture/shop",
+    "autoload": { "psr-4": { "Fixture\\\\": "src/" } },
+    "repositories": [ { "type": "vcs", "url": "x" } ],
+    "config": { "sort": true, "n": 3 }
+}`;
+ const tree = jsonStructure(json);
+ assert.deepEqual(crumbsAt(tree, json, '"src/"'), ['autoload', 'psr-4', 'Fixture\\']);
+ assert.deepEqual(crumbsAt(tree, json, '"vcs"'), ['repositories', 'type']);
+ assert.deepEqual(crumbsAt(tree, json, 'true'), ['config', 'sort']);
+ assert.deepEqual(crumbsAt(tree, json, '"name"', 2), ['name']);
+ assert.deepEqual(crumbsAt(tree, json, '{', 0), []);
+});
+
+test('YAML: indentation path, quoted keys, sequences and block scalars', () => {
+ const yaml = `services:
+    _defaults:
+        autowire: true
+    App\\Mailer:
+        arguments:
+            - '%mailer.dsn%'
+        tags:
+            - { name: mailer }
+    'quoted key':
+        script: |
+            fake: value
+        after: 1
+---
+second: doc
+`;
+ const tree = yamlStructure(yaml);
+ assert.deepEqual(crumbsAt(tree, yaml, '%mailer'), ['services', 'App\\Mailer', 'arguments']);
+ assert.deepEqual(crumbsAt(tree, yaml, 'true'), ['services', '_defaults', 'autowire']);
+ assert.deepEqual(crumbsAt(tree, yaml, 'fake: value'), ['services', 'quoted key', 'script']);
+ assert.deepEqual(crumbsAt(tree, yaml, 'after'), ['services', 'quoted key', 'after']);
+ assert.deepEqual(crumbsAt(tree, yaml, 'doc'), ['second']);
+});
+
+test('HTML: element path with id and classes; void, raw and unclosed elements', () => {
+ const page = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><script>if (a < b) { "<div>" }</script></head>
+<body>
+  <!-- <section> -->
+  <main id="app" class="page wide">
+    <ul class='items'>
+      <li>First
+      <li>Second</li>
+    </ul>
+    <img src="x.png" alt=">">
+  </main>
+</body>
+</html>`;
+ const tree = htmlStructure(page);
+ assert.deepEqual(crumbsAt(tree, page, 'Second'), ['html', 'body', 'main#app.page.wide', 'ul.items', 'li']);
+ assert.deepEqual(crumbsAt(tree, page, 'First'), ['html', 'body', 'main#app.page.wide', 'ul.items', 'li']);
+ assert.deepEqual(crumbsAt(tree, page, '"<div>"'), ['html', 'head', 'script']);
+ assert.deepEqual(crumbsAt(tree, page, 'x.png'), ['html', 'body', 'main#app.page.wide', 'img']);
+ assert.deepEqual(crumbsAt(tree, page, '<section>'), ['html', 'body']);
+});
+
+test('structureOf: language groups of the settings page', () => {
+ assert.equal(breadcrumbLanguage('jsonc'), 'json');
+ assert.equal(structureOf('css', 'a{}'), undefined);
+ assert.ok(structureOf('yaml', 'a: 1')?.length);
+});

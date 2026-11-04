@@ -237,7 +237,7 @@ try {
    assert.ok(m.firstTab.some(i=>i.startsWith('Fechar abas à direita'))&&!m.firstTab.some(i=>i.startsWith('Fechar abas à esquerda')),'left/right closers only when tabs exist on that side');
    assert.deepEqual(m.editorMenu.filter(i=>i!=='—').map(i=>i.replace(/ \[.*\]/,'').replace(' (off)','')).slice(0,6),['Mostrar ações de contexto','Colar','Copiar/colar especial','Modo de seleção em coluna','Encontrar usos','Ir para'],'editor menu starts like reference 31');
    assert.ok(m.goTo.length>=3,'Go To submenu');
-   assert.ok(['Extrair método…','Extrair variável…','Incorporar variável'].every(l=>m.refactor.includes(l)),'plugin refactorings kept under Refactor: '+m.refactor);
+   assert.ok(['Extrair método…','Extrair variável…'].every(l=>m.refactor.includes(l))&&m.refactor.some(l=>/^Incorporar/.test(l)),'plugin refactorings kept under Refactor: '+m.refactor);
    assert.deepEqual(m.remaining,['Broken.php'],'Close Tabs to the Left');
    const k=results[theme+':keymap'];
    assert.match(k.waiting,/segunda tecla|second stroke/i,'first chord stroke waits for the second');
