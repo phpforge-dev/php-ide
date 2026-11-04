@@ -90,7 +90,7 @@ test('JUnit: erro, entidades e relatório vazio', () => {
  assert.deepEqual(parseJunit('<testsuites/>', '/r'), []);
 });
 
-test('plugin: detecta Pest/PHPUnit pelo composer.json e oferece ações por teste', async () => {
+test('plugin: detecta Pest/PHPUnit pelo composer.json e completa datasets', async () => {
  const pest = new PhpTestsPlugin();
  assert.deepEqual(await pest.detect(project(join(fixtures, 'pest'))), { version: '^3.0' });
  assert.equal(pest.name, 'Pest');
@@ -99,15 +99,15 @@ test('plugin: detecta Pest/PHPUnit pelo composer.json e oferece ações por test
  assert.equal(await new PhpTestsPlugin().detect(project(join(fixtures, '../laravel-strings'))), null, 'projeto sem runner');
  const host = new PluginHost(project(join(fixtures, 'pest')), [new PhpTestsPlugin()]);
  assert.deepEqual(await host.status(), [{ id: 'php-tests', name: 'Pest', version: '^3.0' }]);
- const lenses = await host.codeLenses('tests/Unit/CalculatorTest.php', read('pest/tests/Unit/CalculatorTest.php'));
- assert.equal(lenses[0].title, '▶ Executar CalculatorTest.php');
- assert.deepEqual(lenses[0].arguments, [{ framework: 'pest', path: 'tests/Unit/CalculatorTest.php', filter: '', label: 'CalculatorTest.php' }]);
- assert.deepEqual(lenses.slice(1).map(l => [l.line, l.title]), [[4, '▶ Executar teste'], [8, '▶ Executar teste'], [12, '▶ Executar teste'], [16, '▶ Executar describe'], [17, '▶ Executar teste'], [21, '▶ Executar teste'], [26, '▶ Executar teste'], [30, '▶ Executar teste']]);
- assert.deepEqual(await host.codeLenses('src/Calculator.php', read('pest/src/Calculator.php')), [], 'só arquivos de teste');
- const unit = new PluginHost(project(join(fixtures, 'phpunit')), [new PhpTestsPlugin()]);
- const classLens = (await unit.codeLenses('tests/Unit/CalculatorTest.php', read('phpunit/tests/Unit/CalculatorTest.php')))[0];
- assert.equal(classLens.title, '▶ Executar CalculatorTest');
- assert.equal((classLens.arguments[0] as { framework: string }).framework, 'phpunit');
+ // Executar fica no gutter (módulo de workbench), como na referência: sem CodeLens.
+ assert.deepEqual(await host.codeLenses('tests/Unit/CalculatorTest.php', read('pest/tests/Unit/CalculatorTest.php')), []);
+ // Datasets compartilhados (tests/Pest.php) em ->with('…'): completar e ir para a declaração.
+ const text = read('pest/tests/Unit/CalculatorTest.php'); const at = text.indexOf("->with('emails')") + 8;
+ const items = await host.complete('tests/Unit/CalculatorTest.php', text, at);
+ assert.ok(items?.items.some(i => i.label === 'emails'));
+ const [target] = (await host.define('tests/Unit/CalculatorTest.php', text, at + 2))!;
+ assert.ok(target.uri.endsWith('/tests/Pest.php'));
+ assert.equal(target.range.start.line, 2);
 });
 
 // Ensaio real opcional: PHP_IDE_TEST_RUNNERS aponta para cópias das fixtures com `composer install` feito.
