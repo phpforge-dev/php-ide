@@ -95,15 +95,14 @@ try{
  await page.waitForFunction(()=>document.querySelectorAll('.compose-state-hint').length===2);
  const hints=(await page.locator('.compose-state-hint').allTextContents()).map(t=>t.replace(/\u00a0/g,' '));
  check(hints.join('|')==='exited (0)|running','inlay de status: web exited (0), cache running, worker sem inlay');
- check(await page.locator('.glyph-margin-widgets .compose-run.compose-running').count()===2,'ícone de cache e ▶▶ de services: marcados como em execução');
+ check(await page.locator('.glyph-margin-widgets .compose-run.compose-running').count()===0,'o ícone ▷ não muda com o estado (como na referência); o estado fica no inlay');
  await page.screenshot({path:out+'/01-gutter-state.png',clip:{x:0,y:60,width:760,height:330}});
 
  // 4. Gutter shared with the debugger: clicking the Compose icon opens the run menu and does not toggle a breakpoint.
  const before=await debugConfigs();const box=await glyph(2).boundingBox();
- await page.mouse.click(box.x+box.width/2,box.y+box.height/2);await page.locator('.compose-run-menu').waitFor();await page.waitForTimeout(200);
+ await page.mouse.click(box.x+box.width/2,box.y+box.height/2);await page.waitForFunction(()=>window.__calls.some(c=>c[0]==='dockerCompose'&&c[3]==='up'));await page.waitForTimeout(200);
  check(await breakpoints()===0&&await debugConfigs()===before,'clique no ícone do Compose não cria breakpoint');
- check((await page.locator('.compose-run-menu [role=menuitem]').allTextContents()).join('|')==="Executar 'cache'|Parar 'cache'",'menu do ícone: Executar/Parar o serviço');
- await page.keyboard.press('Escape');
+ check(await page.locator('.compose-run-menu').count()===0&&(await composeCalls('up'))[0][5]==='cache','clique no ▷ de cache executa up -d cache direto, sem menu');
  // The line number itself still belongs to the debugger in project files.
  const number=await page.locator('.margin-view-overlays .line-numbers').filter({hasText:/^4$/}).first().boundingBox();
  await page.mouse.click(number.x+number.width-6,number.y+number.height/2);await page.waitForTimeout(250);
@@ -121,11 +120,11 @@ try{
  await page.getByRole('button',{name:'compose.yaml',exact:true}).first().click();await page.locator('.compose-run').first().waitFor();await page.waitForTimeout(300);
 
  // 3. Gutter ▶ on web → temporary configuration selected in the toolbar, up -d web.
- await glyph(1).click();await page.locator('.compose-run-menu [data-compose-run=up]').click();
- await page.waitForFunction(()=>window.__calls.some(c=>c[0]==='dockerCompose'&&c[3]==='up'));
- const up=(await composeCalls('up'))[0];check(up[2]==='compose.yaml'&&up[5]==='web','▶ de web executa up -d web');
- await page.waitForFunction(()=>document.querySelector('#run-config-host .run-config-name')?.textContent==='compose.yaml: web');
- check(await page.locator('#run-config-host.temporary').count()===1,'configuração temporária "compose.yaml: web" selecionada no topo');
+ await page.locator('[data-compose=down]:not([disabled])').waitFor();await glyph(1).click();
+ await page.waitForFunction(()=>window.__calls.filter(c=>c[0]==='dockerCompose'&&c[3]==='up').length===2);
+ const up=(await composeCalls('up'))[1];check(up[2]==='compose.yaml'&&up[5]==='web','▶ de web executa up -d web');
+ await page.waitForFunction(()=>document.querySelector('#run-config-host .run-config-name')?.textContent==='fixture/compose.yaml.web: Compose Deployment');
+ check(await page.locator('#run-config-host.temporary').count()===1,'configuração temporária "fixture/compose.yaml.web: Compose Deployment" selecionada no topo');
  check(!(await page.locator('#run-current').isDisabled()),'botão Executar do topo habilitado para a configuração');
  await page.waitForFunction(()=>[...document.querySelectorAll('.compose-state-hint')].map(e=>e.textContent.replace(/\u00a0/g,' ')).join('|')==='running|running',null,{timeout:8000});
  check(true,'após o up, web passa a running no inlay');
@@ -134,7 +133,7 @@ try{
  // Toolbar popup: lists the configuration, Arquivo atual, Save and Edit Configurations.
  await page.locator('#run-config-host').click();const menu=page.locator('#run-config-host-menu');await menu.waitFor();
  const labels=await menu.locator('.run-config-menu-label').allTextContents();
- check(labels.join('|')==="compose.yaml: web|Arquivo atual|Salvar a configuração 'compose.yaml: web'|Editar configurações…",'popup do seletor: configuração, Arquivo atual, Salvar, Editar configurações…');
+ check(labels.join('|')==="fixture/compose.yaml.cache: Compose Deployment|fixture/compose.yaml.web: Compose Deployment|Arquivo atual|Salvar a configuração 'fixture/compose.yaml.web: Compose Deployment'|Editar configurações…",'popup do seletor: as duas temporárias, Arquivo atual, Salvar, Editar configurações…');
  await page.screenshot({path:out+'/03-toolbar-menu.png'});
  await menu.locator('[data-action=edit]').click();
 
@@ -150,30 +149,30 @@ try{
  await dialog.getByRole('button',{name:'OK'}).click();await dialog.waitFor({state:'detached'});
  check(await page.locator('#run-config-host .run-config-name').textContent()==='Shop web'&&await page.locator('#run-config-host.temporary').count()===0,'configuração salva aparece no topo sem marca temporária');
  const saved=JSON.parse(await page.evaluate(()=>localStorage.getItem('php-ide-docker-compose-configs:/fixture')));
- check(saved.configurations[0].services.join(',')==='web,cache'&&saved.configurations[0].projectName==='shop'&&saved.configurations[0].downVolumes===true,'configuração persistida por projeto');
+ const shopWeb=saved.configurations.find(c=>c.name==='Shop web');check(shopWeb.services.join(',')==='web,cache'&&shopWeb.projectName==='shop'&&shopWeb.downVolumes===true&&shopWeb.downRemoveOrphans===true,'configuração persistida por projeto');
  // Run from the toolbar.
  await page.locator('#run-current').click();
- await page.waitForFunction(()=>window.__calls.filter(c=>c[0]==='dockerCompose'&&c[3]==='up').length===2);
- const run=(await composeCalls('up'))[1];
+ await page.waitForFunction(()=>window.__calls.filter(c=>c[0]==='dockerCompose'&&c[3]==='up').length===3);
+ const run=(await composeCalls('up'))[2];
  check(JSON.stringify([run[5],run[6]])===JSON.stringify([['web','cache'],{build:'always',recreate:'',removeOrphans:false,projectName:'shop'}]),'Executar do topo: up -d --build -p shop web cache');
 
  // 1. Down from Services: options start from the configuration (volumes on), warning, then down --volumes.
  await page.locator('#docker-tab-compose').click();await page.locator('[data-compose=down]:not([disabled])').waitFor();
  await page.locator('[data-compose=down]').click();const down=page.locator('.compose-down-dialog');await down.waitFor();
- check(await down.locator('[name=volumes]').isChecked()&&await down.locator('.compose-down-warning').isVisible(),'Down: “Remover volumes” vem da configuração, com aviso de perda de dados');
- await down.locator('[name=removeOrphans]').check();await page.screenshot({path:out+'/05-down-dialog.png'});
+ check(await down.locator('.compose-down-warning').isVisible(),'Down: a configuração remove volumes, então pede confirmação com aviso de perda de dados');
+ await page.screenshot({path:out+'/05-down-dialog.png'});
  await down.getByRole('button',{name:'Down e remover volumes'}).click();
  await page.waitForFunction(()=>window.__calls.some(c=>c[0]==='dockerCompose'&&c[3]==='down'));
- const d=(await composeCalls('down'))[0];check(JSON.stringify(d[6])===JSON.stringify({volumes:true,removeOrphans:true,projectName:'shop'}),'Down envia --volumes --remove-orphans -p shop');
+ const d=(await composeCalls('down'))[0];check(JSON.stringify(d[6])===JSON.stringify({volumes:true,removeOrphans:true,projectName:'shop'}),'Down envia --volumes --remove-orphans -p shop (órfãos ligado nas configurações do gutter)');
  await page.waitForFunction(()=>document.getElementById('docker-compose-output').textContent.includes('Volume shop_data Removed'));
  await page.waitForFunction(()=>document.querySelectorAll('.compose-state-hint').length===0,null,{timeout:8000});
- check(await page.locator('.glyph-margin-widgets .compose-run.compose-running').count()===0,'após o Down, sem inlays nem marcadores de execução');
+ check(true,'após o Down, sem inlays de estado');
 
  // 2. Services: Compose project group and the inlay opening logs.
  await page.evaluate(()=>{window.__engine={cache:{state:'running',exitCode:0},web:{state:'exited',exitCode:137}};});
- await page.locator('#docker-connect').click();await page.waitForFunction(()=>[...document.querySelectorAll('#docker-tree summary')].some(s=>s.textContent.startsWith('Compose: shop')));
- const group=page.locator('#docker-tree details[data-group="Compose: shop"]');
- check(await group.locator('summary').getAttribute('data-running')==='true','Services: grupo Compose: shop marcado em execução');
+ await page.locator('#docker-connect').click();await page.waitForFunction(()=>[...document.querySelectorAll('#docker-tree summary')].some(s=>s.textContent.startsWith('Docker-compose: shop')));
+ const group=page.locator('#docker-tree details[data-group="Docker-compose: shop"]');
+ check(await group.locator('summary').getAttribute('data-running')==='true','Services: grupo Docker-compose: shop marcado em execução');
  check((await group.locator('.docker-resource').evaluateAll(b=>b.map(e=>e.dataset.state))).join(',')==='running,exited','Services: cache running, web exited');
  await page.waitForFunction(()=>[...document.querySelectorAll('.compose-state-hint')].map(e=>e.textContent.replace(/\u00a0/g,' ')).join('|')==='exited (137)|running',null,{timeout:8000});
  check(await page.locator('.compose-state-failed').count()===1,'saída 137 aparece como falha no inlay');
