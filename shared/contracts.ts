@@ -60,6 +60,8 @@ export type AgentEvent =
   { type: 'mode'; current: string } |
   { type: 'permission'; id: string; title: string; kind?: string; options: { id: string; name: string; kind: string }[] } |
   { type: 'changes'; changes: AgentChange[] } |
+  { type: 'terminal'; id: string; command?: string; cwd?: string; status: 'waiting' | 'running' | 'exited' | 'rejected' | 'killed'; exitCode?: number | null; signal?: string | null } |
+  { type: 'terminal-output'; id: string; text: string } |
   { type: 'commands'; commands: { name: string; description: string; hint?: string | null }[] } |
   { type: 'done'; stopReason: string; error?: string };
 export type Event = { type: 'language'; message: string } | { type: 'acp'; event: AgentEvent } |
@@ -183,6 +185,9 @@ export interface IdeApi {
   agents(): Promise<AgentInfo[]>;
   agentStart(agent: string): Promise<void>;
   agentPrompt(text: string, context?: { path: string; text: string; selection?: string }, extras?: AgentPromptExtras): Promise<void>;
+  /** Aprova (true) ou recusa o comando que o agente quer rodar no terminal; cada comando é decidido uma vez. */
+  agentTerminalDecision(id: string, allow: boolean): Promise<void>;
+  agentTerminalKill(id: string): Promise<void>;
   agentHistory(): Promise<AgentHistorySummary[]>;
   agentHistoryLoad(id: string): Promise<AgentHistorySummary & { items: unknown[] }>;
   agentHistorySave(conversation: { id: string; agent: string; items: unknown[] }): Promise<AgentHistorySummary>;

@@ -156,6 +156,26 @@ scenario('attachments', async () => {
  await page.close();
 });
 
+scenario('terminal', async () => {
+ const {page, errors} = await page_({script: 'terminal'});
+ await startAgent(page);
+ await page.locator('#agent-prompt').fill('Rode os testes'); await page.keyboard.press('Enter');
+ await page.waitForSelector('.agent-terminal[data-id="t1"] .agent-terminal-run');
+ assert.equal(await page.locator('.agent-terminal[data-id="t1"] .agent-terminal-command').textContent(), '$ php vendor/bin/phpunit --testdox');
+ await shot(page, 'terminal-approval');
+ await page.locator('.agent-terminal[data-id="t1"] .agent-terminal-run').click();
+ await page.waitForSelector('.agent-terminal[data-id="t2"] .agent-terminal-reject');
+ assert.equal(await page.locator('.agent-terminal[data-id="t1"] .agent-terminal-status').textContent(), 'Concluído');
+ assert.match(await page.locator('.agent-terminal[data-id="t1"] .agent-terminal-output').textContent(), /OK \(1 test, 1 assertion\)/);
+ await page.locator('.agent-terminal[data-id="t2"] .agent-terminal-reject').click();
+ await page.waitForFunction(() => !document.querySelector('#agent-send').disabled);
+ assert.equal(await page.locator('.agent-terminal[data-id="t2"] .agent-terminal-status').textContent(), 'Recusado');
+ assert.deepEqual(await page.evaluate(() => window.api.calls.filter(c => c[0] === 'agentTerminalDecision').map(c => c.slice(1))), [['t1', true], ['t2', false]]);
+ await shot(page, 'terminal-done');
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 const page_ = page;
 try {
  await server.listen();

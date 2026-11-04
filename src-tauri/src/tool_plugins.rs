@@ -63,6 +63,8 @@ pub fn service_permission(method:&str)->Option<&'static str>{
   "agentPrompt"=>Some("process"),
   "agentReset"=>Some("process"),
   "agentStart"=>Some("process"),
+  "agentTerminalDecision"=>Some("process"),
+  "agentTerminalKill"=>Some("process"),
   "agents"=>Some("process"),
   "composerCancel"=>Some("project.read"),
   "composerProbe"=>Some("project.read"),

@@ -18,6 +18,16 @@ installEditorWorkers?.();
   const services = {};
   if (options.database) services.database = {sqlIntelligence: {entries: new Map([['s1', {session: {id: 's1', label: 'app@localhost', driver: 'postgres'}, model: {label: 'app', database: 'app', defaultSchema: 'public', schemas: [{name: 'public', tables: [{name: 'users', kind: 'table', columns: [{name: 'id', type: 'bigint'}, {name: 'email', type: 'varchar(255)', nullable: false}]}]}]}}]])}};
   const scripts = {
+   terminal: async (text, extras, emit, api) => {
+    emit({type: 'message', text: 'Vou rodar os testes. '});
+    emit({type: 'terminal', id: 't1', command: 'php vendor/bin/phpunit --testdox', cwd: '', status: 'waiting'});
+    if (!(await api.waitTerminal('t1'))) { emit({type: 'terminal', id: 't1', status: 'rejected'}); return; }
+    emit({type: 'terminal', id: 't1', status: 'running'});
+    for (const line of ['PHPUnit 11.5.0 by Sebastian Bergmann.\n', '\n', 'User\n', ' ✔ Name returns synthetic user\n', '\n', 'OK (1 test, 1 assertion)\n']) { await new Promise(r => setTimeout(r, 30)); emit({type: 'terminal-output', id: 't1', text: line}); }
+    emit({type: 'terminal', id: 't1', status: 'exited', exitCode: 0, signal: null});
+    emit({type: 'terminal', id: 't2', command: 'git push --force', cwd: '', status: 'waiting'});
+    if (!(await api.waitTerminal('t2'))) { emit({type: 'terminal', id: 't2', status: 'rejected'}); emit({type: 'message', text: 'Ok, não vou enviar.'}); }
+   },
    echo: async (text, extras, emit) => { emit({type: 'message', text: 'Resposta a: ' + text}); },
   };
   const api = fakeApi({script: window.agentScript ?? scripts[options.script ?? 'echo'], commands: options.commands ?? []});

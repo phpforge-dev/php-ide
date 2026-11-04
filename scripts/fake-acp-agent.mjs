@@ -58,6 +58,23 @@ new AgentSideConnection(connection => {
     try { await connection.writeTextFile({ sessionId, path: '/tmp/php-ide-escape.txt', content: 'x' }); await say(sessionId, 'Escrita externa aceita. '); }
     catch (error) { await say(sessionId, `Escrita externa recusada: ${error.message}. `); }
    }
+   // "terminal": pede dois comandos ao terminal do cliente (o usuário aprova/recusa cada um);
+   // "terminal-parar": um comando que só termina se o usuário interromper.
+   if (text.includes('terminal')) {
+    const long = text.includes('terminal-parar');
+    const runs = long ? [{ command: 'sleep', args: ['30'] }] : [{ command: 'printf', args: ['ola %s\\n', 'terminal'] }, { command: 'echo saida-recusada' }];
+    for (const run of runs) {
+     try {
+      const term = await connection.createTerminal({ sessionId, ...run, cwd: join(session.cwd, 'src'), outputByteLimit: 4096 });
+      await update(sessionId, { sessionUpdate: 'tool_call', toolCallId: `term-${term.id}`, title: `Executar ${run.command}`, kind: 'execute', status: 'in_progress', content: [{ type: 'terminal', terminalId: term.id }] });
+      const exit = await term.waitForExit();
+      const out = await term.currentOutput();
+      await term.release();
+      await update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId: `term-${term.id}`, status: exit.exitCode === 0 ? 'completed' : 'failed' });
+      await say(sessionId, `Terminal ${run.command}: código ${exit.exitCode ?? 'nenhum'}, sinal ${exit.signal ?? 'nenhum'}, saída "${out.output.trim()}". `);
+     } catch (error) { await say(sessionId, `Terminal ${run.command} recusado: ${error.message}. `); }
+    }
+   }
    if (text.includes('longo')) {
     for (let i = 0; i < 300 && !session.cancelled; i++) await new Promise(r => setTimeout(r, 50));
     if (session.cancelled) return { stopReason: 'cancelled' };
