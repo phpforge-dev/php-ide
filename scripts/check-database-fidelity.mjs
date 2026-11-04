@@ -1,6 +1,7 @@
 // Database fidelity (DataGrip-style) in WebKit, the macOS Tauri WebView, with the real host shell,
 // Monaco and the plugin bundle: Stop/⌘F2, read-only per driver, Oracle TNS, table grid filters,
-// sorting and Submit, Redis new key, stream entries and binary values.
+// sorting and Submit, tables without a primary key (row locator), Redis new key, stream entries,
+// binary values and keys whose name is not UTF-8.
 // The API is synthetic and records calls; driver behaviour against disposable containers lives in
 // plugin-database tests/live-databases.mjs. DATABASE_PLUGIN_DIR picks a local plugin build.
 import assert from 'node:assert/strict';
@@ -43,11 +44,12 @@ const bootstrap=`
    pluginAuthorizeService:async()=>{},
    databaseSources:async()=>sources,databaseSaveSources:async list=>(sources=list),databasePasswordStored:async()=>true,
    databaseConnect:async input=>({id:'s-'+input.sourceId,label:input.name,driver:input.driver,schemas:input.driver==='redis'?['db0']:['public'],sourceId:input.sourceId,version:'fixture',readOnly:!!input.readOnly}),
-   databaseTables:async id=>id==='s-rd'?[{name:'events',kind:'stream'},{name:'blob',kind:'string'}]:[{name:'people',kind:'BASE TABLE'}],
-   databaseTnsNames:async input=>{record('databaseTnsNames',[input]);return {dir:input.tnsAdmin||'/opt/oracle/network/admin',names:[{name:'PROD',detail:'tcps://db.example:2484/prod'},{name:'DEV',detail:'tcp://10.0.0.5:1521/dev'}]};},
+   databaseTables:async id=>id==='s-rd'?[{name:'events',kind:'stream'},{name:'blob',kind:'string'},{name:'"img:\\\\xff\\\\xd8"',kind:'string',binary:true}]:[{name:'people',kind:'BASE TABLE'},{name:'logs',kind:'BASE TABLE'}],
+   databaseTnsNames:async input=>{record('databaseTnsNames',[input]);return {dir:input.tnsAdmin||'/opt/oracle/network/admin',names:[{name:'PROD',detail:'tcps://db.example:2484/prod'},{name:'DEV',detail:'tcp://10.0.0.5:1521/dev'},{name:'HA',detail:'tcp://db1:1521/ha (+1 endereço(s), failover, balanceamento)'}]};},
    databasePage:async (...args)=>{record('databasePage',args);const [id,,table,offset,,options]=args;
     if(id==='s-rd'&&table==='events')return {columns:[{name:'id',type:'stream id',nullable:false,primary:true},{name:'fields',type:'string',nullable:false,primary:false}],rows:[['1-0','a=1 b=ff']],binary:[[0,1]],entries:[[{field:'a',value:'1',hex:[false,false]},{field:'b',value:'ff',hex:[false,true]}]],offset:0,hasMore:false,ordered:true,cellLimit:512,kind:'stream',ttl:-1,size:1,meta:'stream · 1 item · TTL sem expiração'};
     if(id==='s-rd')return {columns:[{name:'value',type:'string',nullable:false,primary:false}],rows:[['ff0041']],binary:[[0,0]],offset:0,hasMore:false,ordered:true,cellLimit:512,kind:'string',ttl:-1,size:1,meta:'string · 1 item'};
+    if(table==='logs')return {columns:[{name:'at',type:'text',nullable:true,primary:false},{name:'msg',type:'text',nullable:true,primary:false}],rows:[['10:00','boot'],['10:00','boot']],rowIds:['(0,1)','(0,2)'],identity:'rowid',offset,hasMore:false,ordered:false,cellLimit:512,editable:true,filtered:false};
     let rows=people.slice();if(options?.where)rows=rows.filter(r=>Number(r[0])>1);if(/DESC/.test(options?.orderBy??''))rows.reverse();
     return {columns:[{name:'id',type:'integer',nullable:false,primary:true},{name:'name',type:'text',nullable:false,primary:false},{name:'note',type:'text',nullable:true,primary:false}],rows,offset,hasMore:false,ordered:true,cellLimit:512,editable:true,filtered:!!options?.where};},
    databaseGridEdit:async (...args)=>{record('databaseGridEdit',args);return {applied:args[3].length};},
@@ -105,6 +107,7 @@ try{
  assert.equal(await page.locator('.host-row').isVisible(),false,'host row visible in TNS');
  assert.equal(await page.locator('.tns-row').first().isVisible(),true);
  assert.equal(await page.locator('[name="url"]').inputValue(),'oracle:thin:@PROD');
+ assert.match(await page.locator('select[name="tnsName"] option[value="HA"]').getAttribute('title'),/failover, balanceamento/);
  await page.locator('select[name="tnsName"]').selectOption('DEV');
  assert.equal(await page.locator('[name="url"]').inputValue(),'oracle:thin:@DEV');
  await page.getByRole('tab',{name:'Opções'}).click();
@@ -142,6 +145,18 @@ try{
  const [submit]=await calls(page,'databaseGridEdit');
  assert.deepEqual(submit.args[3],[{op:'update',key:{id:'3'},set:{name:'Carla Souza'}},{op:'insert',values:{id:'9',name:'Nova'}}]);
  await page.waitForFunction(()=>!document.querySelector('td.changed')&&!document.querySelector('tr.inserted'));
+
+ // 2b. Table without a primary key: rows identified by the physical locator (ctid), even duplicates.
+ await page.getByRole('button',{name:'logs'}).click();
+ await page.waitForFunction(()=>document.querySelector('#data-message')?.textContent.includes('localizador físico'));
+ await page.locator('td[data-row="1"][data-col="1"]').dblclick();
+ await page.locator('.cell-editor').fill('shutdown');await page.locator('.cell-editor').press('Enter');
+ await page.locator('#data-grid').focus();await page.keyboard.press('Meta+Enter');
+ await page.waitForFunction(()=>window.calls.filter(c=>c.method==='databaseGridEdit').length===2);
+ const nokey=(await calls(page,'databaseGridEdit')).at(-1);
+ assert.equal(nokey.args[2],'logs');
+ assert.deepEqual(nokey.args[3],[{op:'update',key:{$rowid:'(0,2)',at:'10:00',msg:'boot'},set:{msg:'shutdown'}}]);
+ await shot(page,'grid-no-primary-key');
 
  // 3. Console: Stop button and ⌘F2 cancel the running statement.
  await page.locator('.db-source[data-id="pg"] .db-source-title').click();
@@ -193,6 +208,9 @@ try{
  const create=(await calls(page,'databaseRedisEdit')).find(c=>c.args[2].op==='create').args[2];
  assert.deepEqual([create.key,create.kind,create.field,create.value,create.ttl],['queue:new','hash','f','v',60]);
  await shot(page,'redis-new-key');
+ // Key whose name is not UTF-8: listed in redis-cli quoting and opened by that name.
+ await page.getByRole('button',{name:'"img:\\xff\\xd8"'}).click();
+ await page.waitForFunction(()=>window.calls.some(c=>c.method==='databasePage'&&c.args[2]==='"img:\\xff\\xd8"'));
  assert.deepEqual(errors,[]);
- console.log('WebKit: read-only per driver, Oracle TNS aliases, grid WHERE/ORDER BY/edit/Submit, Stop with ⌘F2 and Redis hex, stream and new key flows OK.');
+ console.log('WebKit: read-only per driver, Oracle TNS aliases (failover/balance detail), grid WHERE/ORDER BY/edit/Submit, no-PK grid by row locator, Stop with ⌘F2 and Redis hex, stream, new key and non-UTF-8 key flows OK.');
 }finally{await browser?.close();await server.close();}

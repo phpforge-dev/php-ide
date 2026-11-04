@@ -24,15 +24,71 @@ Harness WebKit: `DATABASE_PLUGIN_DIR=~/Projects/plugin-database node scripts/che
 
 ## Limitações conhecidas
 
-- **Oracle:** sem permissão `ALTER SYSTEM`, o Stop abandona a chamada após 2 s e reabre a conexão, e o servidor pode seguir executando até perceber o socket fechado. O oracle-rs não expõe *break*.
-- **SQL Server:** o Stop usa `KILL`, que exige `ALTER ANY CONNECTION`. A sessão do console é reaberta e a transação aberta se perde. O DataGrip envia *attention* e preserva a sessão.
-- **MySQL:** um `SLEEP()` interrompido devolve resultado, não erro. Os comandos seguintes do lote são pulados mesmo assim.
-- **Somente leitura:** o classificador é conservador. `SELECT … FOR UPDATE`, `EXEC`/`CALL` e blocos PL/SQL são recusados. Para colunas com nome de palavra reservada de escrita, como `insert`, é preciso usar aspas.
-- **TNS:** usa o primeiro ADDRESS TCP/TCPS, sem balanceamento nem failover. Não há LDAP, e wallet só no formato PEM aceito pelo oracle-rs. A verificação de DN depende do driver.
-- **Redis:** chaves cujo nome não é UTF-8 não aparecem na árvore. Entradas de stream não são editáveis, porque o Redis só acrescenta.
+As limitações abaixo foram revistas na [rodada 2](#rodada-2-04112026); as que ela resolveu estão marcadas.
+
+- **Oracle:** ~~sem *break*~~ (rodada 2: break em banda). Se o servidor não confirmar o break em 5 s, a IDE tenta `ALTER SYSTEM CANCEL SQL` e reabre a conexão.
+- **SQL Server:** ~~Stop por `KILL`~~ (rodada 2: *attention* TDS). `KILL` ficou só como reserva, quando o servidor não confirma a *attention* em 5 s.
+- **MySQL:** ~~`SLEEP()` interrompido devolve resultado~~ (rodada 2: vira erro).
+- **Somente leitura:** ~~`FOR UPDATE`, `CALL` e palavras reservadas recusados~~ (rodada 2). Ainda são recusados blocos PL/SQL, `CALL` no Oracle e `EXEC` de procedimentos de usuário no SQL Server.
+- **TNS:** ~~sem failover nem balanceamento~~ (rodada 2). Continuam sem suporte DESCRIPTION_LIST e LDAP. Wallet só no formato PEM aceito pelo oracle-rs, e a verificação de DN depende do driver.
+- **Redis:** ~~chaves com nome não UTF-8 fora da árvore~~ (rodada 2). Entradas de stream não são editáveis, porque o Redis só acrescenta.
 - **Grade:**
-  - Tabelas sem PK ficam somente leitura.
+  - ~~Tabelas sem PK somente leitura~~ (rodada 2). Views e tabelas sem PK que também não têm localizador continuam somente leitura (IOT no Oracle, WITHOUT ROWID no SQLite).
   - Células truncadas (> 512 caracteres) e tipos binários ou espaciais não são editados.
   - O valor é enviado como texto: Oracle DATE depende do NLS e SQL Server binário não converte.
   - Não há edição de resultados do console, nem modo *auto-submit*, nem desfazer por célula.
 - **Comparação:** não houve comparação visual nem de comportamento com o PhpStorm. Os itens ficam em desenvolvimento, sem promoção de compatibilidade.
+
+## Rodada 2 (04/11/2026)
+
+Plugin `plugin-database`, `main` local, um commit por item, sem push e sem nova versão (continua 1.1.0): `65dc575` Stop, `b94bbe3` somente leitura, `7ae8509` TNS, `f59d65c` + `7f5e263` grade sem PK (o segundo alinha com a observação do PhpStorm) e `60de540` Redis. O host não mudou. O harness WebKit `scripts/check-database-fidelity.mjs` ganhou os casos novos. Como a parte nativa mudou, a revisão fixada em `src-tauri/Cargo.toml` precisa ser atualizada depois do push.
+
+### Evidência
+
+- **DOC:** a ajuda da JetBrains diz que a opção *Read-only* protege a fonte contra alterações acidentais e desliga a edição no editor de dados. Diz também que, no console, a garantia depende de o driver suportar o modo somente leitura. Ou seja, quem decide é o servidor, sem uma lista própria e conservadora de comandos.
+- **Especificações públicas:** MS-TDS (*attention* 2.2.1.7 e DONE_ATTN 3.2.5.2), Oracle Net (FAILOVER, LOAD_BALANCE, RETRY_COUNT e Easy Connect Plus com vários hosts) e a sintaxe de strings com aspas do `redis-cli` (`\xNN`).
+- **OBS (04/11/2026, PhpStorm 2026.1.4):** observação na tela com fontes de dados globais temporárias apontando para containers descartáveis (PG 16, MySQL 8.4, SQL Server 2022, Oracle Free 23, Redis 7), removidas no fim. As capturas ficam só na máquina, em `.artifacts/phpstorm-reference/database-r2/`. O resultado está na seção [Observação do PhpStorm](#observação-do-phpstorm-rodada-2).
+- **HIP:**
+  - Que o UPDATE do editor de tabela no PostgreSQL também combine colunas e ctid, como no Oracle. O PG estava em Read-only, então só a leitura com `CTID` foi observada.
+  - A forma `"…\xNN…"` para nomes Redis segue o `redis-cli`; não foi comparada com a árvore do DataGrip.
+  - O erro de `SLEEP()` cancelado imita o cancelamento do lado cliente do Connector/J.
+
+### Observação do PhpStorm (rodada 2)
+
+| Item | O que o PhpStorm faz (OBS) | Nosso comportamento |
+|---|---|---|
+| Stop no SQL Server | O Output mostra "Cancelling…" e depois, em vermelho, "[HY008] The query was canceled.". `@@SPID` (52) e `@@TRANCOUNT` (1) continuam iguais depois. | Igual: *attention* preserva a sessão e a transação. |
+| Stop no Oracle | Faixa e Output vermelhos com "ORA-01013 … cancelamento da operação atual". O console Oracle abre com Tx: Manual. | Igual no Stop (ORA-01013). Diferença: nosso console Oracle é auto-commit. |
+| Stop do MySQL em `SLEEP()` | "Cancelling…" e depois "completed in … ms", **sem erro**. A aba do resultado fica com 0 linhas e não mostra o `1` do servidor. | Diferente: mostramos "Consulta cancelada" (aba "Cancelado") e paramos o lote. O valor `1` também não aparece. |
+| Somente leitura | Antes de enviar, o PhpStorm mostra a faixa "You are attempting to execute a statement that leads to modification of data during a read-only connection", com um botão **Execute** para forçar. `SELECT … FOR UPDATE`, colunas `update`/`delete` e `CALL` passam sem aviso. Com auto-commit no PostgreSQL, **`CALL` de um procedimento que grava foi executado e gravou** (o pgjdbc só aplica read-only fora do auto-commit). Em Read-only, as grades ficam bloqueadas. | Igual em FOR UPDATE, palavras reservadas e `CALL` de leitura. Divergência deliberada: nosso `CALL` só passa se o corpo só lê, e a sessão segue read-only no servidor. Não oferecemos o botão Execute para forçar. |
+| Grade sem PK | No **resultado do console**, o UPDATE usa todas as colunas (`WHERE at = '10:00' AND msg = 'boot'`) em PG e Oracle. Com duas linhas idênticas: "Unexpected update count received (Actual: 2, Expected: 1). All changes will be rolled back.". No **editor de tabela**, a leitura traz o localizador (`SELECT t.*, CTID` no PG, `SELECT t.*, ROWID` no Oracle) e o UPDATE do Oracle usa todas as colunas **e** `ROWID`, afetando 1 linha. | Ajustado depois da observação: a grade de tabela usa todas as colunas comparáveis mais ctid/ROWID/rowid. A edição de resultados do console continua fora do escopo. |
+| TNS | Conexão TNS com TNSADMIN e nome do alias. Um alias com `FAILOVER=on` e `LOAD_BALANCE=on` cujo primeiro endereço está morto conecta ("Succeeded"). Com `FAILOVER=off`, falha com "ORA-12541 … host 127.0.0.1 port 1". | Igual. |
+| Redis com nome não UTF-8 | A árvore e o `KEYS *` mostram `img:��` (com perda). Mesmo assim, abrir a chave lê o valor (`GET img:��` no log). | Diferente na exibição: mostramos `"img:\xff\xd8"`, que é reversível e também serve para digitar no console. |
+
+### Critérios e validação
+
+| Item | Critérios (REQ) | Testes |
+|---|---|---|
+| Stop que preserva a sessão | **SQL Server:** ⌘F2 envia *attention* na própria conexão e espera o DONE_ATTN. A transação aberta, as `#temp` e os SETs continuam valendo. Se não houver confirmação em 5 s, a IDE usa `KILL` e reconecta. **Oracle:** marker INTERRUPT em banda, troca de RESET e ORA-01013, com o mesmo SID depois, sobre TCP e TCPS. **MySQL/MariaDB:** `SLEEP()` interrompido aparece como "Consulta cancelada" e o lote para. | `cancel_live` mais a verificação de estado de sessão: o backend (SID ou `@@SPID`) é o mesmo antes e depois, e também `@@TRANCOUNT` e a `#temp` no SQL Server, `SET @v` no MySQL/MariaDB e `application_name` no PG. Stop sobre TCPS no Oracle. |
+| Somente leitura menos conservador | `SELECT … FOR UPDATE/SHARE/NO KEY UPDATE` passa pela IDE e o servidor decide: PG, MySQL 8.4 e MariaDB recusam na transação read-only. Palavras de escrita só contam no início de um comando. Exceções: no SQL Server, onde comandos não precisam de `;`, e em palavras reservadas em todos os dialetos (`INTO`, `CREATE`, `GRANT`…). Nomes qualificados (`t.delete`) e funções (`INSERT()` do MySQL) passam. `CALL` no PG/MySQL/MariaDB só passa se o corpo no catálogo não gravar, não controlar transação, não usar SQL dinâmico nem chamar outro procedimento; no MySQL, `MODIFIES SQL DATA` também é recusado. `EXEC` no SQL Server só para procedimentos de sistema de consulta. `SET` que troque o modo de transação é recusado. | `read_only::tests` (classificador, corpo de rotina, `routine_call`) e `read_only_live` nos 5 SGBDs SQL: coluna `update`, FOR UPDATE, `CALL` de leitura aceito, `CALL` que grava recusado e procedimento `READS SQL DATA` que contém DELETE recusado. |
+| TNS failover/balanceamento | Todos os ADDRESS TCP/TCPS do DESCRIPTION, dentro ou fora de ADDRESS_LIST, na ordem do arquivo. FAILOVER vem ligado por padrão e tenta o endereço seguinte. LOAD_BALANCE embaralha a ordem a cada conexão. RETRY_COUNT repete a lista até 10 vezes. Erro de credencial (ORA-01017 e similares) não passa ao endereço seguinte. Easy Connect aceita `h1,h2:porta/svc`. A lista de aliases mostra "+N endereço(s), failover, balanceamento". Com túnel SSH, só o primeiro endereço é usado. | `tns_failover_and_load_balance` (as 6 ordens aparecem); `live-databases.mjs`: alias com endereço morto antes do real conecta, `LOAD_BALANCE=on` conecta 8 de 8 vezes e `FAILOVER=off` falha no endereço morto. |
+| Grade sem PK | A página informa `identity`: `primary`, `rowid` (ctid no PG, ROWID no Oracle, rowid no SQLite, lido como coluna oculta) ou `columns` (MySQL/MariaDB/SQL Server, só tabelas base). O WHERE leva todas as colunas comparáveis e, com `rowid`, também o localizador, como o editor de tabela do PhpStorm. NULL vira `IS NULL`. Ficam de fora float, LOB, binários, valores truncados e `text`/`ntext`/`xml` do SQL Server. Linhas duplicadas desfazem o Submit com a mensagem "linhas idênticas". Linha alterada por outro cliente também desfaz. A barra de status informa como a linha é identificada. | `grid.test.ts`; `sqlite_grid_…` (rowid, view e WITHOUT ROWID); `grid_nokey_live` nos 5 SGBDs; harness WebKit (Submit com `$rowid`). |
+| Redis com nome não UTF-8 | A árvore lista essas chaves no formato do redis-cli (`"img:\xff\xd8"`), marcadas `binary`. O formato tem volta exata, e um nome UTF-8 que já vem entre aspas também é citado. Prévia, edição, TTL, renomear e excluir funcionam com esse nome. O console aceita `\xNN` entre aspas duplas e mostra nomes binários na mesma forma. | `key_names_round_trip_through_redis_cli_quoting`, `redis_arguments_respect_quotes`, `redis_binary_key_live`, harness WebKit. |
+
+Também mudou na rodada 2:
+
+- **MySQL:** o console agora executa `CREATE PROCEDURE` e outros comandos que o protocolo de prepared statements recusa (erro 1295), pelo protocolo de texto.
+- **Oracle:** em somente leitura, cada comando roda na própria transação READ ONLY, desfeita em seguida. Antes, o segundo comando repetia `SET TRANSACTION` (ORA-01453) e o Oracle Free derrubava a conexão.
+- **Crates vendorizados:** tiberius 0.12.3 e oracle-rs 0.1.7 estão em `native/vendor`, renomeados e com as licenças originais, com o patch mínimo de cancelamento (`native/vendor/README.md`). Foram vendorizados porque um `[patch]` não vale quando o plugin é dependência git do host.
+
+Comandos:
+
+- `node tests/live-databases.mjs`: containers e rede Docker próprios, removidos no fim; define `RUST_MIN_STACK` para o future grande do teste em debug.
+- `DATABASE_PLUGIN_DIR=~/Projects/plugin-database node scripts/check-database-fidelity.mjs`: harness WebKit.
+
+### Limitações da rodada 2
+
+- O break do Oracle é sempre em banda. Não foi testado contra servidor que negocia OOB. O Oracle em Docker no macOS não negocia OOB.
+- O FOR UPDATE do Oracle em somente leitura é recusado pelo servidor, mas o oracle-rs devolve "Oracle closed the connection" em vez do ORA e reabre a sessão.
+- A análise do corpo de `CALL` é léxica e conservadora: um `SELECT INSERT(...)` dentro do corpo também recusa.
+- Na suíte completa, com todos os containers ao mesmo tempo, apareceram falhas de carga: um timeout de 8 s na conexão Oracle e um "I/O error" no Redis TLS. Rodando cada SGBD sozinho, todos passam.
