@@ -43,3 +43,22 @@
 .context-menu .menu-heading{padding:6px 10px 2px;font-size:var(--ij-font-size-small);color:var(--ij-text-secondary);cursor:default}
 .context-menu.has-checks button{padding-left:26px;position:relative}
 .context-menu button[aria-checked=true]::before{content:'';position:absolute;left:8px;width:12px;height:12px;background:currentColor;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2 6.5l2.5 2.5L10 3" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/12px no-repeat;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2 6.5l2.5 2.5L10 3" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/12px no-repeat}
+/* Round 2: Inspect Code link/progress (capture 51) and the code preview beside the tree. */
+.problems-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.problems-empty{flex-direction:column;gap:4px}
+.problems-link{height:auto;padding:0;border:0;background:transparent;color:var(--ij-link,#548af7);font:inherit;cursor:pointer}
+.problems-link:hover{text-decoration:underline}
+.problems-link[hidden]{display:none}
+.problems-progress{display:flex;align-items:center;gap:10px;padding:6px 8px;color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
+.problems-progress[hidden]{display:none}
+.problems-progress span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.problems-progress progress{width:120px;height:4px;flex:none;accent-color:var(--ij-focus,#548af7)}
+.problems-toolbar button[aria-pressed=true]{background:var(--ij-selection-inactive);color:var(--ij-text)}
+.problems-preview{flex:1;min-width:0;display:flex;flex-direction:column;border-left:1px solid var(--ij-border)}
+.problems-preview[hidden]{display:none}
+.problems-preview-title{display:flex;align-items:center;gap:5px;height:24px;flex:none;padding:0 8px;color:var(--ij-text);font-size:var(--ij-font-size-small);border-bottom:1px solid var(--ij-border)}
+.problems-preview-title .resource-icon{display:inline-flex;width:16px;height:16px}
+.problems-preview-editor{flex:1;min-height:0}
+.problems-preview-editor[hidden],.problems-preview-empty[hidden]{display:none}
+.problems-preview-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--ij-text-secondary)}
+.monaco-editor .problem-preview-range{border-bottom:2px wavy var(--ij-editor-error,#e55765)}

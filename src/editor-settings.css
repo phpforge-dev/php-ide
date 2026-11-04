@@ -1,0 +1,27 @@
+/* Editor settings page (Settings › Editor › General: Breadcrumbs, Editor Tabs). Islands tokens, own layout. */
+#editor-settings-dialog{top:10vh;margin:0 auto;width:min(560px,92vw);max-height:80vh;padding:0;display:none;flex-direction:column;background:var(--ij-dialog);color:var(--ij-text);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);font:var(--ij-font-size)/1.4 var(--ij-font-ui)}
+#editor-settings-dialog[open]{display:flex}
+#editor-settings-dialog::backdrop{background:var(--ij-backdrop)}
+#editor-settings-dialog header{position:static;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--ij-border);background:var(--ij-dialog)}
+#editor-settings-dialog h2{font-size:15px;font-weight:600;margin:0;color:var(--ij-text)}
+#editor-settings-dialog header button{width:26px;height:26px;border:0;background:transparent;color:var(--ij-text-secondary);font-size:18px;border-radius:var(--ij-control-radius-compact,4px)}
+#editor-settings-dialog header button:hover{background:var(--ij-hover)}
+.editor-settings-body{overflow:auto;padding:4px 18px 12px}
+#editor-settings-dialog section{padding:10px 0;border-bottom:1px solid var(--ij-border)}
+#editor-settings-dialog section:last-child{border-bottom:0}
+#editor-settings-dialog h3{margin:4px 0 8px;font-size:var(--ij-font-size);font-weight:600;color:var(--ij-text)}
+#editor-settings-dialog label{display:flex;align-items:center;gap:6px;margin:5px 0;color:var(--ij-text);font-size:var(--ij-font-size)}
+#editor-settings-dialog fieldset{border:0;margin:4px 0;padding:0 0 0 22px;display:flex;flex-wrap:wrap;align-items:center;column-gap:16px}
+#editor-settings-dialog fieldset:disabled{opacity:.5}
+#editor-settings-dialog legend{float:left;margin-right:10px;padding:0;color:var(--ij-text-secondary)}
+.editor-settings-languages{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));row-gap:0}
+.editor-settings-languages legend{grid-column:1/-1;float:none;margin:4px 0 2px}
+#editor-settings-dialog input[type=number],#editor-settings-dialog select{height:24px;padding:0 6px;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius-compact,4px);background:var(--ij-control-bg,var(--ij-island));color:var(--ij-text);font:inherit}
+#editor-settings-dialog input[type=number]{width:64px}
+#editor-settings-dialog input:focus-visible,#editor-settings-dialog select:focus-visible{outline:2px solid var(--ij-focus,#548af7);outline-offset:1px}
+#editor-settings-dialog footer{padding:8px 16px;border-top:1px solid var(--ij-border);color:var(--ij-text-info);font-size:var(--ij-font-size-small);height:auto;display:block;background:var(--ij-dialog)}
+#editor-settings-dialog input[type=checkbox],#editor-settings-dialog input[type=radio]{appearance:auto;-webkit-appearance:auto;flex:none;width:14px;height:14px;min-width:0;margin:0;padding:0;border:0;background:none;accent-color:var(--ij-focus,#548af7)}
+#editor-settings-dialog .editor-settings-row{gap:8px}
+#editor-settings-dialog .editor-settings-note{margin:4px 0 0;color:var(--ij-text-info);font-size:var(--ij-font-size-small)}
+#editor-settings-dialog label.editor-settings-row input,#editor-settings-dialog label.editor-settings-row select{display:inline-block;width:auto;margin:0}
+#tabs[hidden]{display:none}

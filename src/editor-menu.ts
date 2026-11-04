@@ -3,6 +3,9 @@ import { t, msg } from './i18n';
 import { keymap } from './keymap';
 import { openMenu, type MenuItem } from './context-menu';
 import { structureOf, symbolPath, referenceOf } from './code-structure';
+import { pluginServices } from './plugin-services';
+import { runMenuItems } from './run-context';
+import { compareWithClipboard } from './compare-clipboard';
 import './editor-menu.css';
 // UI-CONTEXT-001 — editor context menu in place of Monaco's. Order and labels observed on PhpStorm 2026.1.4
 // (capture 31, 2026-10-23): Show Context Actions · AI Actions | Paste · Copy / Paste Special · Column Selection
@@ -10,8 +13,16 @@ import './editor-menu.css';
 // Local History · Git | Compare with Clipboard · snippets · Diagrams | AI chat. Cut/Copy appear with a selection
 // (public help; the capture had none). Left out, rather than shown dead: AI, Generate, Run/Debug configurations,
 // Compare with Clipboard, snippets/gists and Diagrams. Shortcuts are the ones that work here (keymap or Monaco).
+// Round 2: Generate… (⌘N / Alt+Insert) lists what plugins offer — `generate.*` plugin services with
+// generateItems(context) and editor actions they contribute whose id/label says generate/getter/setter/constructor/
+// implement/override; Run · Debug · More Run/Debug delegate to plugin keymap actions (run-context.ts); Compare with
+// Clipboard opens a diff (compare-clipboard.ts). AI, snippets/gists and Diagrams stay out.
 
 type Entry = Exclude<MenuItem, '-'>;
+/** Contribution of a plugin to Generate… (plugin service named `generate.<plugin>`). */
+export type GenerateContext = { editor: monaco.editor.IStandaloneCodeEditor; model: monaco.editor.ITextModel; position: monaco.Position; path?: string; language: string };
+export type GenerateItem = { label: string; run(): unknown; shortcut?: string; disabled?: boolean };
+type GenerateProvider = { generateItems(context: GenerateContext): GenerateItem[] | Promise<GenerateItem[]> };
 type Hooks = {
  /** Active project file (not a virtual buffer). */
  path(): string | undefined;
@@ -60,6 +71,7 @@ export function mountEditorMenu(editor: monaco.editor.IStandaloneCodeEditor, hoo
   const git = supported.filter(a => /^Git:\s*/.test(a.label)).map(a => action(a.id, a.label.replace(/^Git:\s*/, '').replace(/^./, c => c.toUpperCase())));
   const ref = reference();
   const column = !!editor.getOption(monaco.editor.EditorOption.columnSelection);
+  const target = editor.getDomNode();
   return [
    action('editor.action.quickFix', t('Mostrar ações de contexto'), { disabled: readOnly }),
    '-',
@@ -91,11 +103,36 @@ export function mountEditorMenu(editor: monaco.editor.IStandaloneCodeEditor, hoo
    '-',
    action('editor.action.rename', t('Renomear…'), { disabled: readOnly }),
    { id: 'refactor', label: t('Refatorar'), disabled: readOnly, children: [action('editor.action.rename', t('Renomear…')), ...(refactorThis ? [] : [action('editor.action.refactor', t('Refatorar este…'))]), ...refactors] },
+   { id: 'generate', label: t('Gerar…'), shortcut: keymap.shortcut('editor.generate') || undefined, disabled: readOnly || !canGenerate(), run: () => void generate() },
+   '-',
+   ...runMenuItems(target),
    '-',
    ...(file ? [file.openIn, '-', file.history] as MenuItem[] : []),
    ...(git.length ? [{ id: 'git', label: 'Git', children: git } as Entry] : []),
+   '-',
+   { id: 'compare-clipboard', label: t('Comparar com a área de transferência'), run: () => void compareWithClipboard(editor, path?.split('/').pop() ?? editor.getModel()?.uri.path.split('/').pop() ?? '', hooks.status) },
   ];
  }
+ // --- Generate… -----------------------------------------------------------------------------
+ const generateActions = () => editor.getSupportedActions().filter(a => !a.id.startsWith('editor.') && /generat|gerar|getter|setter|construct|implement|override|sobrescrever/i.test(a.id + ' ' + a.label));
+ const providers = () => pluginServices<GenerateProvider>('generate.').filter(p => typeof p?.generateItems === 'function');
+ const canGenerate = () => !!editor.getModel() && (providers().length > 0 || generateActions().length > 0);
+ const caretPoint = () => { const position = editor.getPosition(); const node = editor.getDomNode(); if (!position || !node) return { x: innerWidth / 3, y: innerHeight / 3 }; const at = editor.getScrolledVisiblePosition(position); const r = node.getBoundingClientRect(); return { x: r.left + (at?.left ?? 0), y: r.top + (at?.top ?? 0) + (at?.height ?? 18) }; };
+ async function generate() {
+  const model = editor.getModel(), position = editor.getPosition(); if (!model || !position) return;
+  const context: GenerateContext = { editor, model, position, path: hooks.path(), language: model.getLanguageId() };
+  const lists = await Promise.all(providers().map(p => Promise.resolve().then(() => p.generateItems(context)).catch(error => { hooks.status(msg`Gerar: ${String((error as Error)?.message ?? error)}`); return [] as GenerateItem[]; })));
+  if (editor.getModel() !== model) return;
+  const items: Entry[] = [...lists.flat().filter(i => i && typeof i.label === 'string').map((i, n) => ({ id: 'generate-' + n, label: i.label, shortcut: i.shortcut, disabled: i.disabled, run: () => { editor.focus(); return i.run(); } })),
+   ...generateActions().map(a => action(a.id, a.label))];
+  if (!items.length) { hooks.status(t('Nada a gerar neste ponto.')); return; }
+  const at = caretPoint(); const node = editor.getDomNode();
+  openMenu([{ label: t('Gerar'), heading: true }, ...items], at.x, at.y, { restore: node?.querySelector('textarea') ?? null, label: t('Gerar') });
+ }
+ keymap.registerAction({ id: 'editor.generate', label: 'Gerar…', category: 'Código', aliases: 'generate code constructor getter setter gerar', context: 'editor',
+  defaults: { mac: 'Meta+N', other: 'Alt+Insert' }, enabled: () => canGenerate() && !editor.getOption(monaco.editor.EditorOption.readOnly), run: () => generate() });
+ keymap.registerAction({ id: 'editor.compareClipboard', label: 'Comparar com a área de transferência', category: 'Editor', aliases: 'compare clipboard diff', context: 'editor', defaults: {},
+  enabled: () => !!editor.getModel(), run: () => compareWithClipboard(editor, hooks.path()?.split('/').pop() ?? editor.getModel()?.uri.path.split('/').pop() ?? '', hooks.status) });
  const show = (x: number, y: number) => {
   const node = editor.getDomNode(); node?.classList.add('menu-open');
   openMenu(items(), x, y, { restore: node?.querySelector('textarea') ?? null, label: t('Menu do editor'), onClose: () => { node?.classList.remove('menu-open'); } });

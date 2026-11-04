@@ -29,7 +29,7 @@ export function symbolIcon(kind:string):HTMLElement{
  if(['class','interface','enum','trait'].includes(kind)){const icon=fileIcon('x.php',false);const name='php-'+kind;icon.dataset.icon='original/'+name;
   icon.querySelectorAll('img').forEach(img=>{img.src=originals[`./assets/original-icons/${name}${img.classList.contains('icon-dark')?'_dark':''}.svg`];});return icon;}
  const icon=document.createElement('span');icon.className='resource-icon symbol-icon';icon.dataset.icon='symbol/'+kind;icon.setAttribute('aria-hidden','true');
- const letter=kind==='method'?'m':kind==='function'?'f':kind==='namespace'?'n':'#';
+ const letter=kind==='method'?'m':kind==='function'?'f':kind==='namespace'||kind==='module'?'n':kind==='key'?'k':kind==='tag'?'t':'#';
  icon.dataset.letter=letter; // drawn by CSS (code-breadcrumbs.css) so it never joins the element's text
  return icon;
 }

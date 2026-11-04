@@ -1,0 +1,11 @@
+/* Compare with Clipboard dialog (UI-CONTEXT-001). */
+.compare-clipboard{top:6vh;margin:0 auto;width:min(1100px,94vw);max-width:none;height:min(720px,86vh);padding:0;display:none;flex-direction:column;background:var(--ij-dialog);color:var(--ij-text);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);font:var(--ij-font-size)/1.4 var(--ij-font-ui)}
+.compare-clipboard[open]{display:flex}
+.compare-clipboard::backdrop{background:var(--ij-backdrop)}
+.compare-clipboard header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--ij-border)}
+.compare-clipboard h2{margin:0;font-size:14px;font-weight:600}
+.compare-clipboard header button{width:26px;height:26px;border:0;background:transparent;color:var(--ij-text-secondary);font-size:18px;border-radius:var(--ij-control-radius-compact,4px)}
+.compare-clipboard header button:hover{background:var(--ij-hover)}
+.compare-clipboard-labels{display:grid;grid-template-columns:1fr 1fr;padding:4px 14px;color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
+.compare-clipboard-editor{flex:1;min-height:0}
+.compare-clipboard footer{height:auto;padding:6px 14px;border-top:1px solid var(--ij-border);color:var(--ij-text-info);font-size:var(--ij-font-size-small);display:block}

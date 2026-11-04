@@ -1,0 +1,59 @@
+/* Bookmarks (UI-CONTEXT-001): gutter mark, mnemonic chooser and the list popup. Own drawing, Islands tokens. */
+.monaco-editor .bookmark-glyph{position:relative}
+.monaco-editor .bookmark-glyph::before{content:'';position:absolute;left:3px;top:50%;width:9px;height:12px;margin-top:-6px;background:var(--ij-text-secondary,#8f9ba8);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 12'%3E%3Cpath d='M0 1a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v11L4.5 9 0 12z'/%3E%3C/svg%3E") center/9px 12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 12'%3E%3Cpath d='M0 1a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v11L4.5 9 0 12z'/%3E%3C/svg%3E") center/9px 12px no-repeat}
+.monaco-editor .bookmark-glyph[class*=bookmark-m-]::before{left:1px;width:13px;height:13px;margin-top:-6.5px;border-radius:3px;-webkit-mask:none;mask:none;background:var(--ij-hover-strong,#4e5157)}
+.monaco-editor .bookmark-glyph[class*=bookmark-m-]::after{position:absolute;left:1px;top:50%;width:13px;height:13px;margin-top:-6.5px;display:flex;align-items:center;justify-content:center;font:600 9px/1 var(--ij-font-ui);color:var(--ij-text,#dfe1e5)}
+.monaco-editor .bookmark-m-1::after{content:'1'}
+.monaco-editor .bookmark-m-2::after{content:'2'}
+.monaco-editor .bookmark-m-3::after{content:'3'}
+.monaco-editor .bookmark-m-4::after{content:'4'}
+.monaco-editor .bookmark-m-5::after{content:'5'}
+.monaco-editor .bookmark-m-6::after{content:'6'}
+.monaco-editor .bookmark-m-7::after{content:'7'}
+.monaco-editor .bookmark-m-8::after{content:'8'}
+.monaco-editor .bookmark-m-9::after{content:'9'}
+.monaco-editor .bookmark-m-0::after{content:'0'}
+.monaco-editor .bookmark-m-A::after{content:'A'}
+.monaco-editor .bookmark-m-B::after{content:'B'}
+.monaco-editor .bookmark-m-C::after{content:'C'}
+.monaco-editor .bookmark-m-D::after{content:'D'}
+.monaco-editor .bookmark-m-E::after{content:'E'}
+.monaco-editor .bookmark-m-F::after{content:'F'}
+.monaco-editor .bookmark-m-G::after{content:'G'}
+.monaco-editor .bookmark-m-H::after{content:'H'}
+.monaco-editor .bookmark-m-I::after{content:'I'}
+.monaco-editor .bookmark-m-J::after{content:'J'}
+.monaco-editor .bookmark-m-K::after{content:'K'}
+.monaco-editor .bookmark-m-L::after{content:'L'}
+.monaco-editor .bookmark-m-M::after{content:'M'}
+.monaco-editor .bookmark-m-N::after{content:'N'}
+.monaco-editor .bookmark-m-O::after{content:'O'}
+.monaco-editor .bookmark-m-P::after{content:'P'}
+.monaco-editor .bookmark-m-Q::after{content:'Q'}
+.monaco-editor .bookmark-m-R::after{content:'R'}
+.monaco-editor .bookmark-m-S::after{content:'S'}
+.monaco-editor .bookmark-m-T::after{content:'T'}
+.monaco-editor .bookmark-m-U::after{content:'U'}
+.monaco-editor .bookmark-m-V::after{content:'V'}
+.monaco-editor .bookmark-m-W::after{content:'W'}
+.monaco-editor .bookmark-m-X::after{content:'X'}
+.monaco-editor .bookmark-m-Y::after{content:'Y'}
+.monaco-editor .bookmark-m-Z::after{content:'Z'}
+.bookmark-mnemonic,.bookmarks-popup{position:fixed;z-index:2100;padding:8px;box-sizing:border-box;background:var(--ij-popup);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);color:var(--ij-text);font:var(--ij-font-size)/1.4 var(--ij-font-ui)}
+.bookmark-mnemonic{width:300px}
+.bookmark-mnemonic-title,.bookmarks-popup-title{margin:0 2px 8px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bookmark-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.bookmark-grid button{height:24px;min-width:0;padding:0;border:1px solid var(--ij-control-border);border-radius:var(--ij-control-radius-compact,4px);background:transparent;color:var(--ij-text);font:600 11px var(--ij-font-ui)}
+.bookmark-grid button.used{color:var(--ij-text-info);border-style:dashed}
+.bookmark-grid button[aria-pressed=true]{background:var(--ij-selection);color:var(--ij-selection-text);border-color:var(--ij-focus,#548af7)}
+.bookmark-grid button:focus-visible{outline:2px solid var(--ij-focus,#548af7);outline-offset:1px}
+.bookmark-mnemonic input{display:block;width:100%;box-sizing:border-box;margin:8px 0 4px;height:24px;padding:0 6px}
+.bookmark-mnemonic small,.bookmarks-empty{color:var(--ij-text-info);font-size:var(--ij-font-size-small)}
+.bookmarks-popup{width:min(520px,90vw);max-height:50vh;display:flex;flex-direction:column}
+.bookmarks-popup [role=listbox]{overflow:auto;outline:none}
+.bookmarks-popup [role=option]{display:flex;align-items:center;gap:6px;height:24px;padding:0 6px;border-radius:var(--ij-tab-radius,4px);cursor:pointer;white-space:nowrap}
+.bookmarks-popup [role=option][aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
+.bookmarks-popup .bookmark-key{width:14px;flex:none;font-weight:600;text-align:center}
+.bookmarks-popup .resource-icon{display:inline-flex;width:16px;height:16px;flex:none}
+.bookmarks-popup small{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--ij-text-info);font-family:var(--ij-font-editor,monospace)}
+.bookmarks-empty{padding:6px}

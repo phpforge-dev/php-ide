@@ -1,6 +1,8 @@
 import * as monaco from 'monaco-editor';
 import { t } from './i18n';
-import { structureOf, symbolPath, crumbLabel, type CodeSymbol } from './code-structure';
+import { structureOf, symbolPath, crumbLabel, breadcrumbLanguage, type CodeSymbol } from './code-structure';
+import { editorSettings, onEditorSettings, updateEditorSettings } from './editor-settings';
+import { openMenu } from './context-menu';
 import { fileIcon, symbolIcon } from './file-icons';
 import type { Entry } from '../shared/contracts';
 import './code-breadcrumbs.css';
@@ -11,6 +13,9 @@ import './code-breadcrumbs.css';
 // - the navigation bar in the status bar continues the file path with the code path (`Broken › total`); a click
 //   on any segment opens a popup with that segment's children, sorted by name, and choosing one navigates.
 // Hovering a crumb highlights the element's range in the editor (public docs, "Breadcrumbs"). Our own drawing.
+// Round 2: HTML, JavaScript, TypeScript, JSON and YAML structure (code-structure.ts); placement Top/Bottom, hiding
+// and per-language check boxes from Settings › Editor › General › Breadcrumbs (editor-settings.ts). Right click on
+// the bar offers the same placement choices (own requirement; the reference's bar menu was not observed).
 
 type Hooks = {
  /** Active buffer key and whether it is a project file (virtual buffers get no popups). */
@@ -40,10 +45,33 @@ export function mountCodeBreadcrumbs(editor: monaco.editor.IStandaloneCodeEditor
   moving = true; try { editor.setPosition(position); editor.revealPositionInCenterIfOutsideViewport(position); } finally { moving = false; }
   editor.focus();
  };
+ /** Top or bottom of the editor area; the area may be wrapped by previews or splits, so it is found each time. */
+ function place(placement: 'top' | 'bottom') {
+  let slot: HTMLElement = editor.getContainerDomNode();
+  while (slot.parentElement?.classList.contains('editor-split') || slot.parentElement?.classList.contains('editor-tab-split')) slot = slot.parentElement;
+  const wanted = placement === 'top' ? slot.previousElementSibling : slot.nextElementSibling;
+  if (wanted === bar) return;
+  if (placement === 'top') slot.before(bar); else slot.after(bar);
+  bar.dataset.placement = placement; editor.layout();
+ }
+ bar.addEventListener('contextmenu', event => {
+  event.preventDefault();
+  const current = editorSettings().breadcrumbs.placement;
+  openMenu([
+   { label: t('Breadcrumbs'), heading: true },
+   { id: 'top', label: t('Topo'), checked: current === 'top', run: () => updateEditorSettings(s => { s.breadcrumbs.placement = 'top'; }) },
+   { id: 'bottom', label: t('Rodapé'), checked: current === 'bottom', run: () => updateEditorSettings(s => { s.breadcrumbs.placement = 'bottom'; }) },
+   '-',
+   { id: 'hide', label: t('Não mostrar'), run: () => updateEditorSettings(s => { s.breadcrumbs.show = false; }) },
+   { id: 'settings', label: t('Configurar breadcrumbs…'), run: () => { window.dispatchEvent(new CustomEvent('ide-editor-settings', { detail: { section: 'breadcrumbs' } })); } },
+  ], event.clientX, event.clientY, { restore: editor.getDomNode()?.querySelector('textarea') ?? null, label: t('Breadcrumbs') });
+ });
  function renderBar() {
   const model = editor.getModel();
   const path = pinned && pinned.model === model ? pinned.path : caretPath(); const selected = pinned && pinned.model === model ? pinned.index : -1;
-  const hide = !path.length;
+  const options = editorSettings().breadcrumbs; const group = model ? breadcrumbLanguage(model.getLanguageId()) : undefined;
+  const hide = !path.length || !options.show || !group || options.languages[group] === false;
+  place(options.placement);
   if (bar.hidden !== hide) { bar.hidden = hide; editor.layout(); }
   const items: HTMLElement[] = [];
   path.forEach((symbol, index) => {
@@ -138,6 +166,6 @@ export function mountCodeBreadcrumbs(editor: monaco.editor.IStandaloneCodeEditor
  editor.onDidChangeModel(() => { pinned = undefined; highlight.clear(); closePopup?.(); schedule(); });
  editor.onDidChangeModelContent(() => { clearTimeout(typing); typing = setTimeout(schedule, 120); });
  editor.onDidChangeModelLanguage(schedule);
- renderAll();
+ onEditorSettings(() => renderAll());
  return { refresh: renderAll, element: bar };
 }

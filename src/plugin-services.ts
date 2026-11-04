@@ -9,6 +9,8 @@ export function providePluginService(owner:string,name:string,value:unknown){
  return()=>{if(contributions.get(name)?.owner===owner){contributions.delete(name);visible();notify(name);window.dispatchEvent(new CustomEvent('ide-plugin-service',{detail:{name,active:false}}));}};
 }
 export function pluginService<T=any>(name:string):T|undefined{return contributions.get(name)?.value;}
+/** Every active contribution whose name starts with `prefix` (several plugins may each add one, e.g. `generate.*`). */
+export function pluginServices<T=any>(prefix:string):T[]{return [...contributions].filter(([name])=>name.startsWith(prefix)).map(([,entry])=>entry.value);}
 
 /** Mount contributions lazily on activation and follow replacements without retaining old controllers. */
 export function optionalPluginService<T extends object=any>(name:string,mount:(service:any)=>T,fallback:Record<string,any>={reset:()=>{},refresh:()=>{}}):T{

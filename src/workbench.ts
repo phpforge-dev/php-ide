@@ -2,6 +2,7 @@ import { t as tr, msg, html } from './i18n';
 import type { IdeApi } from '../shared/contracts';
 import { keymap, type Binding } from './keymap';
 import { mountKeymapSettings } from './keymap-settings';
+import { mountEditorSettings } from './editor-settings';
 import * as monaco from 'monaco-editor';
 import './islands-shell.css';
 import { paintAvatar as paintProjectAvatar } from './project-avatar';
@@ -143,6 +144,7 @@ export function mountWorkbench(api: IdeApi) {
  keymap.onError=(error,id)=>{el('status').textContent=msg`Atalho ${tr(keymap.action(id)?.label??id)}: ${String((error as Error)?.message??error)}`;};
  keymap.install(document);
  mountKeymapSettings();
+ mountEditorSettings();
 }
 
 /** Status bar widgets from the editor model (reference 05/40: line separator, indentation, read-only lock). */

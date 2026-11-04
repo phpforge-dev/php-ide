@@ -61,3 +61,10 @@
 .keymap-chooser [role=option] small{margin-left:auto;color:var(--ij-text-secondary);font-size:var(--ij-font-size-small)}
 .keymap-chooser [role=option][aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
 .keymap-chooser [role=option][aria-selected=true] small{color:inherit;opacity:.8}
+/* Named keymaps (round 2): name dialog for Duplicate…/Rename…. */
+.keymap-name-dialog{width:min(380px,90vw);padding:16px;background:var(--ij-dialog);color:var(--ij-text);border:1px solid var(--ij-popup-border);border-radius:var(--ij-popup-radius);box-shadow:var(--ij-shadow);font:var(--ij-font-size)/1.4 var(--ij-font-ui)}
+.keymap-name-dialog::backdrop{background:var(--ij-backdrop)}
+.keymap-name-dialog h3{margin:0 0 12px;font-size:14px;font-weight:600}
+.keymap-name-dialog label{display:flex;align-items:center;gap:8px}
+.keymap-name-dialog input{flex:1;height:26px;padding:0 6px;margin:0}
+.keymap-name-error{min-height:16px;margin:6px 0;color:var(--ij-editor-error,#e55765);font-size:var(--ij-font-size-small)}

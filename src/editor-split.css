@@ -1,0 +1,16 @@
+/* Split Right/Down (UI-CONTEXT-001): the editor slot and a second pane on the same document. */
+.editor-tab-split{flex:1;min-height:0;min-width:0;display:flex}
+.editor-tab-split[data-orientation=down]{flex-direction:column}
+.editor-tab-split>:first-child{min-width:0;min-height:0}
+.editor-split-divider{flex:none;background:var(--ij-border);outline:none}
+.editor-tab-split[data-orientation=right]>.editor-split-divider{width:1px;margin:0 2px;cursor:col-resize;box-shadow:0 0 0 2px transparent}
+.editor-tab-split[data-orientation=down]>.editor-split-divider{height:1px;margin:2px 0;cursor:row-resize}
+.editor-split-divider:hover,.editor-split-divider:focus-visible{background:var(--ij-focus,#548af7)}
+.editor-split-pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.split-tabs{display:flex;align-items:center;height:34px;flex:none;padding:0 8px;border-bottom:1px solid var(--ij-border)}
+.split-tab{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 4px 0 8px;border-radius:var(--ij-tab-radius,4px);color:var(--ij-text);font-size:var(--ij-font-size);background:var(--ij-tab-selected-inactive,var(--ij-hover))}
+.editor-split-pane.focused .split-tab{background:var(--ij-tab-selected,var(--ij-selection-inactive));box-shadow:inset 0 0 0 1px var(--ij-focus,#548af7)}
+.split-tab .resource-icon{display:inline-flex;width:16px;height:16px}
+.split-tab .close-tab{width:18px;height:18px;padding:0;border:0;border-radius:3px;background:transparent;color:var(--ij-text-secondary);line-height:1}
+.split-tab .close-tab:hover{background:var(--ij-hover);color:var(--ij-text)}
+.editor-split-host{flex:1;min-height:0}
