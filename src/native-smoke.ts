@@ -275,8 +275,10 @@ export async function nativeSmoke(info:any){
  await check('Web: TypeScript, React e Vue na janela Tauri',async()=>{
   document.getElementById('appearance')!.click();document.querySelector<HTMLButtonElement>('#appearance-dialog .plugins-open')!.click();
   const plugins=document.getElementById('plugins-dialog') as HTMLDialogElement;
-  await wait(()=>!!plugins.querySelector('[data-builtin-plugin="vue"]')&&!!plugins.querySelector('[data-builtin-plugin="react"]'),10000,'Vue/React não aparecem como incluídos');
-  assert(plugins.open&&plugins.querySelector('[data-builtin-plugin="vue"] .plugin-on')&&plugins.querySelector('[data-builtin-plugin="react"] .plugin-on'),'suporte web não identificado como habilitado');plugins.querySelector<HTMLButtonElement>('.plugins-close')!.click();
+  // Vue/React vêm do plugin padrão Web Languages (extraído do host na 0.2.13): o cartão instalado deve nomear os dois e estar ativo.
+  const webCard=()=>plugins.querySelector<HTMLElement>('[data-installed-plugin="phpforge.web-languages"]');
+  await wait(()=>/\bVue\b/.test(webCard()?.textContent??'')&&/\bReact\b/.test(webCard()?.textContent??''),10000,'Vue/React não aparecem como incluídos');
+  await wait(()=>plugins.open&&!!webCard()?.querySelector('.plugin-badge.plugin-on')&&!webCard()?.querySelector('.plugin-error'),10000,'suporte web não identificado como habilitado: '+(webCard()?.querySelector('.plugin-badge')?.textContent??'sem cartão'));plugins.querySelector<HTMLButtonElement>('.plugins-close')!.click();
   await wait(()=>!!document.querySelector('#tree button[aria-label="web-main.ts"]'));
   const ed=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
   const open=async(path:string)=>{document.querySelector<HTMLButtonElement>(`#tree button[aria-label="${path}"]`)!.click();await wait(()=>ed.getModel()?.uri.path.endsWith('/'+path)===true);return ed.getModel()!;};
