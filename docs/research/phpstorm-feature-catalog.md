@@ -95,7 +95,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/php-type-checking.html).
 - **Critérios de aceitação preliminares:** Alias, retorno, união/null e instanceof geram candidatos corretos; unknown não inventa tipo.
 - **Estado de implementação:** Em desenvolvimento — [recorte 20](implementation-slice-20.md): alias, nullsafe, instanceof, `static` e unknown aprovados em fixture própria contra o Phpactor; sem OBS.
-- **Diferenças conhecidas:** `match` não é inferido (lacuna do Phpactor); equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): `match` inferido pela camada própria (união dos braços, `throw` ignorado) para definição, completion, hover e inspeções; teste de plugin com o probe TYPE-MATCH; sem OBS.
+- **Diferenças conhecidas:** `match` resolvido pela camada própria quando o Phpactor não responde; braço de tipo desconhecido deixa o tipo desconhecido; equivalência não medida.
 
 ## PHP-IDX-001 — Indexação
 
@@ -137,7 +138,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/php-type-checking.html).
 - **Critérios de aceitação preliminares:** identity(User) preserva User; investigar bounds, aninhamento e herança separadamente sem assumir cobertura.
 - **Estado de implementação:** Em desenvolvimento — [recorte 20](implementation-slice-20.md): coleções com `@template`/`@extends`/`@implements` e `class-string` em método aprovados; sem OBS.
-- **Diferenças conhecidas:** `@template` em função (`identity(User)`) falha (lacuna do motor); equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): `@template` em função resolvido pela camada própria (`T`, `?T`, `class-string<T>`, `T[]`/`array<K, T>`/`list<T>`, limite `of`, receptor encadeado); definição de membro pelo tipo local quando o Phpactor não acha (GEN-IDENTITY); sem OBS.
+- **Diferenças conhecidas:** templates de classe continuam com o Phpactor; templates aninhados, condicionais e `key-of`/`value-of` fora do recorte; equivalência não medida.
 
 ## PHP-TRAIT-001 — Traits
 
@@ -176,7 +178,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/settings-auto-import.html).
 - **Critérios de aceitação preliminares:** Inserção não duplica use; conflito oferece alias; preview/undo e paste conforme configuração.
 - **Estado de implementação:** Em desenvolvimento — [recorte 19](implementation-slice-19.md): completion de classe insere `use` sem duplicar; conflito gera alias e alternativa FQN; quick fix de classe não resolvida (importar/alias/qualificar); sem OBS.
-- **Diferenças conhecidas:** Sem autoimport ao colar e sem configuração de estilo; equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): autoimport ao colar ("Insert imports on paste" All/Ask/None, padrão Ask observado) para trechos copiados na IDE; nome ocupado vira FQN; um passo de desfazer; harness WebKit `paste-imports`; OBS 04/11 (P19–P20): padrão Ask confirmado e diálogo "Selecionar classes para importar".
+- **Diferenças conhecidas:** colar de fora da IDE não importa; sem configuração de estilo nem preferências de espaço global; equivalência não medida.
 
 ## PHP-RENAME-001 — Rename Symbol
 
@@ -189,7 +192,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/rename-refactorings.html).
 - **Critérios de aceitação preliminares:** Preview exato; homônimos preservados; opções de texto explícitas; cancelar não altera; undo restaura hashes.
 - **Estado de implementação:** Em desenvolvimento — [recorte 19](implementation-slice-19.md): Shift+F6 com prévia por ocorrência, opção explícita para comentários/strings, homônimos preservados por namespace/imports, transação com hash e histórico local, cancelar sem alterar e desfazer; classes por motor próprio, membros/variáveis pelo Phpactor; renomear/mover arquivo pela árvore atualiza classe/namespace. Smoke nativo aprovado; sem OBS.
-- **Diferenças conhecidas:** Sem rename in-place e sem redo; conflitos de membros homônimos na hierarquia delegados ao Phpactor; equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): rename in-place (padrão "In the editor"): ocorrências do arquivo acompanham a digitação, lookup com sugestões por tipo para variáveis, ícones de comentários/strings e texto, Tab/⌥⇧O abrem o popup de opções (com Renomear arquivo e Mais opções), Shift+F6 abre o diálogo, Enter aplica em um passo de desfazer, Esc restaura, conflito abre a prévia; harness WebKit com 5 cenários; OBS 04/11 (P10–P15) aplicada: ícones em linha, Tab conclui, popup "Também renomear em:".
+- **Diferenças conhecidas:** sem redo; sugestões de nome só para variáveis; "ocorrências de texto" não existe para classes; conflitos de membros homônimos na hierarquia delegados ao Phpactor; equivalência não medida.
 
 ## PHP-VENDOR-001 — Navegação em vendor
 
@@ -202,7 +206,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/using-the-composer-dependency-manager.html).
 - **Critérios de aceitação preliminares:** Ir e voltar em pacote local instalado; exclusão e dependência ausente tratadas; rename não altera vendor por acidente.
 - **Estado de implementação:** Em desenvolvimento — [recorte 20](implementation-slice-20.md): pacote local em `vendor` navegável e dependência ausente tratada; rename de classes recusa vendor ([recorte 19](implementation-slice-19.md)); sem OBS.
-- **Diferenças conhecidas:** Exclusão configurável de vendor não implementada; equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): exclusão configurável (`.php-ide/php-intelligence.json`, ação "Análise PHP: pastas excluídas…") com `*`, `**` e `?`; afeta índice de classes, hierarquia, inspeções, refatorações e o índice do Phpactor no próximo início; harness WebKit `exclusions`; sem OBS.
+- **Diferenças conhecidas:** não marca pastas na árvore como o "Mark Directory as | Excluded"; sem tela de Settings; Phpactor só relê ao reiniciar; equivalência não medida.
 
 ## PHP-NATIVE-001 — Funções/classes nativas
 
@@ -517,7 +522,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** REQ do escopo solicitado; sem evidência comportamental coletada.
 - **Critérios de aceitação preliminares:** Começar com Extract Method; variáveis/retornos/efeitos e undo verificados; uma especificação por transformação.
 - **Estado de implementação:** Em desenvolvimento — [recorte 19](implementation-slice-19.md): Extract Method (entradas/saídas/retorno, recusas explícitas), Extract Variable e Inline Variable com prévia e desfazer; num único arquivo aberto a refatoração edita o buffer e o Ctrl+Z do editor desfaz. Smoke nativo aprovado; sem OBS.
-- **Diferenças conhecidas:** Sem detecção de duplicados, Inline Method e Change Signature; equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): Inline Method/Function (⌥⌘N, três opções da documentação, recusas explícitas) e Change Signature (⌘F6, Nome/Tipo de retorno/Tipo/Parâmetro/Padrão, reordenar, conflitos na prévia, renomeia no corpo, strings e PHPDoc); testes de plugin e harness WebKit; OBS 04/11 (P16–P18) aplicada ao diálogo do Inline e ao cabeçalho/prévia do Change Signature.
+- **Diferenças conhecidas:** sem detecção de duplicados, Propagate Parameters e "Create and initialize class properties"; PHPDoc não reordenado; Inline com receptor complexo mantido; equivalência não medida.
 
 ## TOOL-INSPECT-001 — Inspeções
 
@@ -530,7 +536,8 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/php-type-checking.html).
 - **Critérios de aceitação preliminares:** Símbolo indefinido e tipo incompatível; range, severidade, suppress e quick fix com undo.
 - **Estado de implementação:** Em desenvolvimento — [recorte 19](implementation-slice-19.md): classe indefinida (Phpactor) e tipo incompatível de retorno/argumento literal (própria) com intervalo, severidade, F2, quick fix e `@noinspection` por instrução/arquivo; diagnósticos e correções de plugins (Laravel) no editor PHP. Smoke nativo aprovado; sem OBS.
-- **Diferenças conhecidas:** Sem inferência geral de tipos nas inspeções, sem painel de resultados/perfil; correções de plugin que criam arquivo ainda não são oferecidas; equivalência não medida.
+- **Atualização (04/11/2026):** [fidelidade PHP Intelligence](php-intelligence-fidelity.md): F2/Shift+F2 com cursor antes do problema, modos maior prioridade/todos e tooltip compacto (correção principal ⌥⇧⏎, Mais ações ⌥⏎) no lugar do peek do Monaco; inferência de tipos (new, variáveis, parâmetros, `$this`, retornos declarados, ternário, `match`) com classes pela hierarquia do projeto; ⌥⏎ com correções primeiro e supressões por último; "Criar classe/interface/trait" no caminho PSR-4 e correções de plugin que criam arquivo (transação nativa com criação e desfazer); harness WebKit; OBS 04/11 (P1–P9, P21–P23) aplicada: tooltip abaixo, faixa do `return`, escalares só com `strict_types` (erro), supressões em submenu, diálogo "Criar nova classe PHP".
+- **Diferenças conhecidas:** argumentos só para funções/métodos do próprio arquivo; Monaco agrupa o ⌥⏎ por tipo; submenu de supressão parcial; diálogo de criar classe sem Template/Implements; sem painel de resultados/perfil; equivalência não medida.
 
 ## Cobertura e limites
 
