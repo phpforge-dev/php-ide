@@ -13,11 +13,29 @@ Trabalho no plugin `phpforge.php-intelligence` (repositório `plugin-php-intelli
   [Change signature](https://www.jetbrains.com/help/phpstorm/change-signature.html) (Name, Return type, colunas Type/Parameter/Default, "Default" é o valor escrito nas chamadas, Preview/Refactor, Ctrl+F6 / ⌘F6),
   [Auto import](https://www.jetbrains.com/help/phpstorm/settings-auto-import.html) ("Insert imports on paste": All / Ask / None),
   [PHP type checking](https://www.jetbrains.com/help/phpstorm/php-type-checking.html).
-- **OBS autorizada**: só as capturas já existentes `14-rename` (rename in-place com lookup, ícones `//` e `≡` e o rodapé "Press ⌥⇧O to show options popup") e `15-intentions` (lista do ⌥⏎). A tela do PhpStorm esteve ocupada por outras sessões (`git-fidelity`, `php-debugger-fidelity`) durante todo o trabalho; **não houve observação nova**.
+- **OBS autorizada (04/11/2026)**: PhpStorm 2026.1.4, Islands Dark, projeto descartável `obs-project` (PSR-4 `App\\` → `src/`), capturas `P0`–`P23` em `.artifacts/phpstorm-reference/` (locais). Anteriores: `14-rename` e `15-intentions`.
 - **REQ próprio**: textos em português, visual dos popups, mensagens das inspeções, recusas explícitas fora do recorte, arquivo de configuração `.php-ide/php-intelligence.json`.
-- **Hipóteses (pendentes de OBS)**: ordem exata das correções do ⌥⏎ além de "correção da inspeção primeiro, supressões por último"; conteúdo do tooltip do F2 (mensagem + correção principal ⌥⇧⏎ + "More actions ⌥⏎"); padrão "Ask" para importar ao colar; texto do popup de opções do rename; nomes das opções do diálogo de Inline Method para PHP; se o PhpStorm qualifica com FQN quando o nome curto colado está ocupado.
+- **Hipóteses (ainda sem OBS)**: rename de classe com arquivo homônimo (a opção "Renomear arquivo" no popup é nossa); qualificar com FQN quando o nome curto colado está ocupado (o PhpStorm oferece a coluna "Replace with Alias from Target Scope", não observada com conteúdo); Inline de método não estático por receptor externo; propagação de parâmetros.
 
-Nenhum item é promovido a compatível: todos seguem **Em desenvolvimento / não validados comparativamente**.
+## Observado no PhpStorm (04/11/2026) e ajustado
+
+| Captura | Observado | Ajuste no plugin (`ee7f83a`) |
+|---|---|---|
+| P2–P4 | F2 põe o cursor no início do problema e volta ao início; com avisos, os avisos fracos são pulados; tooltip **abaixo** da linha: mensagem + ⋮, depois a correção principal com ⌥⇧⏎ e "More actions… ⌥⏎" | tooltip abaixo, ⋮ abre o submenu da inspeção, "Mais ações…" |
+| P2, P22 | a faixa de "tipo de retorno" é a instrução `return …;` inteira | faixa e cursor no `return` |
+| P1, P21–P23 | sem `strict_types`, `return 'many'` em `int` e `take('x')` não são acusados; com `strict_types` viram **erro** ("Return value must be of type 'int', 'string' returned"; "Expected parameter of type 'int', 'string' provided", correção "Cast 'x' to int") | conversões escalares só em modo estrito, como erro; correção "Converter 'x' para int"; array→int continua aviso |
+| P2 | classes: aviso "Return value is expected to be '\\App\\Model\\User', '\\App\\Model\\Circle' returned", correção "Change return type from '…' to '…'" | mensagens e títulos com FQN; o código recebe o nome curto importado |
+| P5–P7 | ⌥⏎ mostra só as correções; supressões ("Suppress all for file", "Suppress for file", "Suppress for method", "Suppress for statement"…) ficam num submenu com o nome da inspeção | um item "Suprimir '…'…" no fim abre o submenu (todas no arquivo / no arquivo / na instrução) |
+| P3, P6, P8, P9 | classe indefinida é aviso; a correção é "Create class" e abre "Create New PHP Class" (Name fixo, Namespace, File name, Directory, Template, Extends/Implements); o arquivo de `new Invoice()` ganha `__construct()` e é aberto | "Criar classe" abre o diálogo equivalente (sem Template/Implements); construtor a partir de `new` |
+| P10–P11 | rename de método: nome em caixa, outras ocorrências em verde, ícones `//` `≡` em linha empurrando o texto, lookup com o nome atual e "Press ⌥⇧O to show options popup"; ⌥⇧O abre "Also rename in:" (Comments and strings, Text occurrences, "More options… ⇧F6"); **Tab aceita o item do lookup e conclui** | ícones como inlay, verde, lookup sempre com o nome, Tab conclui, popup com título e ícones |
+| P14–P15 | variável: sem ícones nem popup; lookup com sugestões e "Press ⏎ or ⇥ to replace" | rodapé "Pressione ⏎ ou ⇥ para substituir" |
+| P16 | "Inline Method Refactoring", "Method Cart::price", três opções; a terceira desabilitada na declaração | igual |
+| P17–P18 | Change Signature: Visibility, Return type, Name; lista de parâmetros; "+" adiciona no fim com editor Type/Parameter (`$`)/Default; "Signature Preview" multilinha | visibilidade, ordem do cabeçalho, prévia multilinha; a lista continua uma tabela editável |
+| P19–P20 | colar código com classe não importada abre "Select Classes To Import" (Reference / Replace with Alias from Target Scope) — **Ask é o padrão** — e insere `use` após o namespace | diálogo equivalente; padrão Ask confirmado |
+
+Diferenças que ficam: a lista de sugestões do rename do PhpStorm inclui nomes por uso e por IA; o diálogo de criar classe não tem Template/Implements; o Change Signature do PhpStorm edita um parâmetro por vez em linha, o nosso mostra a tabela inteira; o menu do ⌥⏎ do Monaco agrupa por tipo; o submenu de supressão não tem "Suppress for method", "Disable inspection" nem "Run inspection on…".
+
+Mesmo com a observação, nenhum item é promovido a compatível: todos seguem **Em desenvolvimento / não validados comparativamente**.
 
 ## Critérios e o que foi implementado
 

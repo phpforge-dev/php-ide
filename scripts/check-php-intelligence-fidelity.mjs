@@ -61,25 +61,26 @@ const scenarios = {};
 const scenario = (name, files, run) => scenarios[name] = { files, run };
 
 // ── F2 / Shift+F2 ──────────────────────────────────────────────────────────────────────────
-scenario('f2', { 'src/Problems.php': `<?php\n\nnamespace App;\n\nfunction count(): int\n{\n    return 'many';\n}\n\nfunction label(): string\n{\n    return 42;\n}\n\n$a = 1;\n` }, async (page, h) => {
+// strict_types: as conversões escalares só são acusadas (como erro) em modo estrito (OBS P21).
+scenario('f2', { 'src/Problems.php': `<?php\n\ndeclare(strict_types=1);\n\nnamespace App;\n\nfunction count(): int\n{\n    return 'many';\n}\n\nfunction label(): string\n{\n    return 42;\n}\n\n$a = 1;\n` }, async (page, h) => {
  await h.open('src/Problems.php');
  await h.waitMarkers(2);
  // A weak warning from another owner, to check the "highest priority" mode skips it.
- await page.evaluate(() => { const m = monacoApi.editor.getModels().find(m => m.uri.path.endsWith('Problems.php')); monacoApi.editor.setModelMarkers(m, 'fixture', [{ severity: monacoApi.MarkerSeverity.Info, message: 'Unused variable', startLineNumber: 15, startColumn: 1, endLineNumber: 15, endColumn: 3 }]); });
+ await page.evaluate(() => { const m = monacoApi.editor.getModels().find(m => m.uri.path.endsWith('Problems.php')); monacoApi.editor.setModelMarkers(m, 'fixture', [{ severity: monacoApi.MarkerSeverity.Info, message: 'Unused variable', startLineNumber: 17, startColumn: 1, endLineNumber: 17, endColumn: 3 }]); });
  const sev = await page.evaluate(() => monacoApi.editor.getModelMarkers({}).map(m => m.severity + ':' + m.startLineNumber));
  await h.caret(1, 1); await page.keyboard.press('F2'); await page.waitForTimeout(250);
  const first = await h.state();
- assert.deepEqual(first.pos, [7, 12], 'F2 puts the caret right before the first problem: ' + JSON.stringify(first) + ' ' + sev);
+ assert.deepEqual(first.pos, [9, 5], 'F2 puts the caret right before the first problem: ' + JSON.stringify(first) + ' ' + sev);
  assert.ok(first.tooltip?.includes("'many'") || /string|int/i.test(first.tooltip ?? ''), 'compact tooltip with the message: ' + first.tooltip);
  assert.equal(first.peek, 0, 'no Monaco problem peek');
  await page.waitForTimeout(400); await h.shot('f2-tooltip');
  const fix = await page.evaluate(() => document.querySelector('.php-problem-tooltip .php-problem-fix')?.textContent ?? null);
  await page.keyboard.press('F2'); await page.waitForTimeout(200);
- assert.deepEqual((await h.state()).pos, [12, 12], 'second problem');
+ assert.deepEqual((await h.state()).pos, [14, 5], 'second problem');
  await page.keyboard.press('F2'); await page.waitForTimeout(200);
- assert.deepEqual((await h.state()).pos, [7, 12], 'wraps to the first; weak warning skipped while there are errors/warnings');
+ assert.deepEqual((await h.state()).pos, [9, 5], 'wraps to the first; weak warning skipped while there are errors/warnings');
  await page.keyboard.press('Shift+F2'); await page.waitForTimeout(200);
- assert.deepEqual((await h.state()).pos, [12, 12], 'Shift+F2 goes back (wrapping)');
+ assert.deepEqual((await h.state()).pos, [14, 5], 'Shift+F2 goes back (wrapping)');
  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
  assert.equal((await h.state()).tooltip, null, 'Esc closes the tooltip');
  await page.keyboard.press('F2'); await page.waitForTimeout(200); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(100);
@@ -135,7 +136,7 @@ scenario('rename-variable', { 'src/run.php': total }, async (page, h) => {
  assert.deepEqual(items, ['total', 'userProfile', 'profile'], 'lookup: current name then type-based suggestions');
  assert.equal(await page.locator('.php-rename-other').count(), 1, 'the other $total is highlighted');
  assert.equal(await page.locator('.php-rename-icons button').count(), 0, 'local variable: no option icons');
- assert.equal(await page.locator('.php-rename-hint').count(), 0, 'no options hint for variables');
+ assert.match(await page.locator('.php-rename-hint').textContent(), /⏎ ou ⇥ para substituir/, 'variables: replace hint, no options (OBS P14)');
  await h.shot('rename-variable-lookup');
  await page.keyboard.press('ArrowDown'); await page.waitForTimeout(100);
  assert.ok((await h.text()).includes('$userProfile = new') && (await h.text()).includes('return $userProfile->id()'), 'choosing a suggestion renames live:\n' + await h.text() + JSON.stringify(await page.evaluate(() => [document.activeElement?.className, document.querySelectorAll('.php-rename-primary').length])));
@@ -150,7 +151,7 @@ scenario('rename-options', { 'src/Invoice.php': same, 'src/Receipt.php': `<?php\
  await h.open('src/Invoice.php'); await h.caretAt('class Invoice', 8);
  await page.keyboard.press('Shift+F6'); await page.waitForSelector('.php-rename-primary');
  assert.match(await page.locator('.php-rename-hint').textContent(), /⌥⇧O/, 'options hint in the lookup');
- await page.keyboard.press('Tab'); await page.waitForSelector('.php-rename-options');
+ await page.keyboard.press('Alt+Shift+O'); await page.waitForSelector('.php-rename-options');
  const labels = await page.locator('.php-rename-options label').allTextContents();
  assert.deepEqual(labels, ['Comentários e strings', 'Renomear arquivo']);
  const checks = await page.locator('.php-rename-options input').evaluateAll(i => i.map(x => x.checked));
@@ -201,7 +202,9 @@ scenario('inline-method', { 'src/Cart.php': cart, 'src/shop.php': shop }, async 
  await h.open('src/Cart.php'); await h.caretAt('function total', 10);
  await page.keyboard.press('Alt+Meta+N'); await page.waitForSelector('.refactor-dialog');
  const radios = await page.locator('.refactor-dialog .refactor-radios label').allTextContents();
- assert.deepEqual(radios, ['Incorporar todas as chamadas e remover o método', 'Incorporar todas as chamadas e manter o método'], 'options on the declaration');
+ assert.deepEqual(radios, ['Incorporar todas e remover o método', 'Incorporar todas e manter o método', 'Incorporar só esta e manter o método'], 'the three options (OBS P16)');
+ assert.equal(await page.locator('.refactor-dialog .refactor-radios input').nth(2).isDisabled(), true, 'single occurrence disabled on the declaration');
+ assert.equal(await page.locator('.refactor-dialog .refactor-radios legend').textContent(), 'Método Cart::total');
  await h.shot('inline-dialog');
  await page.locator('.refactor-dialog footer button[value=ok]').click();
  await page.waitForFunction(() => !window.monacoApi.editor.getModels().find(m => m.uri.path.endsWith('Cart.php')).getValue().includes('function total'), null, { timeout: 8000 });
@@ -224,7 +227,7 @@ scenario('change-signature', { 'src/Greeter.php': greet }, async (page, h) => {
  assert.equal(await page.locator('.refactor-signature input[name=name]').inputValue(), 'greet');
  assert.equal(await page.locator('.refactor-signature input[name=returnType]').inputValue(), 'string');
  assert.deepEqual(await page.locator('.refactor-signature .param-name').evaluateAll(i => i.map(x => x.value)), ['$name', '$times = 1']);
- assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'greet(string $name, int $times = 1): string');
+ assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'public function greet(\n   string $name,\n   int $times = 1\n): string');
  // Rename the method and $name → $who, add bool $loud = false with call value true.
  await page.locator('.refactor-signature input[name=name]').fill('salute');
  await page.locator('.refactor-signature .param-name').first().fill('$who');
@@ -232,7 +235,7 @@ scenario('change-signature', { 'src/Greeter.php': greet }, async (page, h) => {
  await page.locator('.refactor-signature .param-type').nth(2).fill('bool'); await page.locator('.refactor-signature .param-name').nth(2).fill('$loud'); await page.locator('.refactor-signature .param-call').nth(2).fill('true');
  assert.match(await page.locator('.refactor-signature .project-dialog-error').textContent(), /obrigatório depois de um opcional/, 'validation like the dialog');
  await page.locator('.refactor-signature .param-name').nth(2).fill('$loud = false');
- assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'salute(string $who, int $times = 1, bool $loud = false): string');
+ assert.equal(await page.locator('.refactor-signature-preview').textContent(), 'public function salute(\n   string $who,\n   int $times = 1,\n   bool $loud = false\n): string');
  await h.shot('change-signature');
  await page.locator('.refactor-signature footer button[value=ok]').click(); await page.waitForTimeout(800);
  const after = await h.text();
@@ -262,12 +265,22 @@ scenario('inspections', { 'composer.json': JSON.stringify({ autoload: { 'psr-4':
  await page.evaluate(diagnostics);
  await h.open('src/Shop.php'); await h.waitMarkers(1);
  const marker = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => [m.startLineNumber, m.message]));
- assert.deepEqual(marker, [[10, 'Tipo de retorno incompatível: esperado User, encontrado Circle.']], 'inferred class mismatch through the variable');
+ assert.deepEqual(marker, [[10, "O valor de retorno deveria ser '\\App\\User'; '\\App\\Circle' retornado"]], 'inferred class mismatch through the variable (OBS P2 wording)');
  await h.caret(10, 16); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
  const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
- assert.equal(items[0], 'Alterar tipo de retorno para Circle', 'inspection fix first: ' + items.join(' | '));
- const quick = items.filter(i => !/Incorporar|Extrair/.test(i)); assert.ok(/^Suprimir/.test(quick.at(-1)) && /^Suprimir/.test(quick.at(-2)), 'suppressions last among the quick fixes: ' + items.join(' | '));
+ assert.equal(items[0], "Alterar tipo de retorno de '\\App\\User' para '\\App\\Circle'", 'inspection fix first: ' + items.join(' | '));
+ const quick = items.filter(i => !/Incorporar|Extrair/.test(i)); assert.equal(quick.at(-1), "Suprimir 'PhpIncompatibleReturnTypeInspection'…", 'one suppression entry, last (opens the submenu, OBS P7): ' + items.join(' | '));
+ assert.equal(quick.filter(i => /^Suprimir/.test(i)).length, 1);
  await h.shot('inspections-alt-enter');
+ await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+ await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget'); await page.waitForTimeout(300);
+ await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].find(o => o.textContent.includes('Suprimir')).click());
+ await page.waitForSelector('.php-inspection-menu', { timeout: 4000 });
+ assert.deepEqual(await page.locator('.php-inspection-menu button').allTextContents(), ['Suprimir todas no arquivo', 'Suprimir no arquivo', 'Suprimir na instrução']);
+ await page.locator('.php-inspection-menu button').nth(2).click(); await page.waitForTimeout(200);
+ assert.ok((await h.text()).includes('/** @noinspection PhpIncompatibleReturnTypeInspection */\n        return $c;'), 'suppressed for the statement:\n' + await h.text());
+ await page.keyboard.press('Meta+z'); await page.waitForTimeout(800); await h.caret(10, 16);
+ await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget'); await page.waitForTimeout(300);
  await page.keyboard.press('Enter'); await page.waitForTimeout(300);
  assert.ok((await h.text()).includes('public function owner(): Circle'));
 });
@@ -277,10 +290,14 @@ scenario('create-class', { 'composer.json': JSON.stringify({ autoload: { 'psr-4'
  await h.open('src/Shop/Cart.php'); await h.waitMarkers(1);
  await h.caretAt('Invoice', 2); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
  const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
- assert.equal(items[0], "Criar classe 'Invoice'", 'no import candidate: create class first: ' + items.join(' | '));
+ assert.equal(items[0], 'Criar classe', 'no import candidate: create class first: ' + items.join(' | '));
  await page.keyboard.press('Enter');
+ await page.waitForSelector('.refactor-create-class', { timeout: 5000 });
+ assert.deepEqual(await page.locator('.refactor-create-class input').evaluateAll(i => i.map(x => [x.name, x.value, x.readOnly])), [['name', 'Invoice', true], ['namespace', 'App\\Shop', false], ['file', 'Invoice', false], ['directory', 'src/Shop', false], ['extends', '', false]], 'Create New PHP Class fields (OBS P8)');
+ await h.shot('create-class-dialog');
+ await page.locator('.refactor-create-class footer button[value=ok]').click();
  await page.waitForFunction(() => 'src/Shop/Invoice.php' in window.files, null, { timeout: 8000 });
- assert.equal(await page.evaluate(() => window.files['src/Shop/Invoice.php']), '<?php\n\nnamespace App\\Shop;\n\nclass Invoice\n{\n\n}\n');
+ assert.equal(await page.evaluate(() => window.files['src/Shop/Invoice.php']), '<?php\n\nnamespace App\\Shop;\n\nclass Invoice\n{\n\n    public function __construct()\n    {\n    }\n}\n', 'constructor from new Invoice() (OBS P9)');
  await page.waitForFunction(() => monacoApi.editor.getEditors().some(e => e.getDomNode()?.closest('#editor') && e.getModel()?.uri.path.endsWith('/src/Shop/Invoice.php')), null, { timeout: 8000 });
  await h.shot('create-class');
  await page.locator('.refactor-toast button', { hasText: 'Desfazer' }).click();
@@ -305,10 +322,11 @@ scenario('paste-imports', { 'src/Billing/charge.php': billingSrc, 'src/Shop/Cart
  await page.keyboard.press('Meta+c'); await page.waitForTimeout(150);
  await h.open('src/Shop/Cart.php'); await h.caret(6, 1); await page.keyboard.press('Meta+v');
  await page.waitForSelector('.refactor-dialog', { timeout: 5000 });
- const labels = await page.locator('.refactor-dialog label.refactor-check').allTextContents();
- assert.deepEqual(labels, ['App\\Billing\\Invoice', 'App\\Model\\User'], 'Ask: the classes to import, all checked');
+ const labels = await page.locator('.refactor-imports .row span:first-child').allTextContents();
+ assert.deepEqual(labels, ['CApp\\Billing\\Invoice', 'CApp\\Model\\User'], 'Ask: Select Classes To Import, all selected (OBS P20)');
+ assert.equal(await page.locator('.refactor-imports .row[aria-selected=true]').count(), 2);
  await h.shot('paste-imports');
- await page.locator('.refactor-dialog label.refactor-check input').nth(1).uncheck();
+ await page.locator('.refactor-imports .row').nth(1).click();
  await page.locator('.refactor-dialog footer button[value=ok]').click(); await page.waitForTimeout(300);
  const after = await h.text();
  assert.ok(after.includes('namespace App\\Shop;\n\nuse App\\Billing\\Invoice;\n\nclass Cart {}'), 'only the chosen import inserted:\n' + after);
