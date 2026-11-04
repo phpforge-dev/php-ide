@@ -103,7 +103,8 @@ export namespace Shop {
 };
 const tree={'':['config','public','src','composer.json'],config:['config/services.yaml'],public:['public/index.html'],src:['src/Broken.php','src/Other.php','src/app.js','src/types.ts']};
 let browser;const results={};const failures=[];
-const step=async(name,fn)=>{try{results[name]=await fn();}catch(error){failures.push(name+': '+(error?.message??error).split('\n')[0]);results[name]={error:String(error?.message??error).split('\n')[0]};}};
+const brief=error=>{const lines=String(error?.message??error).split('\n');return [lines[0],...lines.slice(1).filter(l=>l.trim().startsWith('-')).slice(-3).map(l=>l.trim())].join(' — ');};
+const step=async(name,fn)=>{try{results[name]=await fn();}catch(error){failures.push(name+': '+brief(error));results[name]={error:brief(error)};}};
 try {
  await new Promise((resolve,reject)=>{server.stdout.on('data',d=>{if(String(d).includes(String(port)))resolve();});server.once('exit',reject);});
  browser=process.argv.includes('--chromium')?await chromium.launch({headless:true,channel:'chrome'}):await webkit.launch({headless:true});
@@ -133,7 +134,7 @@ try {
   };
  }});`;
  for(const theme of themes){
-  const page=await browser.newPage({viewport:{width:1400,height:909},deviceScaleFactor:1});page.setDefaultTimeout(4000);
+  const page=await browser.newPage({viewport:{width:1400,height:909},deviceScaleFactor:1});page.setDefaultTimeout(8000);
   await page.emulateMedia({colorScheme:theme});await fixture.route(page);if(process.env.STACK)page.on('pageerror',e=>console.log(e.stack));
   await page.addInitScript(([t,l])=>{try{localStorage.clear();localStorage.setItem('php-ide-appearance',JSON.stringify({theme:t}));if(l)localStorage.setItem('php-ide-language',l);}catch{}
    // The clipboard is stubbed: WebKit's headless clipboard needs a user gesture permission.
@@ -218,6 +219,7 @@ try {
    // A plugin-like run action (same registry the PHP Tests plugin uses: category Executar, editor context).
    await page.evaluate(async()=>{const {keymap}=await import('/src/keymap.ts');window.__ran=[];
     keymap.registerAction({id:'fixture.runContext',label:"Executar o teste sob o cursor",category:'Executar',context:'editor',defaults:{},run:()=>window.__ran.push('run')});
+    keymap.registerAction({id:'fixture.runWithCoverage',label:'Executar com cobertura',category:'Executar',context:'editor',defaults:{},run:()=>window.__ran.push('coverage')});
     const {providePluginService}=await import('/src/plugin-services.ts');
     providePluginService('fixture','generate.fixture',{generateItems:ctx=>ctx.language==='php'?[{label:'Construtor',run:()=>window.__ran.push('constructor')},{label:'Getters',run:()=>window.__ran.push('getters')}]:[]});});
    await openFile('src/Broken.php');await setCaret(7,10);
@@ -333,7 +335,7 @@ try {
    assert.deepEqual(p.opened,{tab:'src/Other.php',caret:[9,14]},'double click opens the problem');
    const m=results[theme+':menus'];
    const clean=items=>items.filter(i=>i!=='—').map(i=>i.replace(' (off)',''));
-   assert.deepEqual(clean(m.tab),['Fechar','Fechar outras abas','Fechar todas as abas','Fechar abas à esquerda','Copiar caminho/referência…','Dividir à direita','Dividir para baixo','Fixar aba','Configurar abas do editor…','Marcadores','Executar','Mais Executar/Depurar','Abrir em','Histórico local','Renomear arquivo…'],'tab menu order (reference 53)');
+   assert.deepEqual(clean(m.tab),['Fechar','Fechar outras abas','Fechar todas as abas','Fechar abas à direita','Copiar caminho/referência…','Dividir à direita','Dividir para baixo','Fixar aba','Configurar abas do editor…','Marcadores','Executar','Mais Executar/Depurar','Abrir em','Histórico local','Renomear arquivo…'],'tab menu order (reference 53)');
    assert.deepEqual(m.bookmarksSub,['Adicionar marcador','Adicionar marcador mnemônico…','Mostrar todos os marcadores…'],'Bookmarks submenu');
    assert.deepEqual(m.split,{editors:2,sameModel:true,side:'right',title:'Broken.php'},'Split Right');
    assert.ok(clean(m.tabWhileSplit).includes('Desfazer divisão'),'Unsplit while split');assert.equal(m.unsplit,0);

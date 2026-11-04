@@ -9,6 +9,8 @@ import { openMenu, type MenuItem } from './context-menu';
 // IDE does not have (splits, new window, bookmarks, file type override, run configurations, gists, AI chat) are
 // left out rather than shown dead. Pinned tabs: "Close Other Tabs", left/right and "Close All but Pinned" keep
 // them, "Close All Tabs" closes them too (public help, "Pin tabs"; not compared yet).
+// Round 2 adds Split Right/Down (+ Unsplit), Configure Editor Tabs…, Bookmarks and Run/Debug from plugins; still
+// out: Split and Move, Open Tab in New Window, Override File Type, snippets/gists and AI.
 // The keymap actions close through the tabs' × buttons, which keep main.ts's unsaved-buffer guard. ⌘W has no
 // default on macOS: Tauri's default menu uses it to close the window.
 export type TabHooks = {
@@ -19,6 +21,12 @@ export type TabHooks = {
  close(paths: string[]): void;
  /** Copy path, Open In, Local History and Rename for project files; undefined for virtual buffers. */
  fileItems(path: string): { copyPath: Entry; openIn: Entry; history: Entry; rename(): void } | undefined;
+ split?: { split(path: string, orientation: 'right' | 'down'): unknown; unsplit(): void; active(): { path: string } | undefined };
+ bookmarks?: { hasFile(path: string): boolean; toggleFile(path: string): void; mnemonicFile(path: string): void; show(): void };
+ /** Settings › Editor › General › Editor Tabs. */
+ configure?(): void;
+ /** Run / Debug / More Run/Debug offered by plugins for this tab (active tab only). */
+ runItems?(path: string): MenuItem[];
 };
 type Entry = Exclude<MenuItem, '-'>;
 let hooks: TabHooks | undefined;
@@ -68,7 +76,24 @@ export function showTabMenu(tab: HTMLElement, path: string, x: number, y: number
   '-',
   ...(file ? [{ ...file.copyPath, label: t('Copiar caminho/referência…') } as MenuItem] : []),
   '-',
+  '-',
+  ...(hooks.split ? [
+   { id: 'split-right', label: t('Dividir à direita'), shortcut: keymap.shortcut('editor.splitRight') || undefined, run: () => hooks!.split!.split(path, 'right') },
+   { id: 'split-down', label: t('Dividir para baixo'), shortcut: keymap.shortcut('editor.splitDown') || undefined, run: () => hooks!.split!.split(path, 'down') },
+   ...(hooks.split.active() ? [{ id: 'unsplit', label: t('Desfazer divisão'), shortcut: keymap.shortcut('editor.unsplit') || undefined, run: () => hooks!.split!.unsplit() }] : []),
+  ] as MenuItem[] : []),
+  '-',
   { id: 'pin', label: pinned ? t('Desafixar aba') : t('Fixar aba'), shortcut: keymap.shortcut('editor.pinTab') || undefined, run: () => hooks!.setPinned(path, !pinned) },
+  ...(hooks.configure ? [{ id: 'configure-tabs', label: t('Configurar abas do editor…'), run: () => hooks!.configure!() }] : []),
+  '-',
+  ...(hooks.bookmarks && file ? [{ id: 'bookmarks', label: t('Marcadores'), children: [
+   { id: 'bookmark-file', label: hooks.bookmarks.hasFile(path) ? t('Remover marcador') : t('Adicionar marcador'), run: () => hooks!.bookmarks!.toggleFile(path) },
+   { id: 'bookmark-mnemonic', label: t('Adicionar marcador mnemônico…'), run: () => hooks!.bookmarks!.mnemonicFile(path) },
+   '-',
+   { id: 'bookmarks-show', label: t('Mostrar todos os marcadores…'), shortcut: keymap.shortcut('bookmarks.show') || undefined, run: () => hooks!.bookmarks!.show() },
+  ] }] as MenuItem[] : []),
+  '-',
+  ...(hooks.runItems?.(path) ?? []),
   '-',
   ...(file ? [file.openIn, '-', file.history, '-', { id: 'rename-file', label: t('Renomear arquivo…'), shortcut: keymap.shortcut('project.rename') || undefined, run: file.rename }] as MenuItem[] : []),
  ];
