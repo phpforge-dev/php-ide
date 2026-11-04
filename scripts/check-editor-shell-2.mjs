@@ -341,7 +341,7 @@ try {
    assert.deepEqual(m.split,{editors:2,sameModel:true,side:'right',title:'Broken.php'},'Split Right');
    assert.ok(clean(m.tabWhileSplit).includes('Desfazer divisão'),'Unsplit while split');assert.equal(m.unsplit,0);
    assert.equal(m.glyphs,1,'F3 adds a line bookmark');assert.ok(m.mnemonicPopup,'⌥F3 mnemonic chooser');
-   assert.equal(m.list.length,2,'⌘F3 lists bookmarks: '+m.list);assert.ok(m.list.some(l=>/^1\b/.test(l)&&l.includes('Broken.php:9')),'mnemonic listed');
+   assert.equal(m.list.length,2,'⌘F3 lists bookmarks: '+m.list);assert.ok(m.list.some(l=>/^1(?!\d)/.test(l)&&l.includes('Broken.php:9')),'mnemonic listed');
    assert.deepEqual(m.jumped,[9,9],'^1 jumps to mnemonic 1');
    const em=clean(m.editorMenu);
    for(const label of ['Gerar…','Executar','Mais Executar/Depurar','Comparar com a área de transferência'])assert.ok(em.includes(label),'editor menu has '+label+': '+em);

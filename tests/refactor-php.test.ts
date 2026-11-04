@@ -230,26 +230,26 @@ function take2(bool $flag) {}
 `;
  // Sem strict_types o PhpStorm não acusa conversões escalares (OBS 04/11); classes e null continuam.
  const loose = inspect(text);
- assert.ok(!loose.some(p => text.slice(p.start, p.end).includes("'x'") || p.id === 'PhpParamsInspection'));
+ assert.ok(!loose.some(p => text.slice(p.start, p.end).includes("'x'") || p.id === 'PhpStrictTypeCheckingInspection'));
  const none = loose.find(p => p.id === 'PhpIncompatibleReturnTypeInspection')!;
  assert.equal(text.slice(none.start, none.end), 'return null;'); assert.equal(none.severity, 'warning');
  assert.equal(none.fixes[0].title, "Alterar tipo de retorno de 'string' para '?string'");
  assert.ok(!loose.some(p => p.message.includes("'float'")));
  assert.ok(loose.some(p => p.id === 'PhpVoidFunctionResultUsedInspection'));
- // Com strict_types as conversões viram erro, com a instrução return inteira como faixa.
+ // Com strict_types as conversões viram erro de PhpStrictTypeCheckingInspection (nome da referência), com a instrução return inteira como faixa.
  const strict = text.replace('<?php', '<?php\ndeclare(strict_types=1);');
  const problems = inspect(strict);
- const ret = problems.find(p => p.id === 'PhpIncompatibleReturnTypeInspection' && strict.slice(p.start, p.end) === "return 'x';")!;
+ const ret = problems.find(p => p.id === 'PhpStrictTypeCheckingInspection' && strict.slice(p.start, p.end) === "return 'x';")!;
  assert.equal(ret.severity, 'error');
  assert.equal(applyEdits(strict, ret.fixes[0].edits).includes('public function id(): string'), true);
- const args = problems.filter(p => p.id === 'PhpParamsInspection'); assert.deepEqual(args.map(a => strict.slice(a.start, a.end)), ["'nope'", '1']);
+ const args = problems.filter(p => p.id === 'PhpStrictTypeCheckingInspection' && !strict.slice(p.start, p.end).startsWith('return')); assert.deepEqual(args.map(a => strict.slice(a.start, a.end)), ["'nope'", '1']);
  assert.equal(args[0].fixes[0].title, "Converter 'nope' para int");
  const fixed = applyEdits(strict, [suppressEdit(strict, ret.start, ret.id, 'statement')]);
- assert.match(fixed, /        \/\*\* @noinspection PhpIncompatibleReturnTypeInspection \*\/\n        return 'x';/);
+ assert.match(fixed, /        \/\*\* @noinspection PhpStrictTypeCheckingInspection \*\/\n        return 'x';/);
  const again = inspect(fixed).find(p => p.id === ret.id && p.message.includes("'int'"))!;
  assert.equal(suppressed(fixed, again.start, again.id), true);
  assert.equal(suppressed(fixed, again.start, 'Other'), false);
- const file = applyEdits(strict, [suppressEdit(strict, 0, 'PhpParamsInspection', 'file')]);
- assert.equal(suppressed(file, file.indexOf("'nope'"), 'PhpParamsInspection'), true);
+ const file = applyEdits(strict, [suppressEdit(strict, 0, 'PhpStrictTypeCheckingInspection', 'file')]);
+ assert.equal(suppressed(file, file.indexOf("'nope'"), 'PhpStrictTypeCheckingInspection'), true);
  assert.equal(suppressed(file, file.indexOf("'nope'"), 'PhpIncompatibleReturnTypeInspection'), false);
 });

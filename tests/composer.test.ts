@@ -116,6 +116,7 @@ test('CodeLens: install/update na seção require e ▶ por script', async () =>
  assert.deepEqual(lenses.map(l => [l.line, l.title, l.arguments[0]]), [
   [line('"require": {'), '▶ composer install', { action: 'install' }],
   [line('"require": {'), '↻ composer update', { action: 'update' }],
+  [line('"require": {'), 'Mostrar log', { show: 'log' }],
   [line('"auto-scripts"'), '▶ Executar auto-scripts', { action: 'run-script', script: 'auto-scripts' }],
   [line('"post-install-cmd"'), '▶ Executar post-install-cmd', { action: 'run-script', script: 'post-install-cmd' }],
   [line('"lint"'), '▶ Executar lint', { action: 'run-script', script: 'lint' }],

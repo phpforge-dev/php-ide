@@ -1,16 +1,16 @@
 [package]
 name = "php-ide"
-version = "0.2.19"
+version = "0.2.20"
 edition = "2021"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 [dependencies]
-phpforge-database = { git = "https://github.com/phpforge-dev/plugin-database", rev = "283d268ce896c32ea16496ba91d9a9cb40d696bb" }
-phpforge-agents = { git = "https://github.com/phpforge-dev/plugin-agents", rev = "cb899d1a5dcbd2f9b66315a6b034e0d6b54ab382" }
-phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "2e63ef0090b66be828b3e6d6bdc0450bea204f18" }
+phpforge-database = { git = "https://github.com/phpforge-dev/plugin-database", rev = "2857d6889d1077bd0802a066e7271c47c662be36" }
+phpforge-agents = { git = "https://github.com/phpforge-dev/plugin-agents", rev = "aa585d9dac2116b6024a503361daf1cae14d3458" }
+phpforge-git = { git = "https://github.com/phpforge-dev/plugin-git", rev = "9056c30de8098380a9605ac0fcf0c6f238438f6f" }
 phpforge-terminal = { git = "https://github.com/phpforge-dev/plugin-terminal", rev = "5eba8143d583efe66dd0a02cffce710413817c68" }
-phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "bc95a57fb5049c6f84876a0e4c3ced9459205b91" }
-phpforge-php-intelligence = { git = "https://github.com/phpforge-dev/plugin-php-intelligence", rev = "4112b24671ef6bf6fdbb5067afc0ba6a5cb04641" }
+phpforge-docker-services = { git = "https://github.com/phpforge-dev/plugin-docker-services", rev = "ae7bf9c2757087cde0e826cb674e9d224d03e11b" }
+phpforge-php-intelligence = { git = "https://github.com/phpforge-dev/plugin-php-intelligence", rev = "f3bee71e12f5b9a147c6c8e1a236ab8014310741" }
 dunce = "1"
 libc = "0.2"
 tauri = { version = "2", features = [] }
