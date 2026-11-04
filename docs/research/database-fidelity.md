@@ -41,7 +41,7 @@ As limitações abaixo foram revistas na [rodada 2](#rodada-2-04112026); as que 
 
 ## Rodada 2 (04/11/2026)
 
-Plugin `plugin-database`, `main` local, um commit por item, sem push e sem nova versão (continua 1.1.0): `65dc575` Stop, `b94bbe3` somente leitura, `7ae8509` TNS, `f59d65c` grade sem PK e `60de540` Redis. O host não mudou. O harness WebKit `scripts/check-database-fidelity.mjs` ganhou os casos novos. Como a parte nativa mudou, a revisão fixada em `src-tauri/Cargo.toml` precisa ser atualizada depois do push.
+Plugin `plugin-database`, `main` local, um commit por item, sem push e sem nova versão (continua 1.1.0): `65dc575` Stop, `b94bbe3` somente leitura, `7ae8509` TNS, `f59d65c` + `7f5e263` grade sem PK (o segundo alinha com a observação do PhpStorm) e `60de540` Redis. O host não mudou. O harness WebKit `scripts/check-database-fidelity.mjs` ganhou os casos novos. Como a parte nativa mudou, a revisão fixada em `src-tauri/Cargo.toml` precisa ser atualizada depois do push.
 
 ### Evidência
 
