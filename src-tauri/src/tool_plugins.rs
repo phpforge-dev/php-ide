@@ -118,6 +118,7 @@ pub fn service_permission(method:&str)->Option<&'static str>{
   "gitAccount"=>Some("process"),
   "gitAccounts"=>Some("process"),
   "gitAccountsDefault"=>Some("process"),
+  "gitAccountsLogin"=>Some("process"),
   "gitAccountsRemove"=>Some("process"),
   "gitAccountsSave"=>Some("process"),
   "gitAccountsUse"=>Some("process"),
