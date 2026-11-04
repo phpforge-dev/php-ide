@@ -21,6 +21,7 @@ import { mountSearchEverywhere } from './search-everywhere';
 
 import { editorColors, editorFont, editorRules } from './editor-theme';
 import { mountEditorChrome } from './editor-chrome';
+import { mountCodeBreadcrumbs } from './code-breadcrumbs';
 
 import { mountProjectActions } from './project-actions';
 
@@ -118,6 +119,12 @@ window.addEventListener('ide-autosave-changed', () => {
 const dirty = (b: Buffer) => !b.virtual && b.model.getValue() !== b.saved;
 let active: string | undefined;
 const gitPanel = optionalPluginService('git',p=>p.mount(api, () => [...buffers.values()].some(dirty), async () => { editor.setModel(null); buffers.forEach(b => b.model.dispose()); buffers.clear(); active = undefined; opened.clear(); views.clear(); backStack.length=0;forwardStack.length=0;navigationButtons(); tabs(); await tree(); }));
+// UI-BREADCRUMBS-001: code path at the bottom of the editor and in the status-bar navigation bar.
+let projectName = '';
+const codeBreadcrumbs: { refresh(): void } | undefined = mountCodeBreadcrumbs(editor, {
+ path: () => active, isFile: path => !buffers.get(path)?.virtual, project: () => projectName || $('project').textContent || '',
+ tree: path => api.tree(path), open: path => open(path), status,
+});
 type Place = { path: string; line: number; column: number };
 const backStack: Place[] = []; const forwardStack: Place[] = [];
 const views = new Map<string, monaco.editor.ICodeEditorViewState>();
@@ -136,7 +143,7 @@ function tabs() {
  $<HTMLButtonElement>('definition').disabled = !navigable.includes(language);
  $<HTMLButtonElement>('references').disabled=!(phpLike.includes(language)||webLanguage(language));
  $<HTMLButtonElement>('implementations').disabled=!(phpLike.includes(language)||language==='vue');
- $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
+ if (codeBreadcrumbs) codeBreadcrumbs.refresh(); else $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
  $('tabs').replaceChildren(...[...opened].filter(path => buffers.has(path)).map(path => {
   const b = buffers.get(path)!; const tab = document.createElement('div'); tab.className = 'file-tab';
   const text = b.model.getValue(); const icon = fileIcon(path,false,text);
@@ -392,7 +399,7 @@ keymap.registerAction({id:'file.save',label:'Salvar arquivo',category:'Arquivo',
 $('references').onclick=()=>run(()=>usages.show());
 // ⌘B em PHP: Declaration or Usages (declaração leva aos usos; uso único navega direto).
 for(const [id,action] of [['definition','editor.action.revealDefinition'],['implementations','editor.action.goToImplementation']]) $(id).onclick=()=>run(async()=>{editor.focus();const model=editor.getModel(),position=editor.getPosition();if(id==='definition'&&model&&position&&phpLike.includes(model.getLanguageId())){await navigateDefinition(position);return;}if(id==='implementations'&&model&&position&&model.getLanguageId()==='php'&&await phpImplementations(model,position))return;editor.trigger('navigation-toolbar',action,{});});
-async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=info.name;await tree();showPlugins();return true;} return false; }
+async function chooseProject(path?: string): Promise<boolean> { if([...buffers.values()].some(dirty)){throw Error(tr('Salve os arquivos alterados antes de trocar de projeto.'));} const info=path ? await api.openRecentProject(path) : await api.openProject(); if(info){webProject.reset();gitPanel.reset();databasePanel.reset();consoleUi.reset();agentPanel.reset();terminalPanel.reset();dockerPanel.reset();toolPlugins.reset();backStack.length=0;forwardStack.length=0;opened.clear();views.clear();navigationButtons();editor.setModel(null);buffers.forEach(b=>b.model.dispose());buffers.clear();active=undefined;tabs();$('project').textContent=projectName=info.name;await tree();showPlugins();return true;} return false; }
 /** Opens Plugins on the plugin behind a feature: its card when installed (state + fix), the Marketplace otherwise. */
 const showPluginFor=(id:string)=>window.dispatchEvent(new CustomEvent('ide-show-plugins',{detail:{id}}));
 $('show-agent').onclick=()=>{if(!pluginService('agents')){status('Ative o plugin Agents em Plugins.');showPluginFor('phpforge.agents');return;}$('agent').hidden=false;$('db').hidden=true;};
@@ -453,7 +460,7 @@ monaco.languages.registerCodeLensProvider('php',pluginLenses);
 window.addEventListener('ide-plugins-changed',()=>pluginLensChanges.fire(pluginLenses));
 window.addEventListener('beforeunload',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();event.returnValue='';}});
 const showPlugins = () => run(async () => { renderPluginStatus($('plugins'), await api.plugins()); });
-export const ready=(async()=>{$('project').textContent=(await api.workspace()).name;await tree();showPlugins();})();
+export const ready=(async()=>{$('project').textContent=projectName=(await api.workspace()).name;await tree();showPlugins();})();
 const closeProjectButton=document.createElement('button');closeProjectButton.id='close-project';closeProjectButton.textContent=tr('Fechar projeto');document.querySelector('header')!.append(closeProjectButton);closeProjectButton.onclick=()=>run(async()=>{if([...buffers.values()].some(dirty))throw Error(tr('Salve os arquivos alterados antes de fechar o projeto.'));await api.closeProject();location.reload();});
 
 window.addEventListener('ide-before-language-change',event=>{if([...buffers.values()].some(dirty)){event.preventDefault();status(tr('Salve os arquivos alterados antes de aplicar o idioma.'));}});
