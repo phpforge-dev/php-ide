@@ -1,0 +1,45 @@
+/* UI-PROBLEMS-001 — Problems tool window (captures 50–52). Islands tokens; our own icons. */
+#problems-panel{position:relative;flex:0 0 auto;height:260px;min-height:120px;max-height:70%;display:flex;flex-direction:column;margin-top:var(--ij-gap,6px);
+ background:var(--ij-island);border-radius:var(--ij-island-radius);overflow:hidden;color:var(--ij-text);font-size:var(--ij-font-size)}
+#problems-panel[hidden]{display:none}
+#problems-panel .tool-window-resize{position:absolute;top:0;left:0;right:0;height:4px;background:transparent;z-index:2}
+.problems-head{gap:10px}
+.problems-tabs{display:flex;align-items:center;gap:4px}
+.problems-tabs [role=tab]{display:inline-flex;align-items:center;gap:6px;height:var(--ij-tab-height,26px);padding:0 8px!important;border:1px solid transparent!important;border-radius:var(--ij-tab-radius,6px);background:transparent;color:var(--ij-text);font-size:var(--ij-font-size)!important;cursor:pointer}
+.problems-tabs [role=tab]:hover{background:var(--ij-hover)}
+.problems-tabs [role=tab][aria-selected=true]{background:var(--ij-tab-selected,var(--ij-selection-inactive));border-color:var(--ij-tab-selected-border,var(--ij-focus))!important}
+.problems-count{color:var(--ij-text-secondary);font-variant-numeric:tabular-nums}
+.problems-hide{font-size:16px!important;color:var(--ij-text-secondary);width:24px;height:24px}
+.problems-body{flex:1;min-height:0;display:flex}
+.problems-toolbar{display:flex;flex-direction:column;align-items:center;gap:4px;width:32px;flex:none;padding:4px 0}
+.problems-toolbar button{width:24px;height:24px;padding:4px;border:0;border-radius:var(--ij-control-radius-compact);background:transparent;color:var(--ij-text-secondary)}
+.problems-toolbar button[hidden]{display:none}
+.problems-toolbar button:hover{background:var(--ij-hover);color:var(--ij-text)}
+.problems-toolbar svg{width:16px;height:16px;display:block}
+.problems-toolbar [data-problems-action=fix]{color:var(--ij-editor-warning-icon,#f2c55c)}
+.problems-list{flex:1;min-width:0;overflow:auto;padding:2px 8px 8px 0;outline:none}
+.problems-list[hidden]{display:none}
+.problems-list [role=group][hidden]{display:none}
+.problem-file,.problem-row,.problem-inspection{display:flex;align-items:center;gap:6px;height:var(--ij-row-height,24px);padding:0 8px;border-radius:var(--ij-control-radius-compact);white-space:nowrap;cursor:default}
+.problem-file::before{content:'';flex:none;width:16px;height:16px;margin-left:-4px;background:var(--ij-text-secondary);-webkit-mask:url("./assets/jetbrains-icons/general/chevronDown_dark.svg") center/16px no-repeat;mask:url("./assets/jetbrains-icons/general/chevronDown_dark.svg") center/16px no-repeat}
+.problem-file[aria-expanded=false]::before{-webkit-mask-image:url("./assets/jetbrains-icons/general/chevronRight_dark.svg");mask-image:url("./assets/jetbrains-icons/general/chevronRight_dark.svg")}
+.problem-file .resource-icon{display:inline-flex}
+.problem-row{padding-left:30px}.problem-inspection{padding-left:30px}.problem-inspection+.problem-row,.problem-inspection~.problem-row{padding-left:50px}
+.problem-file-path,.problem-line,.problem-file-count{color:var(--ij-text-secondary)}
+.problem-file-path{overflow:hidden;text-overflow:ellipsis}
+.problem-message{overflow:hidden;text-overflow:ellipsis}
+.problem-line{flex:none;margin-left:-6px;white-space:pre}
+.problem-icon{display:inline-flex;flex:none;width:16px;height:16px}.problem-icon svg{width:14px;height:14px;margin:1px}
+.problem-error{color:var(--ij-editor-error-icon)}.problem-warning{color:var(--ij-editor-warning-icon)}.problem-weak{color:var(--ij-editor-weak-icon)}.problem-other{color:var(--ij-text-secondary)}
+.problems-list [aria-selected=true]{background:var(--ij-selection-inactive)}
+.problems-list:focus [aria-selected=true]{background:var(--ij-selection);color:var(--ij-selection-text)}
+.problems-list:focus [aria-selected=true] :is(.problem-line,.problem-file-path){color:inherit;opacity:.8}
+.problems-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--ij-text-secondary)}
+.problems-empty[hidden]{display:none}
+/* Bottom stripe group, as on capture 50: … Terminal, Problems, Git. */
+.left-rail #show-problems{order:15}.left-rail #show-git{order:16}
+.tool-rail [data-ij-icon=problems]{--icon:url("./assets/jetbrains-icons/toolwindows/problems@20x20_dark.svg")}
+/* Shared menu extras: section titles and check items (Problems options). */
+.context-menu .menu-heading{padding:6px 10px 2px;font-size:var(--ij-font-size-small);color:var(--ij-text-secondary);cursor:default}
+.context-menu.has-checks button{padding-left:26px;position:relative}
+.context-menu button[aria-checked=true]::before{content:'';position:absolute;left:8px;width:12px;height:12px;background:currentColor;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2 6.5l2.5 2.5L10 3" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/12px no-repeat;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2 6.5l2.5 2.5L10 3" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/12px no-repeat}

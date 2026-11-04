@@ -22,6 +22,7 @@ import { mountSearchEverywhere } from './search-everywhere';
 import { editorColors, editorFont, editorRules } from './editor-theme';
 import { mountEditorChrome } from './editor-chrome';
 import { mountCodeBreadcrumbs } from './code-breadcrumbs';
+import { mountProblems } from './problems';
 
 import { mountProjectActions } from './project-actions';
 
@@ -411,6 +412,12 @@ const agentPanel = optionalPluginService('agents',p=>p.mount(api,$('agent'),{
 }));
 api.onEvent(event=>{if(event.type==='language')backgroundStatus(event.message);else if(event.type==='acp')agentPanel.handle(event.event);});
 mountWorkbench(api);
+// UI-PROBLEMS-001: Problems tool window (current file and project errors), opened by the inspection widget too.
+mountProblems(editor, {
+ pathOf: uri => [...buffers].find(([, b]) => !b.virtual && b.model.uri.toString() === uri.toString())?.[0],
+ open: async (path, line, column) => { const previous = place(); await open(path, false); const target = { lineNumber: line, column }; editor.setPosition(target); editor.revealPositionInCenterIfOutsideViewport(target); remember(previous); },
+ status,
+});
 await mountPluginManager(api).ready;
 const toolPlugins=mountToolPlugins(api,{path:()=>active,editor,status,changed:()=>{window.dispatchEvent(new Event('ide-plugin-languages-refresh'))},open:async(path,line)=>{const previous=place();await open(path,false);if(line!==undefined){editor.setPosition({lineNumber:line+1,column:1});editor.revealLineInCenter(line+1);}editor.focus();remember(previous);}});
 await toolPlugins.ready();
