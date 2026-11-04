@@ -47,9 +47,9 @@ const api = files => `
    if(method==='tree')return tree()[args[0]??'']??[];
    if(method==='listFiles')return Object.keys(window.files);
    if(method==='fileExists'){if(!(args[0] in window.files))throw Error('missing');return true;}
-   if(method==='read'){const path=String(args[0]??'');if(!(path in window.files))throw Error('not found: '+path);return {path,uri:'file:///fixture/'+path,text:window.files[path],etag:etag(window.files[path])};}
+   if(method==='read'){let path=String(args[0]??'');if(path.startsWith('/fixture/'))path=path.slice(9);if(!(path in window.files))throw Error('not found: '+path);return {path,uri:'file:///fixture/'+path,text:window.files[path],etag:etag(window.files[path])};}
    if(method==='languageApply'){const input=args[0];for(const c of input.changes){if(c.create){if(c.path in window.files)throw Error('exists');window.created.push(c.path);}else if(etag(window.files[c.path])!==c.etag)throw Error('etag');}
-    const etags={};for(const c of input.changes){window.files[c.path]=c.text;etags[c.path]=etag(c.text);}window.applied.push(input.label);return {etags};}
+    const etags={};for(const c of input.changes){if(c.delete){delete window.files[c.path];continue;}window.files[c.path]=c.text;etags[c.path]=etag(c.text);}window.applied.push(input.label);return {etags};}
    if(method==='language'||String(method).startsWith('php'))return window.languageMock(String(method),args[0],...args.slice(1));
    if(method==='gitStatus')return {branch:'main',head:'a'.repeat(40),changes:[],indexToken:'x'};
    if(method==='gitTools')return {branches:[],remotes:[],stashes:[],head:'x'};
@@ -249,8 +249,56 @@ scenario('change-signature', { 'src/Greeter.php': greet }, async (page, h) => {
  await page.locator('.refactor-preview .cancel').click(); await page.waitForTimeout(200); assert.equal(await h.text(), greet);
 });
 
+// ── Inspections, quick-fix order and fixes that create files ─────────────────────────────────
+const diagnostics = `window.languageMock=(method,input)=>{if(method!=='language')return null;const t=input.text;
+ const pos=o=>{const b=t.slice(0,o).split('\\n');return {line:b.length-1,character:b.at(-1).length};};
+ if(input.method==='php/diagnostics'){const out=[];for(const m of t.matchAll(/new (Invoice)\\(/g)){const o=m.index+4;out.push({range:{start:pos(o),end:pos(o+7)},code:'worse.unresolved_name',message:'Class "Invoice" not found',severity:1});}return {current:true,diagnostics:out};}
+ if(input.method==='textDocument/diagnostic'){const o=t.indexOf("'welcome'");if(o<0)return [];return [{range:{start:pos(o),end:pos(o+9)},code:'laravel.view.missing',message:"View 'welcome' não encontrada em resources/views.",severity:'warning',fixes:[{title:'Criar resources/views/welcome.blade.php',create:{uri:'file:///fixture/resources/views/welcome.blade.php',path:'resources/views/welcome.blade.php',content:''}}]}];}
+ if(input.method==='textDocument/codeAction')return [];
+ return null;};`;
+const shapes = `<?php\n\nnamespace App;\n\ninterface Shape {}\nclass Circle implements Shape {}\nclass User {}\n`;
+const typed = `<?php\n\nnamespace App;\n\nclass Shop\n{\n    public function owner(): User\n    {\n        $c = new Circle();\n        return $c;\n    }\n}\n`;
+scenario('inspections', { 'composer.json': JSON.stringify({ autoload: { 'psr-4': { 'App\\': 'src/' } } }), 'src/models.php': shapes, 'src/Shop.php': typed }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/Shop.php'); await h.waitMarkers(1);
+ const marker = await page.evaluate(() => monacoApi.editor.getModelMarkers({ owner: 'php-inspections' }).map(m => [m.startLineNumber, m.message]));
+ assert.deepEqual(marker, [[10, 'Tipo de retorno incompatível: esperado User, encontrado Circle.']], 'inferred class mismatch through the variable');
+ await h.caret(10, 16); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
+ assert.equal(items[0], 'Alterar tipo de retorno para Circle', 'inspection fix first: ' + items.join(' | '));
+ const quick = items.filter(i => !/Incorporar|Extrair/.test(i)); assert.ok(/^Suprimir/.test(quick.at(-1)) && /^Suprimir/.test(quick.at(-2)), 'suppressions last among the quick fixes: ' + items.join(' | '));
+ await h.shot('inspections-alt-enter');
+ await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+ assert.ok((await h.text()).includes('public function owner(): Circle'));
+});
+const order = `<?php\n\nnamespace App\\Shop;\n\nclass Cart\n{\n    public function bill(): void\n    {\n        $x = new Invoice();\n    }\n}\n`;
+scenario('create-class', { 'composer.json': JSON.stringify({ autoload: { 'psr-4': { 'App\\': 'src/' } } }), 'src/Shop/Cart.php': order }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('src/Shop/Cart.php'); await h.waitMarkers(1);
+ await h.caretAt('Invoice', 2); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
+ assert.equal(items[0], "Criar classe 'Invoice'", 'no import candidate: create class first: ' + items.join(' | '));
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(() => 'src/Shop/Invoice.php' in window.files, null, { timeout: 8000 });
+ assert.equal(await page.evaluate(() => window.files['src/Shop/Invoice.php']), '<?php\n\nnamespace App\\Shop;\n\nclass Invoice\n{\n\n}\n');
+ await page.waitForFunction(() => monacoApi.editor.getEditors().some(e => e.getDomNode()?.closest('#editor') && e.getModel()?.uri.path.endsWith('/src/Shop/Invoice.php')), null, { timeout: 8000 });
+ await h.shot('create-class');
+ await page.locator('.refactor-toast button', { hasText: 'Desfazer' }).click();
+ await page.waitForFunction(() => !('src/Shop/Invoice.php' in window.files), null, { timeout: 8000 });
+});
+scenario('plugin-create-fix', { 'routes/web.php': `<?php\n\nreturn view('welcome');\n` }, async (page, h) => {
+ await page.evaluate(diagnostics);
+ await h.open('routes/web.php'); await h.waitMarkers(1);
+ await h.caretAt("'welcome'", 2); await page.keyboard.press('Alt+Enter'); await page.waitForSelector('.action-widget', { timeout: 8000 }); await page.waitForTimeout(300);
+ const items = await page.evaluate(() => [...document.querySelectorAll('.action-widget [role=option]')].map(o => o.textContent.trim()).filter(Boolean));
+ assert.equal(items[0], 'Criar resources/views/welcome.blade.php', 'plugin create fix offered: ' + items.join(' | '));
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(() => 'resources/views/welcome.blade.php' in window.files, null, { timeout: 8000 });
+});
+
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], { stdio: 'pipe' });
 let browser; const results = {}; const failures = [];
+process.on('exit', () => server.kill('SIGKILL'));
 try {
  await new Promise((resolve, reject) => { server.stdout.on('data', d => { if (String(d).includes(String(port))) resolve(); }); server.once('exit', reject); });
  browser = process.argv.includes('--chromium') ? await chromium.launch({ headless: true, channel: 'chrome' }) : await webkit.launch({ headless: true });
@@ -284,4 +332,4 @@ try {
  }
  if (process.argv.includes('--dump')) console.log(JSON.stringify(results, null, 1));
  if (failures.length) { process.exitCode = 1; console.log('Failed: ' + failures.join(', ')); }
-} finally { await browser?.close(); server.kill(); }
+} finally { await browser?.close(); server.kill('SIGKILL'); }
