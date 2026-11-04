@@ -25,16 +25,21 @@ export async function toolPluginsSmoke(_info:unknown){
  const running=native(composerEntry,'composerRun','cancel-fixture',{mode:'path',path:root+'/composer.phar'},{action:'run-script',script:'slow'});
  await new Promise(r=>setTimeout(r,200));await native(composerEntry,'composerCancel','cancel-fixture');const cancelled=await running;assert(cancelled.cancelled,'Composer cancellation queued behind long request');
  checks.push('Composer: external Rust service, configured executable and live output through plugin UI');
- // Test CodeLens comes from the external worker; results/navigation come from its UI module.
+ // Test discovery and results come from the external plugin UI module.
  const editor=monaco.editor.getEditors().find(e=>e.getDomNode()?.closest('#editor'))!;
  document.querySelector<HTMLButtonElement>('#tree button[aria-label="SmokeTest.php"]')!.click();
  await wait(()=>editor.getModel()?.uri.path.endsWith('/SmokeTest.php')??false,'test file did not open');
- await wait(()=>[...document.querySelectorAll('#editor .codelens-decoration a')].some(a=>a.textContent?.includes('Executar teste')),'external test CodeLens missing');
- const lens=[...document.querySelectorAll<HTMLAnchorElement>('#editor .codelens-decoration a')].find(a=>a.textContent?.includes('Executar teste'))!;
- const box=lens.getBoundingClientRect();for(const type of ['mousedown','mouseup','click'])lens.dispatchEvent(new MouseEvent(type,{bubbles:true,cancelable:true,clientX:box.left+box.width/2,clientY:box.top+box.height/2,button:0}));
+ // Test run icons live in the gutter (as in the reference); the plugin owns the menu and the Run window.
+ const glyphAt=(line:number)=>{const top=editor.getDomNode()!.getBoundingClientRect().top+editor.getTopForLineNumber(line)-editor.getScrollTop();return [...document.querySelectorAll<HTMLElement>('#editor .pt-gutter')].find(e=>Math.abs(e.getBoundingClientRect().top-top)<3);};
+ await wait(()=>!!glyphAt(3),'test gutter icon missing');
+ const glyph=glyphAt(3)!.getBoundingClientRect();glyphAt(3)!.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,clientX:glyph.left+glyph.width/2,clientY:glyph.top+glyph.height/2,button:0}));
+ await wait(()=>!!document.querySelector('#test-gutter-menu [data-action="run"]'),'test gutter menu missing');
+ document.querySelector<HTMLButtonElement>('#test-gutter-menu [data-action="run"]')!.click();
  await wait(()=>document.getElementById('test-summary')?.dataset.state==='failed','test results missing');
- const rows=document.querySelectorAll<HTMLButtonElement>('#test-list button');assert(rows.length===2,'wrong test results');rows[1].dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
- await wait(()=>editor.getPosition()?.lineNumber===5,'failure navigation did not select source line');checks.push('PHPUnit/Pest: external CodeLens → Rust runner → report → failure navigation');
+ const rows=document.querySelectorAll<HTMLElement>('#test-tree .pt-row[data-kind=test]');assert(rows.length===2,'wrong test results');rows[1].dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));
+ await wait(()=>editor.getPosition()?.lineNumber===5,'failure navigation did not select source line');
+ await wait(()=>!!editor.getModel()?.getAllDecorations().some(d=>String(d.options.glyphMarginClassName).includes('pt-g-all-failed')),'class result icon missing');
+ checks.push('PHPUnit/Pest: gutter icon → Rust runner → Run window tree → result icons and navigation');
  // Listener ownership and breakpoint settings are handled outside the IDE executable.
  document.getElementById('show-debug')!.click();
  const listening=await native(debuggerEntry,'debugListen',0,false).catch(()=>null);
