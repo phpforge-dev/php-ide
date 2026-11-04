@@ -18,3 +18,8 @@ export function optionalPluginService<T extends object=any>(name:string,mount:(s
  return new Proxy({} as T,{get(_target,key){update();const value=controller?.[key]??fallback[String(key)];if(value!==undefined)return typeof value==='function'?value.bind(controller):value;
  return()=>{const status=document.getElementById('status');if(status)status.textContent=`${name}: instale ou ative o plugin em Plugins.`;};}});
 }
+
+/** Active contributions whose name starts with `prefix` (e.g. `runConfigurations:`), in name order. */
+export function pluginServicesWithPrefix<T=any>(prefix:string):{name:string;value:T}[]{
+ return [...contributions].filter(([name])=>name.startsWith(prefix)).sort(([a],[b])=>a.localeCompare(b)).map(([name,{value}])=>({name,value}));
+}
