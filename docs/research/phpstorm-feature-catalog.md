@@ -391,10 +391,10 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Prioridade / complexidade estimada:** P2 / Alta.
 - **Dependências:** PHP CLI, Composer, processos.
 - **Comportamento observado:** ainda não caracterizado integralmente; ensaios exploratórios não constituem oracle aprovado.
-- **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/using-the-composer-dependency-manager.html).
-- **Critérios de aceitação preliminares:** Instalar por lockfile em fixture própria; falha/rede e output visíveis; indexar após conclusão.
-- **Estado de implementação:** Em desenvolvimento — [recorte 22](implementation-slice-22.md): completion, navegação, diagnósticos e CodeLens em `composer.json`; janela Composer com install/update/require/remove/dump-autoload/validate/scripts, busca no Packagist e executável por PATH/caminho/Docker; sem OBS.
-- **Diferenças conhecidas:** Sem outdated/audit/why e quick fixes; janela sem teste na janela Tauri real; equivalência não medida.
+- **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/using-the-composer-dependency-manager.html); [inspeção Non-installed Composer packages](https://www.jetbrains.com/help/phpstorm/2023.2/php-non-installed-composer-packages.html); saídas reais do Composer 2.11.1 em fixture temporária ([registro](composer-symfony-fidelity.md)).
+- **Critérios de aceitação preliminares:** Instalar por lockfile em fixture própria; falha/rede e output visíveis; indexar após conclusão. Atualizações no gutter via `update --dry-run`, ⌥Enter de pacotes não instalados e scripts ([critérios](composer-symfony-fidelity.md#critérios-e-resultado)).
+- **Estado de implementação:** Em desenvolvimento — [recorte 22](implementation-slice-22.md): completion, navegação, diagnósticos e CodeLens em `composer.json`; janela Composer com install/update/require/remove/dump-autoload/validate/scripts, busca no Packagist e executável por PATH/caminho/Docker. [04/11/2026](composer-symfony-fidelity.md) (plugin-composer local, sem release): ícone de atualização no gutter com clique para atualizar, marcadores do `composer audit`, Outdated/Audit/Why… na janela, why/why-not, ⌥Enter (instalar/atualizar pacote ou todos, hash do lock, why, Executar script); teste WebKit da janela no plugin e harness WebKit no editor real (`scripts/check-composer-symfony-ui.mjs`); sem OBS.
+- **Diferenças conhecidas:** Sem Composer Log separado (saída na janela); destaque de vulneráveis no editor é requisito próprio (sem evidência de equivalente no PhpStorm); não executado na janela Tauri real com estas versões; equivalência não medida.
 
 ## TOOL-GIT-001 — Git
 
@@ -501,10 +501,10 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Prioridade / complexidade estimada:** P2 / Muito alta.
 - **Dependências:** Plugin/adapter, versão, PHP.
 - **Comportamento observado:** ainda não caracterizado integralmente; ensaios exploratórios não constituem oracle aprovado.
-- **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/navigation-and-coding-assistance.html).
-- **Critérios de aceitação preliminares:** Serviço, rota, Twig e console; cache ausente e plugin desativado testados.
-- **Estado de implementação:** Em desenvolvimento — [recorte 22](implementation-slice-22.md): rotas (atributos e YAML), templates Twig, serviços/parâmetros YAML e `%env()%` com completion e navegação em PHP, Twig e YAML; sem OBS.
-- **Diferenças conhecidas:** Sem rotas PHP/XML, bundles, container compilado, Doctrine/forms/traduções; equivalência não medida.
+- **Evidências:** [fonte DOC](https://www.jetbrains.com/help/phpstorm/navigation-and-coding-assistance.html); lista pública de funcionalidades do [Symfony Support](https://espend.de/phpstorm/plugin/symfony) (referência open source, sem código copiado); documentação do Symfony e do Doctrine ([registro](composer-symfony-fidelity.md)).
+- **Critérios de aceitação preliminares:** Serviço, rota, Twig e console; cache ausente e plugin desativado testados. Rotas PHP/XML, bundles, container compilado, Doctrine, forms e traduções conforme [critérios](composer-symfony-fidelity.md#critérios-e-resultado).
+- **Estado de implementação:** Em desenvolvimento — [recorte 22](implementation-slice-22.md): rotas (atributos e YAML), templates Twig, serviços/parâmetros YAML e `%env()%` com completion e navegação em PHP, Twig e YAML. [04/11/2026](composer-symfony-fidelity.md) (plugin-symfony local, sem release): rotas PHP (RoutingConfigurator) e XML; `config/bundles.php` com templates `@Bundle/` via PSR-4 e erro de bundle ausente; container compilado `var/cache/<env>/*Container.xml`; Doctrine (atributos/anotações, findBy, QueryBuilder, DQL, campo inexistente com correção); forms (`data_class`, opções dos tipos, labels traduzíveis); traduções YAML/XLIFF/PHP/JSON em PHP e Twig com "Criar a chave". 33 testes do plugin; harness WebKit com o bundle no sandbox real; sem OBS.
+- **Diferenças conhecidas:** Sem coleções/prefixos de import de rotas, rotas compiladas, mapeamento Doctrine XML/YAML, tipos de form do projeto, catálogos compilados e domínios de constraints; em PHP as correções dependem do plugin PHP intelligence; equivalência não medida.
 
 ## TOOL-REFACTOR-001 — Refatorações adicionais
 
