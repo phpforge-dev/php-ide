@@ -100,7 +100,17 @@ function scheduleAutosave(b: Buffer) {
   if (path && autosaveEnabled) void saveBuffer(path, b).catch(error => status(tr('Falha no salvamento automático. Use Salvar para tentar novamente: ') + path + ': ' + String(error)));
  }, 800));
 }
-function bufferChanged(model: monaco.editor.ITextModel) { tabs(); const b = [...buffers.values()].find(b => b.model === model); if (b) scheduleAutosave(b); }
+function bufferChanged(model: monaco.editor.ITextModel) {
+ const entry = [...buffers].find(([, b]) => b.model === model);
+ if (!entry) return;
+ const [path, b] = entry;
+ const label = [...$('tabs').querySelectorAll<HTMLElement>('.tab-label')].find(label => label.parentElement?.title === path);
+ if (label) {
+  const text = path.split('/').pop()! + (dirty(b) ? ' •' : '');
+  if (label.textContent !== text) label.textContent = text;
+ }
+ scheduleAutosave(b);
+}
 window.addEventListener('ide-autosave-changed', () => {
  try { autosaveEnabled = localStorage.getItem('php-ide-autosave') !== 'false'; } catch { return; }
  for (const b of buffers.values()) scheduleAutosave(b);
@@ -117,7 +127,11 @@ function navigationButtons() { $<HTMLButtonElement>('nav-back').disabled = !back
 function remember(previous: Place | undefined) { if (!previous) return; const next = place(); if (next && JSON.stringify(next) !== JSON.stringify(previous)) { const last = backStack.at(-1); if (JSON.stringify(last) !== JSON.stringify(previous)) backStack.push(previous); if (backStack.length > 100) backStack.shift(); forwardStack.length = 0; navigationButtons(); } }
 function tabs() {
  document.querySelector('.code')!.classList.toggle('has-document',!!active);
- document.querySelectorAll<HTMLButtonElement>('#tree button').forEach(button=>button.classList.toggle('selected',button.dataset.path===active));
+ const treeButtons = new Map<string, HTMLButtonElement>();
+ document.querySelectorAll<HTMLButtonElement>('#tree button').forEach(button=>{
+  button.classList.toggle('selected',button.dataset.path===active);
+  if (button.dataset.path) treeButtons.set(button.dataset.path,button);
+ });
  const language = editor.getModel()?.getLanguageId() ?? '';
  $<HTMLButtonElement>('definition').disabled = !navigable.includes(language);
  $<HTMLButtonElement>('references').disabled=!(phpLike.includes(language)||webLanguage(language));
@@ -125,8 +139,12 @@ function tabs() {
  $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
  $('tabs').replaceChildren(...[...opened].filter(path => buffers.has(path)).map(path => {
   const b = buffers.get(path)!; const tab = document.createElement('div'); tab.className = 'file-tab';
-  const button = document.createElement('button'); button.textContent = path.split('/').pop()! + (dirty(b) ? ' •' : ''); button.title = path; button.className = path === active ? 'active' : ''; button.dataset.ext = path.split('.').pop(); button.prepend(fileIcon(path,false,b.model.getValue())); button.onclick = () => activate(path);
-  for(const entry of $('tree').querySelectorAll<HTMLButtonElement>('button[data-path]')) if(entry.dataset.path===path){const icon=fileIcon(path,false,b.model.getValue());if(entry.firstElementChild?.getAttribute('data-icon')!==icon.dataset.icon)entry.firstElementChild?.replaceWith(icon);}
+  const text = b.model.getValue(); const icon = fileIcon(path,false,text);
+  const button = document.createElement('button');
+  const label = document.createElement('span'); label.className = 'tab-label'; label.textContent = path.split('/').pop()! + (!b.virtual && text !== b.saved ? ' •' : '');
+  button.title = path; button.className = path === active ? 'active' : ''; button.dataset.ext = path.split('.').pop(); button.append(icon,label); button.onclick = () => activate(path);
+  const entry = treeButtons.get(path);
+  if(entry?.firstElementChild?.getAttribute('data-icon')!==icon.dataset.icon)entry?.firstElementChild?.replaceWith(icon.cloneNode(true));
   const close = document.createElement('button'); close.textContent = '×'; close.className = 'close-tab'; close.setAttribute('aria-label', tr('Fechar ') + path); close.onclick = () => closeFile(path);
   // Prevent WebView autoscroll; close only on release, through the same dirty-buffer guard.
   tab.onmousedown = event => { if (event.button === 1) event.preventDefault(); };
@@ -293,13 +311,14 @@ async function locations(method: LanguageMethod, model: monaco.editor.ITextModel
  try { result = webLanguage(model.getLanguageId())?await webLanguages.locations(model,pos,method):await request(method,model,pos); } catch(error) { status(msg`Falha ao buscar ${label}: ${String(error)}`); throw error; }
  if (method === 'textDocument/definition' && model.getLanguageId() === 'php') result = await phpInsights.refineDefinition(model, pos, result); // traits com insteadof/as
  const values = result ? Array.isArray(result) ? result : [result] : [];
- const output = await toLocations(values);
+ const output = await toLocations(values, method !== 'textDocument/references');
  status(output.length ? `${output.length} resultado(s) de ${label}` : msg`Nenhum resultado de ${label} neste ponto`); return output;
 }
 /** Resultado LSP (Location/LocationLink) → locais do Monaco, abrindo buffers dos arquivos alvo. */
-async function toLocations(values: any[]) {
+async function toLocations(values: any[], loadModels = true) {
  const output: {uri: monaco.Uri; range: monaco.IRange}[] = [];
  for (const item of values) { const uri = monaco.Uri.parse(item.uri ?? item.targetUri);
+  if (!loadModels && uri.scheme === 'file') { output.push({uri,range:range(item.range ?? item.targetSelectionRange)}); continue; }
   if (uri.scheme === 'php-ide-ddl' && typeof item.content === 'string') { virtual(`ddl${decodeURIComponent(uri.path)}`, item.content, 'sql', 'ddl', uri); output.push({uri,range:range(item.range)}); continue; }
   // Stubs nativos do Phpactor (phar://) abrem como biblioteca somente leitura.
   if (uri.scheme === 'phar') { try { const stub = await api.languageStub(uri.toString()); virtual('library:'+uri.toString(), stub.text, 'php', 'library', uri); output.push({uri,range:range(item.range ?? item.targetSelectionRange)}); } catch(error) { status(msg`Stub nativo indisponível: ${String(error)}`); } continue; }
@@ -313,6 +332,7 @@ async function toLocations(values: any[]) {
 }
 const usages = mountUsages(editor, {
  status,
+ preview: async uri => uri.scheme === 'file' ? (await api.read(uri.fsPath)).text : '',
  find: async (model, position, options) => await phpFamilyUsages(model, position, !options.lens) ?? locations('textDocument/references', model, position),
  open: async target => { const previous = place(); await open(target.uri.fsPath, false); editor.setSelection(target.range); editor.revealRangeInCenter(target.range); remember(previous); },
 });
@@ -326,7 +346,7 @@ async function phpFamilyUsages(model: monaco.editor.ITextModel, position: monaco
  let scope: 'current' | 'base' = 'current';
  if (family.bases.length && ask) { const base = family.bases[0]; const choice = await askBaseMethod(family.name, family.ownerName, base.name, !!base.isAbstract); if (!choice) return null; scope = choice; }
  const found = await (api as unknown as FamilyApi).phpMethodUsages(input, scope); if (!found) return undefined;
- const output = await toLocations(found); status(msg`${output.length} uso(s) de ${family.name}() (${scope === 'base' ? tr('método base') : tr('método atual')})`); return output;
+ const output = await toLocations(found, false); status(msg`${output.length} uso(s) de ${family.name}() (${scope === 'base' ? tr('método base') : tr('método atual')})`); return output;
 }
 async function phpImplementations(model: monaco.editor.ITextModel, position: monaco.Position) {
  const input = phpInput(model, position); if (!input) return false;

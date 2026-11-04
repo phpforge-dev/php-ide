@@ -5,6 +5,7 @@ export function mountUsages(editor: monaco.editor.IStandaloneCodeEditor, hooks: 
  /** `null`: o usuário cancelou (ex.: pergunta do método base). */
  find(model: monaco.editor.ITextModel, position: monaco.Position, options: { lens?: boolean }): Promise<Location[] | null>;
  open(location: Location): Promise<void>;
+ preview?(uri: monaco.Uri): Promise<string>;
  status(message: string): void;
 }) {
  let popup: HTMLElement | undefined; let generation = 0;
@@ -46,18 +47,41 @@ export function mountUsages(editor: monaco.editor.IStandaloneCodeEditor, hooks: 
     hooks.status(tr('É o único uso nos arquivos do projeto')); return;
    }
    root.querySelector('.usages-count')!.textContent = msg`${rows.length} referência(s)`;
+   let limit = 100, previewWorkers = 0;
+   const previews = new Map<string, Promise<string[]>>();
+   let pendingPreviews: {row: typeof rows[number]; code: HTMLElement}[] = [];
+   function loadPreviews() {
+    while(previewWorkers<4 && pendingPreviews.length && token===generation){
+     const {row,code}=pendingPreviews.shift()!;const key=row.location.uri.toString();
+     let text=previews.get(key);
+     if(!text){text=hooks.preview!(row.location.uri).then(text=>text.split(/\r?\n/));previews.set(key,text);}
+     previewWorkers++;
+     void text.then(lines=>{
+      if(token!==generation)return;
+      row.snippet=lines[row.location.range.startLineNumber-1]?.trim()??'';
+      if(code.isConnected)code.textContent=row.snippet;
+     }).catch(()=>{previews.delete(key);}).finally(()=>{previewWorkers--;loadPreviews();});
+    }
+   }
    function render() {
+    pendingPreviews=[];
     results.replaceChildren(); const query = filter.value.toLocaleLowerCase();
     const visible = rows.filter(r=>(r.path+' '+r.snippet).toLocaleLowerCase().includes(query));
     if(!visible.length) { results.textContent = rows.length ? tr('Nenhuma referência corresponde ao filtro.') : tr('Nenhum uso encontrado para este símbolo.'); return; }
-    for(const row of visible) {
+    for(const row of visible.slice(0,limit)) {
      const button = document.createElement('button'); button.type='button'; button.className='usage-result'; button.setAttribute('role','listitem');
      const file = document.createElement('span'); file.className='usage-path'; file.textContent=`${row.path.split('/').slice(-3).join('/')} : ${row.location.range.startLineNumber}`;
      file.title=row.path; const code=document.createElement('code'); code.textContent=row.snippet; button.append(file,code);
+     if(!row.snippet && hooks.preview) pendingPreviews.push({row,code});
      button.onclick=()=>{ close(); void hooks.open(row.location).catch(error=>hooks.status(msg`Falha ao abrir referência: ${String(error)}`)); }; results.append(button);
     }
+    if (visible.length > limit) {
+     const more=document.createElement('button');more.textContent=msg`Mostrar mais (${visible.length-limit} restantes)`;
+     more.onclick=()=>{limit+=100;render();};results.append(more);
+    }
+    loadPreviews();
    }
-   filter.oninput=render; render();
+   filter.oninput=()=>{limit=100;render();}; render();
   } catch(error) { if(token===generation) results.textContent=msg`Não foi possível buscar referências: ${String(error)}`; }
  }
  // CodeLens executes its command during mousedown; dismiss before that command creates a popup.

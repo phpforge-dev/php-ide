@@ -4,6 +4,7 @@ import {t,html,msg} from './i18n';
 import {fileIcon} from './file-icons';
 import {keymap,DOUBLE_SHIFT} from './keymap';
 import './search-everywhere.css';
+import {rankFilePaths} from './file-search-results';
 
 type Category='all'|'classes'|'files'|'symbols'|'actions'|'text';
 type Row={label:string;detail:string;path?:string;run:()=>void|Promise<void>};
@@ -14,7 +15,9 @@ export function mountSearchEverywhere(api:IdeApi,editor:monaco.editor.IStandalon
  const input=dialog.querySelector<HTMLInputElement>('#everywhere-query')!,vendor=dialog.querySelector<HTMLInputElement>('[type=checkbox]')!,list=dialog.querySelector<HTMLElement>('#everywhere-results')!,status=dialog.querySelector<HTMLElement>('#everywhere-status')!,footerPath=dialog.querySelector<HTMLElement>('.everywhere-path')!;
  let category:Category='all',generation=0,selected=0,rows:Row[]=[],timer:ReturnType<typeof setTimeout>|undefined,files:Promise<string[]>|undefined,previous:HTMLElement|null=null;
  let symbolQueue:Promise<unknown>=Promise.resolve();
+ let textQueue:Promise<unknown>=Promise.resolve();
  function symbols(query:string,token:number){const next=symbolQueue.then(()=>token===generation?api.searchSymbols(query):[]);symbolQueue=next.catch(()=>{});return next;}
+ function textResults(query:string,token:number){const next=textQueue.then(()=>token===generation?api.fileSearch(query):{matches:[],truncated:false});textQueue=next.catch(()=>{});return next;}
  const tabs=[['all','Tudo'],['classes','Classes'],['files','Arquivos'],['symbols','Símbolos'],['actions','Ações'],['text','Texto']] as const;
  const buttons=tabs.map(([id,label])=>{const b=document.createElement('button');b.type='button';b.textContent=t(label);b.onclick=()=>{category=id;updateTabs();search();input.focus();};dialog.querySelector('nav')!.append(b);return b;});
  function updateTabs(){buttons.forEach((b,i)=>b.setAttribute('aria-pressed',String(tabs[i][0]===category)));vendor.disabled=category==='actions'||category==='text';}
@@ -59,16 +62,23 @@ export function mountSearchEverywhere(api:IdeApi,editor:monaco.editor.IStandalon
    const add=(work:Promise<Row[]>,label:string)=>{pending++;void work.then(found=>{if(token===generation){rows.push(...found);rows=rows.slice(0,300);}}).catch(error=>{if(token===generation)errors.push(label+': '+String(error));}).finally(()=>{pending--;finish();});};
    if(scope==='all'||scope==='files'){
     files??=api.listFiles('',includeVendor).catch(error=>{files=undefined;throw error;});
-    add(files.then(paths=>paths.filter(path=>matches(path,lower)).sort((a,b)=>{const exact=(s:string)=>s.split('/').pop()?.toLocaleLowerCase()===lower?0:1;return exact(a)-exact(b)||a.length-b.length||a.localeCompare(b);}).slice(0,100).map(path=>({label:path.split('/').pop()!,detail:path,path,run:()=>open(path)}))),t('Arquivos'));
+    add(files.then(paths=>rankFilePaths(paths,lower,()=>token===generation)).then(paths=>paths.map(path=>({label:path.split('/').pop()!,detail:path,path,run:()=>open(path)}))),t('Arquivos'));
    }
    if(scope==='all'||scope==='symbols'||scope==='classes')add(symbols(query,token).then(symbols=>symbols.filter(s=>scope!=='classes'||[5,10,11,23].includes(s.kind)).filter(s=>includeVendor||!new URL(s.location.uri).pathname.includes('/vendor/')).slice(0,100).map(s=>({label:s.name,detail:(s.containerName?s.containerName+' · ':'')+decodeURIComponent(new URL(s.location.uri).pathname),path:new URL(s.location.uri).pathname,run:()=>open(monaco.Uri.parse(s.location.uri).fsPath,s.location.range.start.line+1,s.location.range.start.character+1)}))),t('Símbolos PHP'));
-   if(scope==='text'||(scope==='all'&&query.length>=3))add(api.fileSearch(query).then(result=>{if(result.truncated)errors.push(t('Busca textual limitada a 500 ocorrências.'));return result.matches.slice(0,100).map(m=>({label:m.text.trim(),detail:`${m.path}:${m.line}:${m.column}`,path:m.path,run:()=>open(m.path,m.line,m.column)}));}),t('Texto no projeto (sem vendor)'));
+   if(scope==='text'||(scope==='all'&&query.length>=3))add(textResults(query,token).then(result=>{if(result.truncated)errors.push(t('Busca textual limitada a 500 ocorrências.'));return result.matches.slice(0,100).map(m=>({label:m.text.trim(),detail:`${m.path}:${m.line}:${m.column}`,path:m.path,run:()=>open(m.path,m.line,m.column)}));}),t('Texto no projeto (sem vendor)'));
    finish();
   },180);
  }
  input.oninput=search;vendor.onchange=()=>{files=undefined;search();};
  dialog.addEventListener('keydown',event=>{
-  if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(rows.length){selected=(selected+(event.key==='ArrowDown'?1:-1)+Math.min(rows.length,100))%Math.min(rows.length,100);render();}}
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();if(rows.length){
+    list.children[selected]?.setAttribute('aria-selected','false');
+    selected=(selected+(event.key==='ArrowDown'?1:-1)+Math.min(rows.length,100))%Math.min(rows.length,100);
+    list.children[selected]?.setAttribute('aria-selected','true');list.children[selected]?.scrollIntoView({block:'nearest'});
+    input.setAttribute('aria-activedescendant','everywhere-row-'+selected);footerPath.textContent=rows[selected]?.path??rows[selected]?.detail??'';
+   }
+  }
   if(event.key==='Enter'&&event.target===input){event.preventDefault();execute();}
  });
  function show(scope:Category='all'){previous=document.activeElement as HTMLElement;category=scope;files=undefined;input.value='';updateTabs();if(!dialog.open)dialog.showModal();input.focus();search();}

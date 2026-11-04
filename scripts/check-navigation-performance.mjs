@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'vite';
+import {webkit} from '@playwright/test';
+const server=await createServer({server:{host:'127.0.0.1',port:1443,strictPort:true}});let browser;
+try{
+ await server.listen();browser=await webkit.launch({headless:true});const page=await browser.newPage();page.setDefaultTimeout(15000);
+ const errors=[];page.on('pageerror',error=>errors.push(String(error)));
+ await page.route('**/src/bootstrap.ts',route=>route.fulfill({contentType:'application/javascript',body:`
+  import * as monaco from '/node_modules/monaco-editor/esm/vs/editor/editor.api.js';
+  import {mountUsages} from '/src/editor-usages.ts';
+  import {mountSearchEverywhere} from '/src/search-everywhere.ts';
+  document.body.innerHTML='<header class="main-toolbar"><button id="appearance"></button></header><div id="editor"></div>';
+  const editor={getModel:()=>({getWordAtPosition:()=>({word:'User'})}),getPosition:()=>({lineNumber:1,column:1}),getDomNode:()=>document.getElementById('editor'),getScrolledVisiblePosition:()=>null,focus:()=>{},onDidChangeModel:()=>{},onDidChangeModelContent:()=>{},addAction:()=>{},getSupportedActions:()=>[]};
+  window.previewCalls=0;window.releases=[];window.hold=true;
+  window.usages=mountUsages(editor,{status:()=>{},open:async location=>window.opened=location.uri.path,find:async()=>Array.from({length:1500},(_,i)=>({uri:monaco.Uri.parse('file:///fixture/User'+i+'.php'),range:{startLineNumber:1,startColumn:1,endLineNumber:1,endColumn:2}})),preview:async()=>{window.previewCalls++;if(window.hold)await new Promise(resolve=>window.releases.push(resolve));return '<?php class User {}';}});
+  window.textCalls=[];
+  window.search=mountSearchEverywhere({listFiles:async()=>Array.from({length:50000},(_,i)=>'src/User'+i+'.php'),fileSearch:async query=>{window.textCalls.push(query);if(window.textCalls.length===1)await new Promise(resolve=>window.releaseText=resolve);return {matches:[],truncated:false};}},editor,async()=>{});
+  window.ready=true;
+ `}));
+ await page.goto('http://127.0.0.1:1443');await page.waitForFunction(()=>window.ready);
+ await page.evaluate(()=>{void window.usages.show();});await page.locator('.usage-result').first().waitFor();
+ assert.equal(await page.locator('.usage-result').count(),100);
+ assert.equal(await page.evaluate(()=>window.previewCalls),4);
+ await page.locator('.usages-popup input').fill('User1499.php');
+ assert.equal(await page.evaluate(()=>window.previewCalls),4);
+ await page.evaluate(()=>{window.usages.close();window.releases.forEach(resolve=>resolve());});
+ await page.waitForTimeout(30);assert.equal(await page.evaluate(()=>window.previewCalls),4);
+ await page.evaluate(()=>{window.hold=false;void window.usages.show();});
+ await page.locator('.usage-result code').first().getByText('<?php class User {}',{exact:true}).waitFor();
+ await page.getByRole('button',{name:/Mostrar mais|Show more/}).click();assert.equal(await page.locator('.usage-result').count(),200);
+ await page.locator('.usages-popup input').fill('User1499.php');assert.equal(await page.locator('.usage-result').count(),1);
+ await page.locator('.usage-result').click();assert.equal(await page.evaluate(()=>window.opened),'/fixture/User1499.php');
+ await page.evaluate(()=>window.search.show('files'));await page.locator('#everywhere-query').fill('User');
+ await page.waitForFunction(()=>document.querySelectorAll('.everywhere-row').length===100);
+ await page.locator('.everywhere-row').first().evaluate(el=>window.firstSearchRow=el);
+ await page.locator('#everywhere-query').press('ArrowDown');
+ assert.equal(await page.evaluate(()=>window.firstSearchRow===document.querySelector('.everywhere-row')),true);
+ assert.equal(await page.locator('#everywhere-row-1').getAttribute('aria-selected'),'true');
+ await page.evaluate(()=>window.search.show('text'));await page.locator('#everywhere-query').fill('first');
+ await page.waitForFunction(()=>window.textCalls.length===1);
+ await page.locator('#everywhere-query').fill('second');await page.waitForTimeout(220);
+ await page.locator('#everywhere-query').fill('third');await page.waitForTimeout(220);
+ assert.deepEqual(await page.evaluate(()=>window.textCalls),['first']);
+ await page.evaluate(()=>window.releaseText());await page.waitForFunction(()=>window.textCalls.length===2);
+ assert.deepEqual(await page.evaluate(()=>window.textCalls),['first','third']);
+ assert.deepEqual(errors,[]);
+ console.log('WebKit: bounded references, four preview reads, cancellation, pagination/filter/open and stable file-search keyboard navigation passed.');
+}finally{await browser?.close();await server.close();}

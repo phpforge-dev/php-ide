@@ -52,16 +52,24 @@ export function mountWorkbench(api: IdeApi) {
   main.classList.toggle('right-hidden',collapse);rightTool=id;
   for(const key of ['show-agent','show-db'])el(key).setAttribute('aria-pressed',String(!collapse&&key===id));
  };
- for(const [id,kind,label] of [['show-project','project',tr('Projeto')],['show-commit','save',tr('Commit')]]) {
-  const button=document.getElementById(id);if(!button)continue;const action=button.onclick;icon(button,kind,label);leftRail.append(button);
-  button.onclick=event=>{setLeft(id);action?.call(button,event);};
- }
- document.getElementById('show-project')?.setAttribute('aria-pressed','true');
+ const adoptLeftTools=()=>{
+  for(const [id,kind,label] of [['show-project','project',tr('Projeto')],['show-commit','save',tr('Commit')],['show-git','git','Git']]) {
+   const button=document.getElementById(id);
+   if(!button||button.parentElement===leftRail)continue;
+   const action=button.onclick;icon(button,kind,label);leftRail.append(button);
+   if(id!=='show-git'){
+    button.onclick=event=>{setLeft(id);action?.call(button,event);};
+    button.setAttribute('aria-pressed',String(leftTool===id&&!main.classList.contains('left-hidden')));
+   }
+  }
+  left.querySelector(':scope > .switch:empty')?.remove();
+ };
+ adoptLeftTools();
+ new MutationObserver(adoptLeftTools).observe(left,{childList:true});
  for(const [id,kind,label] of [['show-db','database',tr('Bancos')],['show-agent','agent',tr('Agente')]]) {
   const button=el(id);const action=button.onclick;icon(button,kind,label);rightRail.append(button);
   button.onclick=event=>{setRight(id);action?.call(button,event);};
  }
- const gitButton=document.getElementById('show-git');if(gitButton){icon(gitButton,'git','Git');leftRail.append(gitButton);}
  main.classList.add('right-hidden');
  left.querySelector(':scope > .switch')?.remove();right.querySelector(':scope > .switch')?.remove();
  for(const [pane,side] of [[left,'left'],[right,'right']] as const) {

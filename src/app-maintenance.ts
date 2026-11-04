@@ -37,12 +37,16 @@ export async function mountAppMaintenance(api:IdeApi) {
  let state=await call('appMaintenanceResume') as MaintenanceState;
  let feedback='';let busy=false;let closed=false;let setup:HTMLElement|undefined;
  let setupFinish:(()=>void)|undefined;const selected=new Set<string>();let search='';
- const launcher=button(tr('Atualizações e instalações'),()=>show(),'maintenance-launcher');launcher.id='app-maintenance';
+ const launcher=button(tr('Atualizações e instalações'),()=>show(),'maintenance-open');launcher.id='app-maintenance';
  const dialog=node('dialog','','maintenance-dialog');dialog.setAttribute('aria-label',tr('Atualizações e instalações'));
  const notice=node('aside','','maintenance-notice');notice.hidden=true;notice.setAttribute('role','status');
  const panel=node('div','','maintenance-content');
  const head=node('header');head.append(node('h2',tr('Atualizações e instalações')),button(tr('Fechar'),()=>dialog.close()));dialog.append(head,panel);
- document.body.append(launcher,dialog,notice);
+ document.body.append(dialog,notice);
+ function placeInSettings(){const settings=document.getElementById('appearance-dialog');if(!settings||settings.contains(launcher))return;const footer=settings.querySelector('.appearance-footer');if(footer)footer.before(launcher);else settings.append(launcher);}
+ placeInSettings();
+ const settingsObserver=new MutationObserver(placeInSettings);
+ settingsObserver.observe(document.body,{childList:true});
  for(const type of ['click','keydown'])dialog.addEventListener(type,event=>event.stopPropagation());
  const execute=async(work:()=>Promise<unknown>)=>{if(busy)return;busy=true;feedback='';try{await work();}catch(error){feedback=String(error);}finally{busy=false;await refresh();}};
  function restart(installIde=false) {
@@ -123,7 +127,7 @@ export async function mountAppMaintenance(api:IdeApi) {
  async function refresh(){try{const next=await call('appMaintenanceState') as MaintenanceState;const changed=state.jobs.some(job=>job.status!=='installed'&&next.jobs.some(n=>n.id===job.id&&n.status==='installed'));state=next;if(changed)window.dispatchEvent(new Event('ide-user-plugins-changed'));render();}catch(error){feedback=String(error);panel.append(node('p',feedback,'maintenance-error'));}}
  const scheduleRefresh=()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>void refresh(),100);};
  window.addEventListener('ide-app-maintenance',scheduleRefresh);
- function show(){render();if(!dialog.open)dialog.showModal();void refresh();}
+ function show(){const settings=document.getElementById('appearance-dialog');if(settings instanceof HTMLDialogElement)settings.close();render();if(!dialog.open)dialog.showModal();void refresh();}
  let announced='';
  async function check(){try{await call('appCheckUpdates');await refresh();const key=state.updates.map(p=>`${p.id}@${p.version}`).join('|')+(state.ide?.version??'');if(outstanding(state)&&key!==announced){announced=key;notice.replaceChildren(node('span',tr('Há novas atualizações disponíveis.')),button(tr('Ver atualizações'),show),button(tr('Dispensar'),()=>{notice.hidden=true;}));notice.hidden=false;}}catch(error){feedback=String(error);await refresh();}}
  render();
@@ -132,6 +136,6 @@ export async function mountAppMaintenance(api:IdeApi) {
  return {
   async setup(){if(state.preferences.setupComplete)return;setup=node('main','','maintenance-setup');setup.id='first-run-plugins';document.getElementById('app')!.replaceChildren(setup);renderSetup();await new Promise<void>(resolve=>{setupFinish=resolve;});},
   start(){if(!closed&&state.preferences.checkUpdates)void check();},show,
-  dispose(){closed=true;clearInterval(timer);clearTimeout(refreshTimer);window.removeEventListener('ide-app-maintenance',scheduleRefresh);launcher.remove();notice.remove();dialog.remove();},
+  dispose(){closed=true;clearInterval(timer);clearTimeout(refreshTimer);settingsObserver.disconnect();window.removeEventListener('ide-app-maintenance',scheduleRefresh);launcher.remove();notice.remove();dialog.remove();},
  };
 }

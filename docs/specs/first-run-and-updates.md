@@ -8,7 +8,7 @@ A fresh application profile opens **Set up your environment** before restoring o
 
 The screen completes only when the user chooses Continue. Closing the app during setup resumes that unfinished setup next time. Once completed it does not appear again, including after webview cache resets or project changes. Existing profiles migrate without another first-run screen; installed packages and their permission decisions remain intact. Marketplace remains the normal place to add plugins later.
 
-The global **Updates and installations** control is available both on Welcome and in the workbench. It exposes the queue, available versions, release notes, manual downloads and preferences. Update notices are in-app notifications with view and dismiss actions; they do not request OS notification permissions.
+**Updates and installations** opens from Settings (the appearance dialog), with the other preferences. It is not a button pinned to the window. The panel exposes the queue, available versions, release notes, manual downloads and preferences. Update notices are in-app notifications with view and dismiss actions; they do not request OS notification permissions.
 
 ## Defaults and scheduling
 
@@ -36,7 +36,7 @@ The six external Rust feature libraries are still linked into the IDE binary. Up
 
 ## IDE update distribution
 
-IDE downloads use `tauri-plugin-updater` through restricted host commands; no updater JavaScript permission or arbitrary update endpoint is exposed. Only the fixed official GitHub endpoint is consulted. Signed packages use HTTPS and are verified by the updater before installation. `requireSignedVersion` binds the advertised version to the signature, rejecting older artifacts relabeled as a newer release. Without a supported signed release build, automatic IDE download is disabled and the UI offers the public release downloads page instead. Development builds and Linux non-AppImage installations use this manual path.
+IDE downloads use `tauri-plugin-updater` through restricted host commands; no updater JavaScript permission or arbitrary update endpoint is exposed. Only the fixed official GitHub endpoint is consulted. Signed packages use HTTPS and are verified by the updater before installation. `requireSignedVersion` binds the advertised version to the signature, rejecting older artifacts relabeled as a newer release. Without a supported signed release build, automatic IDE download is disabled and the UI offers the public release downloads page instead. Development builds and Linux non-AppImage installations use this manual path. GitHub's latest-release endpoint returns HTTP 404 when the repository has no stable release, including when every tag is a prerelease. That response means there is no IDE update; the updates page does not show it as a failure.
 
 The implementation follows the [official Tauri updater documentation](https://v2.tauri.app/plugin/updater/). The public key is compiled from `PHP_IDE_UPDATER_PUBLIC_KEY`. The distribution overlay `src-tauri/tauri.updater.conf.json` creates updater signatures/artifacts; the normal developer build does not require a private key.
 
@@ -62,6 +62,7 @@ Real Tauri fixture acceptance must run with an unlocked macOS session. Headless 
 ## Local evidence — 24 October 2026
 
 - `npm run check`: passed typecheck, architecture, 189 unit tests (one existing skipped case), 36 Rust tests, Clippy and both locale catalogs.
+- Later the same day, a missing stable release (GitHub HTTP 404, including a repository that only has prereleases) is treated as no IDE update. `cargo test --bin php-ide` passed 41 tests and Clippy passed. The running app still needs a restart to pick up the host change.
 - `npm run test:maintenance:ui`: 11 headless WebKit workflow checks passed with the actual UI and real 21-plugin metadata, using a synthetic backend. First-run and update-dialog screenshots were inspected.
 - `npm run test:plugins:ui`: passed the regression against installing unselected defaults and confirmed that background completion refreshes the existing manager.
 - Signed workflow YAML parsed successfully. Artifact/manifest tests reject missing signatures, missing platforms and mismatched versions; no signed release or installer was published.

@@ -28,7 +28,7 @@ try {
   window.failInstall=()=>{state.jobs[0].status='failed';state.jobs[0].error='Offline fixture';changed();};
   window.finishInstalls=()=>{for(const job of state.jobs)job.status='installed';changed();};
   const {mountAppMaintenance}=await import('/src/app-maintenance.ts');const app=await mountAppMaintenance(api);
-  app.setup().then(()=>{document.getElementById('app').innerHTML='<h1 id="fixture-workspace">IDE ready</h1>';app.start();});
+  app.setup().then(()=>{document.getElementById('app').innerHTML='<h1 id="fixture-workspace">IDE ready</h1>';const settings=document.createElement('dialog');settings.id='appearance-dialog';document.body.append(settings);settings.show();app.start();});
  `}));
  const assert=(value,message)=>{if(!value)throw Error(message);};
  await page.goto('http://127.0.0.1:'+port);await page.locator('#first-run-plugins').waitFor();
@@ -57,7 +57,7 @@ try {
  assert(await page.evaluate(()=>!window.fixtureCalls.some(c=>c.method==='appRestart')),'restart discarded unsaved work');
  await page.locator('.maintenance-dialog').getByRole('button',{name:'Fechar',exact:true}).click();
  await page.reload();await page.locator('#fixture-workspace').waitFor();assert(await page.locator('#first-run-plugins').count()===0,'first-run setup appeared again');
- await page.locator('#app-maintenance').click();await page.locator('.maintenance-dialog input[data-preference="autoUpdatePlugins"]').check();
+ await page.locator('#appearance-dialog #app-maintenance').click();assert(await page.evaluate(()=>getComputedStyle(document.getElementById('app-maintenance')).position!=='fixed'),'updates control stayed pinned to the window');await page.locator('.maintenance-dialog input[data-preference="autoUpdatePlugins"]').check();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('fixture-preferences')).autoUpdatePlugins===true);
  await mkdir('.artifacts',{recursive:true});await page.screenshot({path:'.artifacts/app-maintenance.png'});assert(errors.length===0,errors.join('; '));
  const result={ok:true,runtime:'headless WebKit, synthetic service',checks:['first-run only profile state','auto updates off by default','unsigned build cannot enable app auto update','essential plugin selection and permission visibility','background queue, failure and retry','continue without waiting for downloads','notifications without default downloads','new permissions require explicit approval','manual download staged for restart','restart protects unsaved work','preferences persist across reload'],errors};
