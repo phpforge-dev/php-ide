@@ -12,11 +12,36 @@ const source=await readFile('src/main.ts','utf8');
 const shell=source.match(/innerHTML = html`([^`]+)`/)[1];
 const before=Array.from({length:40},(_,i)=>i===15?' public ?Carbon $expiresAt = null':` public string $field${i};`).join('\n');
 const after=before.replace('= null','= null,');
+// Blame fixture modeled on the observed PhpStorm repository (G-04): Oct 1 commit, two commits today, one local line.
+const userPhp='<?php\n\nnamespace Fixture;\n\nfinal class User\n{\n    public function name(): string\n    {\n        return "Ana Maria";\n        // edited locally\n    }\n}\n\n// footer\n';
+const at=(d,h=10)=>Math.floor(new Date(d+'T'+String(h).padStart(2,'0')+':00:00').getTime()/1000);const now=new Date();const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+const H={init:'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5',rename:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',footer:'03f8346cae166908f817f2a20cb21c22cb603e34',none:'0'.repeat(40)};
+const blame={path:'src/User.php',revision:null,content:null,lines:[...Array(8).fill(H.init),H.rename,H.none,H.init,H.init,H.footer,H.footer].map((hash,i)=>({hash,original:i+1})),commits:{
+ [H.init]:{hash:H.init,author:'Ana Fixture',email:'ana@example.invalid',authorTime:at('2026-10-01'),commitTime:at('2026-10-01'),summary:'Initial user class',message:'Initial user class',uncommitted:false,path:'src/User.php'},
+ [H.rename]:{hash:H.rename,author:'Ana Fixture',email:'ana@example.invalid',authorTime:at(today,9),commitTime:at(today,9),summary:'Rename default user',message:'Rename default user',previous:{hash:H.init,path:'src/User.php'},uncommitted:false,path:'src/User.php'},
+ [H.footer]:{hash:H.footer,author:'Ana Fixture',email:'ana@example.invalid',authorTime:at(today,11),commitTime:at(today,11),summary:'Add footer comment',message:'Add footer comment',previous:{hash:H.rename,path:'src/User.php'},uncommitted:false,path:'src/User.php'},
+ [H.none]:{hash:H.none,uncommitted:true}}};
+const userBefore=userPhp.replace('        // edited locally\n','');const userAfter=userPhp.replace('        // edited locally\n','        // edited locally\n        // and another\n');
+const userPatch='@@ -9,0 +10,2 @@\n+        // edited locally\n+        // and another\n';const dtoPatch='@@ -16 +16 @@\n- public ?Carbon $expiresAt = null\n+ public ?Carbon $expiresAt = null,\n';
+// Log fixture: the repository observed in PhpStorm (G-16), with a merge, a branch tip, tags and another author.
+const iso=(d,h)=>new Date(d+'T'+String(h).padStart(2,'0')+':00:00').toISOString();
+const logCommits=[
+ {hash:'580a03e0'+'1'.repeat(32),author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,22),subject:'Report draft',parents:['03f8346cae166908f817f2a20cb21c22cb603e34'],refs:'feature/report',committer:'Ana Fixture'},
+ {hash:'03f8346cae166908f817f2a20cb21c22cb603e34',author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,21),subject:'Add footer comment',parents:['d9f445f0'+'2'.repeat(32)],refs:'HEAD -> main, tag: v1.1',committer:'Ana Fixture'},
+ {hash:'d9f445f0'+'2'.repeat(32),author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,20),subject:'Merge branch feature/login',parents:['83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9','2618cba0'+'3'.repeat(32)],refs:'',committer:'Ana Fixture'},
+ {hash:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',author:'Ana Fixture',email:'ana@example.invalid',date:iso(today,19),subject:'Rename default user',parents:['6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5'],refs:'',committer:'Ana Fixture'},
+ {hash:'2618cba0'+'3'.repeat(32),author:'Bruno Dev',email:'bruno@example.invalid',date:iso(today,18),subject:'Add login helper',parents:['6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5'],refs:'feature/login',committer:'Ana Fixture'},
+ {hash:'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5',author:'Ana Fixture',email:'ana@example.invalid',date:iso('2026-10-01',10),subject:'Initial user class',parents:[],refs:'tag: v1.0',committer:'Ana Fixture'}];
+const tools={user:'Ana Fixture',remotes:[],stashes:[],branches:[{name:'main',current:true,remote:false,upstream:'',tracking:''},{name:'feature/login',current:false,remote:false,upstream:'',tracking:''},{name:'feature/report',current:false,remote:false,upstream:'',tracking:''}],
+ tags:[{name:'v1.1',commit:'03f8346cae166908f817f2a20cb21c22cb603e34',annotated:true},{name:'v1.0',commit:'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5',annotated:false}],
+ worktrees:[{path:'/tmp/project',name:'project',branch:'main',head:'03f8346c',current:true,main:true},{path:'/tmp/project-wt',name:'project-wt',branch:'feature/report',head:'580a03e0',current:false}]};
 const bootstrap=`
   import * as monaco from 'monaco-editor';
   import {installEditorWorkers} from '/src/editor-workers.ts';
   import {mountWorkbench} from '/src/workbench.ts';
   import {editorPreviewLayout} from '/src/editor-preview-layout.ts';
+  import {mountEditorChrome} from '/src/editor-chrome.ts';
+  import {dockWindow,resizeToolWindow} from '/src/tool-window.ts';
   import '/src/themes.css';import '/src/style.css';import '/src/workbench.css';import '/src/theme-surfaces.css';import '/src/tool-windows.css';
   installEditorWorkers();
   document.documentElement.dataset.theme='dark';
@@ -24,19 +49,43 @@ const bootstrap=`
   document.getElementById('app').innerHTML=${JSON.stringify(shell)};
   const style=document.createElement('style');style.textContent=${JSON.stringify(pluginCss)};document.head.append(style);
   mountWorkbench({gitStatus:async()=>({branch:'main'})});
-  const editor=monaco.editor.create(document.getElementById('editor'),{value:'<?php',automaticLayout:true,theme:'vs-dark'});
-  editorPreviewLayout(editor);
+  const editor=monaco.editor.create(document.getElementById('editor'),{value:${JSON.stringify(userPhp)},language:'php',automaticLayout:true,theme:'vs-dark'});
+  editorPreviewLayout(editor);mountEditorChrome(editor);window.statuses=[];
   window.opened=[];
-  const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'}]}),
-   gitDiff:async()=>({before:${JSON.stringify(before)},after:${JSON.stringify(after)},beforeLabel:'HEAD',afterLabel:'Disco',token:'t'}),
+  // Changelists kept in memory with the native semantics: unique names, active list receives moves with "Set active".
+  window.toolsState=${JSON.stringify(tools)};
+  window.lists=[{id:'default',name:'Changes',comment:'',active:true,files:['app/DTOs/Payment/SaveCreditCardTokenDTO.php','src/User.php']}];
+  const changelists=input=>{const lists=window.lists;const byId=id=>lists.find(l=>l.id===id);
+   if(input.action==='move'){let target=input.target&&byId(input.target);if(!target){target={id:'cl'+lists.length,name:input.name,comment:input.comment??'',active:false,files:[]};lists.push(target);}
+    for(const l of lists)l.files=l.files.filter(f=>!input.paths.includes(f));target.files.push(...input.paths);if(input.setActive)lists.forEach(l=>l.active=l===target);}
+   if(input.action==='set-active')lists.forEach(l=>l.active=l.id===input.id);
+   if(input.action==='create'){lists.push({id:'cl'+lists.length,name:input.name,comment:input.comment??'',active:false,files:[]});}
+   if(input.action==='delete'){const gone=byId(input.id);window.lists=lists.filter(l=>l!==gone);window.lists.find(l=>l.active).files.push(...gone.files);}
+   window.changelistCalls=(window.changelistCalls??[]).concat([input]);return {lists:structuredClone(window.lists)};};
+  const api={gitStatus:async()=>({branch:'main',head:'6f946771',changes:[{path:'app/DTOs/Payment/SaveCreditCardTokenDTO.php',index:' ',worktree:'M'},{path:'src/User.php',index:' ',worktree:'M'}]}),
+   gitChangelists:async input=>changelists(input),
+   gitTools:async()=>structuredClone(window.toolsState),
+   workspace:async()=>({root:'/tmp/project',name:'project'}),
+   gitOperation:async input=>{window.operations=(window.operations??[]).concat([input]);return 'ok';},gitBranches:async()=>(${JSON.stringify(tools.branches)}),
+   gitLog:async filter=>{window.logRequests=(window.logRequests??[]).concat([filter]);let list=${JSON.stringify(logCommits)};
+    if(filter.authors?.length)list=list.filter(c=>filter.authors.includes(c.author));
+    if(filter.text)list=list.filter(c=>filter.regex?new RegExp(filter.text,filter.matchCase?'':'i').test(c.subject):(filter.matchCase?c.subject:c.subject.toLowerCase()).includes(filter.matchCase?filter.text:filter.text.toLowerCase()));
+    if(filter.since)list=list.filter(c=>c.date.slice(0,10)>=filter.since);return list;},
+   gitHistory:async hash=>({hash,parents:[],files:[{path:'src/User.php',status:'M'}]}),
+   gitHunks:async(path,staged)=>path==='src/User.php'&&!staged?{token:'h1',hunks:[{id:0,patch:${JSON.stringify(userPatch)}}]}:{token:'h0',hunks:[{id:0,patch:${JSON.stringify(dtoPatch)}}]},
+   gitApplyHunk:async(...args)=>{window.applied=(window.applied??[]).concat([args]);},
+   gitEditorBase:async()=>({text:${JSON.stringify(userPhp)},label:'HEAD → editor'}),
+   gitBlame:async input=>{window.blameCalls=(window.blameCalls??[]).concat([input]);return ${JSON.stringify(blame)};},
+   gitDiff:async path=>path==='src/User.php'?{path,before:${JSON.stringify(userBefore)},after:${JSON.stringify(userAfter)},beforeLabel:'Preparado (index)',afterLabel:'Disco',token:'u'}:({before:${JSON.stringify(before)},after:${JSON.stringify(after)},beforeLabel:'HEAD',afterLabel:'Disco',token:'t'}),
    agents:async()=>[]};
   window.api=api;
   const {activate}=await import('/__git-plugin.js');let contribution;
   activate({own:()=>{},provide:(name,value)=>contribution=value,tr:s=>s,msg:(p,...a)=>p.reduce((v,s,i)=>v+s+(a[i]??''),''),html:(p,...a)=>typeof p==='string'?p:p.reduce((v,s,i)=>v+s+(a[i]??''),''),
-   activeLanguage:()=>'pt-BR',dockWindow:()=>()=>{},resizeToolWindow:()=>{},toolIcon:(b,path,label)=>{b.title=label;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+path+'</svg>'},
+   activeLanguage:()=>'pt-BR',dockWindow,resizeToolWindow,toolIcon:(b,path,label)=>{b.title=label;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+path+'</svg>'},
    editorFont:{size:13,family:'monospace'},fileIcon:()=>document.createElement('span'),keymap:{registerAction:()=>()=>{},onChange:()=>()=>{},shortcut:()=>'',ariaShortcuts:()=>''},
    monaco,api,service:()=>({generate:async()=>'',cancel:async()=>{}}),host:{editor,open:async(path,line)=>window.opened.push([path,line]),status:()=>{}}});
   contribution.mount(api,()=>false,async()=>{});
+  contribution.mountEditorChanges(api,editor,{path:()=>'src/User.php',status:text=>window.statuses.push(text)});
   window.ready=true;
  `;
 // The bootstrap is a virtual module so Vite resolves its bare imports (monaco-editor, workers).
@@ -61,9 +110,10 @@ try{
  await page.waitForFunction(()=>document.getElementById('git-diff-count')?.textContent.includes('1'));
  const box=selector=>page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return {top:r.top,height:r.height};});
  const code=await box('.code'),review=await box('#git-review');
- assert.equal(await page.locator('.editor-split').evaluate(el=>getComputedStyle(el).display),'none','empty editor split must not keep space');
+ // The shell no longer always renders .editor-split; when present, an empty split must not keep space.
+ if(await page.locator('.editor-split').count())assert.equal(await page.locator('.editor-split').evaluate(el=>getComputedStyle(el).display),'none','empty editor split must not keep space');
  assert.ok(review.height>code.height-40,`review fills the editor area (${review.height} of ${code.height})`);
- assert.equal(await page.locator('#git-diff-count').textContent(),'1 diferença');
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 0 incluídas');
  assert.equal(await page.locator('.git-commit-toolbar .git-agent-ask svg').count(),1,'agent actions are icons in the Commit toolbar');
  assert.equal(await page.locator('.git-commit-options .git-generate-message svg').count(),1,'AI message is an icon beside Amend');
  await mkdir('.artifacts',{recursive:true});
@@ -71,6 +121,229 @@ try{
  await page.locator('#git-diff-source').click();
  await page.waitForFunction(()=>window.opened.length===1);
  assert.equal(await page.locator('#git-review').evaluate(el=>el.hidden),true);
- assert.deepEqual(errors,[]);
  console.log('WebKit: review fills the editor area; toolbar count, icons and jump to source passed.');
+ // 1. Annotate with Git Blame: gutter menu → annotations, hover popup, annotation menu, click → Log.
+ // Monaco does not keep margin rows in line order; find the row by its trailing line number.
+ const numbers=line=>page.locator('.margin-view-overlays .line-numbers').filter({hasText:new RegExp(`(^|\\D)${line}$`)});
+ await numbers(1).click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Anotar com Git Blame'}).click();
+ await page.waitForSelector('.git-blame-on');
+ await page.waitForFunction(()=>/Fixture/.test(document.querySelector('.margin-view-overlays .line-numbers')?.textContent??''));
+ assert.match(await numbers(1).textContent(),/^\d\d\/\d\d\/\d\d\u00a0Fixture/,'date and last name, as PhpStorm');
+ assert.match(await numbers(9).textContent(),/^Hoje/);
+ assert.equal((await numbers(10).textContent()).replace(/[\s\u00a0]+/g,' ').trim(),'10','uncommitted line has no annotation');
+ assert.equal((await page.evaluate(()=>window.blameCalls[0])).ignoreWhitespace,true);
+ const age=await numbers(13).evaluate(el=>[...el.classList].find(c=>c.startsWith('git-blame-age-')));
+ assert.equal(age,'git-blame-age-0','newest commit has the strongest color');
+ await numbers(13).hover();await page.waitForSelector('.git-blame-popup');
+ assert.match(await page.locator('.git-blame-popup').textContent(),/commit 03f8346cae166908f817f2a20cb21c22cb603e34.*Autor: Ana Fixture <ana@example.invalid>.*Add footer comment/s);
+ await page.screenshot({path:'.artifacts/git-blame.png'});
+ await numbers(9).click({button:'right'});
+ const labels=await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents();
+ assert.deepEqual(labels,['Fechar anotações','Mostrar diff','Exibir','Copiar número da revisão','Anotar revisão','Anotar revisão anterior','Mostrar no histórico do arquivo','Opções']);
+ await page.locator('.git-menu-item',{hasText:'Exibir'}).hover();await page.locator('.git-menu-item',{hasText:'Nomes'}).hover();
+ await page.screenshot({path:'.artifacts/git-blame-menu.png'});
+ await page.keyboard.press('Escape');
+ const shown=page.evaluate(()=>new Promise(resolve=>document.addEventListener('ide-git-show-commit',e=>resolve(e.detail.hash),{once:true})));
+ await numbers(9).click();assert.equal(await shown,H.rename,'click opens the commit in the Log');
+ await numbers(1).click({button:'right'});await page.locator('.git-menu-item',{hasText:'Fechar anotações'}).click();
+ assert.equal(await page.locator('.git-blame-on').count(),0);
+ await page.waitForFunction(()=>![...document.querySelectorAll('.margin-view-overlays .line-numbers')].some(n=>/Fixture/.test(n.textContent)));
+ assert.equal((await numbers(1).first().textContent()).trim(),'1','closing restores plain line numbers');
+ console.log('WebKit: Annotate with Git Blame — gutter menu, columns, age colors, popup, menu, Log link and close passed.');
+ // 2. Changelists: Move to Another Changelist… with a new name and "Set active", then drag back and delete.
+ const group=name=>page.locator('#git-changes details.git-changelist',{has:page.locator('summary strong',{hasText:name})});
+ assert.equal(await group('Alterações').evaluate(el=>el.classList.contains('git-changelist-active')),true,'default list is active');
+ await page.locator('.git-file-row[data-path="src/User.php"]').click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Mover para outra changelist…','Mostrar diff','Ir para o código-fonte','Nova changelist…','Editar changelist…']);
+ await page.locator('.git-menu-item',{hasText:'Mover para outra changelist'}).click();
+ const dialog=page.locator('.git-changelist-dialog');await dialog.locator('input[name=name]').fill('Refactor');
+ await dialog.locator('textarea').fill('Renomear usuário');await dialog.locator('input[name=active]').check();
+ await page.screenshot({path:'.artifacts/git-changelist-move.png'});
+ await dialog.locator('button[value=ok]').click();
+ await group('Refactor').waitFor();
+ assert.equal(await group('Refactor').evaluate(el=>el.classList.contains('git-changelist-active')),true,'Set active makes the new list active (bold)');
+ assert.equal(await group('Alterações').evaluate(el=>el.classList.contains('git-changelist-active')),false);
+ assert.deepEqual(await group('Refactor').locator('.git-file-row').evaluateAll(rows=>rows.map(r=>r.dataset.path)),['src/User.php']);
+ assert.equal(await group('Refactor').locator('summary').getAttribute('title'),'Renomear usuário','comment is the tooltip');
+ assert.equal(await group('Refactor').locator('summary strong').evaluate(el=>getComputedStyle(el).fontWeight),'600');
+ assert.equal(await group('Alterações').locator('summary strong').evaluate(el=>getComputedStyle(el).fontWeight),'400');
+ await page.screenshot({path:'.artifacts/git-changelists.png'});
+ await group('Alterações').locator('summary').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Definir como changelist ativa'}).click();
+ await page.waitForFunction(()=>document.querySelector('details.git-changelist-active summary strong')?.textContent==='Alterações');
+ await group('Refactor').locator('summary').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Excluir changelist'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('details.git-changelist').length===1);
+ assert.equal(await group('Alterações').locator('.git-file-row').count(),2,'files of a deleted list return to the active one');
+ console.log('WebKit: changelists — move with Set active, bold active list, comment, set active and delete passed.');
+ // 3. Line selection in the diff: chunk and line checkboxes, "N diferenças, M incluídas", stage only the marked lines.
+ await page.locator('.git-file-row[data-path="src/User.php"]').click();
+ await page.waitForSelector('#git-review .line-numbers.git-chunk-box');
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 0 incluídas');
+ assert.equal(await page.locator('#git-stage-lines').isDisabled(),true,'nothing included yet');
+ assert.equal(await page.locator('#git-review .git-line-box').count(),2,'one checkbox per line of a multi-line chunk');
+ await page.locator('#git-review .git-line-box').first().click();
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 1 incluídas');
+ await page.waitForSelector('#git-review .line-numbers.git-chunk-box.partial'); // chunk shows a partial selection
+ await page.screenshot({path:'.artifacts/git-diff-lines.png'});
+ await page.locator('#git-stage-lines').click();
+ await page.waitForFunction(()=>window.applied?.length===1);
+ assert.deepEqual(await page.evaluate(()=>window.applied[0]),['src/User.php',false,'h1',{0:[0]}],'only the first added line is staged');
+ await page.locator('#git-review .line-numbers.git-chunk-box').click();
+ await page.waitForFunction(()=>document.getElementById('git-diff-count').textContent==='1 diferença, 1 incluídas');
+ await page.locator('#git-stage-lines').click();await page.waitForFunction(()=>window.applied?.length===2);
+ assert.deepEqual(await page.evaluate(()=>window.applied[1][3]),{0:true},'chunk checkbox includes the whole chunk');
+ await page.locator('#git-close-diff').click();
+ console.log('WebKit: diff line selection — chunk/line checkboxes, included count and partial staging passed.');
+ // 4. Log: graph, labels, branches tree, filters (Branch, User → me, Date, Paths, text with Regex/Cc) and commit menu.
+ if(await page.locator('#git-log-panel').isHidden())await page.locator('#show-git').click();
+await page.locator('#git-filter-branch').click();await page.locator('.git-menu-item',{hasText:'HEAD'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===6);
+ assert.equal(await page.locator('#git-log .git-head-node').count(),1,'HEAD commit drawn as a ring');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-merge .git-commit-text').textContent(),'Merge branch feature/login');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-on-branch').count(),5,'current branch commits are highlighted');
+ assert.equal(await page.locator('#git-log .git-commit-row.git-mine').count(),5,'own commits in bold');
+ assert.deepEqual(await page.locator('#git-log .git-commit-row').nth(1).locator('.git-ref-label').allTextContents(),['main','v1.1']);
+ assert.ok(await page.locator('#git-log path.git-lane').count()>10,'continuous lane segments');
+ assert.deepEqual(await page.locator('#git-log-refs .git-ref-row').allTextContents(),['HEAD (Branch atual)','main','login','report','v1.1','v1.0'],'Local grouped by folder, then Tags');
+ assert.equal(await page.locator('#git-log-refs details summary').allTextContents().then(t=>t.join('|')),'Local|feature|Tags');
+await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitForSelector('#git-history-files .git-file-row');
+ await page.screenshot({path:'.artifacts/git-log.png'});
+ await page.locator('#git-filter-user').click();
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Selecionar…','eu','Bruno Dev']);
+ await page.locator('.git-menu-item',{hasText:'eu'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===5);
+ assert.deepEqual((await page.evaluate(()=>window.logRequests.at(-1))).authors,['Ana Fixture']);
+ assert.equal(await page.locator('#git-filter-user').textContent(),'Usuário: Ana Fixture');
+ await page.locator('#git-filter-date').click();
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Selecionar…','Últimas 24 horas','Últimos 7 dias']);
+ await page.screenshot({path:'.artifacts/git-log-filters.png'});
+ await page.locator('.git-menu-item',{hasText:'Últimos 7 dias'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===4);
+ await page.locator('#git-filter-paths').click();await page.locator('.git-menu-item',{hasText:'Selecionar pastas'}).click();
+ await page.locator('.git-log-ask input').fill('src/');await page.locator('.git-log-ask button[type=submit]').click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).paths?.[0]==='src');
+ await page.locator('#git-filter-branch').click();await page.locator('.git-menu-item',{hasText:'Todas'}).click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).refs?.[0]==='--all');
+ await page.locator('#git-log-search').fill('LOGIN');
+ await page.waitForFunction(()=>window.logRequests.at(-1).text==='LOGIN');
+ await page.locator('#git-log-case').click();
+ await page.waitForFunction(()=>window.logRequests.at(-1).matchCase===true);
+ assert.equal(await page.locator('#git-log .git-commit-row').count(),0,'Match Case');
+ await page.locator('#git-log-case').click();await page.locator('#git-log-search').fill('');
+ await page.locator('#git-filter-user').click();await page.locator('.git-menu-item',{hasText:'Todos'}).click();
+ await page.locator('#git-filter-date').click();await page.locator('.git-menu-item',{hasText:'Todas'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('#git-log .git-commit-row').length===6);
+ await page.locator('#git-log .git-commit-row').nth(3).click({button:'right'});
+ const logMenu=await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents();
+ for(const item of ['Copiar número da revisão','Cherry-pick','Reverter commit','Ir para o commit filho','Ir para o commit pai'])assert.ok(logMenu.includes(item),item);
+ await page.keyboard.press('Escape');
+ await page.locator('#git-log .git-commit-row').nth(3).focus();await page.keyboard.press('ArrowRight');
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.hash),'6492ab8a1f0c4d1e9b7a2c3d4e5f60718293a4b5','→ goes to the parent commit');
+ // Annotate → click opens this commit in the Log.
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent('ide-git-show-commit',{detail:{hash:'2618cba0'+'3'.repeat(32),path:'src/User.php'}})));
+ await page.waitForFunction(()=>document.querySelector('#git-log .git-commit-row[aria-selected=true]')?.dataset.hash.startsWith('2618cba0'));
+ assert.equal(await page.locator('#git-log-panel').isVisible(),true,'Annotate link opens the Log');
+ assert.equal(await page.locator('#git-filter-paths').textContent(),'Caminhos: src/User.php');
+ console.log('WebKit: Log — graph, labels, branches tree, Branch/User/Date/Paths/text filters, commit menu and Annotate link passed.');
+ // 5. Tags: Log → New Tag… (name only), Tag v1.1 → Delete, Tags node menu, Git → New Tag… with Force/Commit/Message.
+ const row=hash=>page.locator(`#git-log .git-commit-row[data-hash^="${hash}"]`);
+ const operation=()=>page.evaluate(()=>window.operations?.at(-1));
+ await row('83f448f3').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Nova tag…'}).click();
+ const tagDialog=page.locator('.git-tag-dialog');
+ assert.equal(await tagDialog.locator('h2').textContent(),'Criar nova tag em 83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9');
+ assert.equal(await tagDialog.locator('.git-tag-prompt').textContent(),'Digite o nome da nova tag');
+ assert.equal(await tagDialog.locator('button[type=submit]').isDisabled(),true,'OK disabled until a name is typed');
+ assert.equal(await tagDialog.locator('.git-tag-full').first().isHidden(),true,'Log variant asks only the name');
+ await tagDialog.locator('input[name=name]').fill('v1.0.1');
+ await page.screenshot({path:'.artifacts/git-tag-new.png'});
+ await tagDialog.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations?.length===1);
+ assert.deepEqual(await operation(),{kind:'create-tag',target:'v1.0.1',commit:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',expectedHead:'6f946771'});
+ await row('03f8346c').click({button:'right'});
+ await page.locator('.git-menu-item',{hasText:'Tag v1.1'}).click();
+ await page.locator('.git-menu').last().locator('.git-menu-item',{hasText:'Excluir'}).click();
+ await page.waitForFunction(()=>window.operations?.length===2);
+ assert.deepEqual(await operation(),{kind:'delete-tag',target:'v1.1',expectedHead:'6f946771'});
+ await page.evaluate(()=>{window.toolsState.remotes=['origin'];});await page.locator('#git-log-refresh').click();await page.waitForTimeout(200);
+ await page.locator('#git-log-refs .git-ref-tag',{hasText:'v1.0'}).click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Checkout','Enviar para origin','Excluir']);
+ await page.locator('.git-menu-item',{hasText:'Enviar para origin'}).click();
+ await page.waitForFunction(()=>window.operations?.length===3);
+ assert.deepEqual(await operation(),{kind:'push-tag',target:'v1.0',remote:'origin',expectedHead:'6f946771'});
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent('ide-git-new-tag')));
+ assert.equal(await tagDialog.locator('h2').textContent(),'Tag');
+ await tagDialog.locator('input[name=name]').fill('v2.0');await tagDialog.locator('textarea').fill('Release 2.0');await tagDialog.locator('input[name=force]').check();
+ assert.equal(await tagDialog.locator('button[type=submit]').textContent(),'Criar tag');
+ await page.screenshot({path:'.artifacts/git-tag-dialog.png'});
+ await tagDialog.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations?.length===4);
+ assert.deepEqual(await operation(),{kind:'create-tag',target:'v2.0',commit:'HEAD',force:true,message:'Release 2.0',expectedHead:'6f946771'});
+ console.log('WebKit: tags — New Tag from the Log, Tag submenu delete, push from the Tags node and annotated New Tag passed.');
+ // 6. Reset Current Branch to Here: Git Reset dialog (Mixed by default), Hard, cancel; Checkout Revision; New Branch from a commit.
+ await row('83f448f3').click({button:'right'});
+ const order=await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents();
+ assert.deepEqual(order,['Copiar número da revisão','Cherry-pick','Checkout da revisão','Redefinir branch atual até aqui…','Reverter commit','Nova branch…','Nova tag…','Ir para o commit filho','Ir para o commit pai'],'PhpStorm menu order');
+ await page.locator('.git-menu-item',{hasText:'Redefinir branch atual'}).click();
+ const reset=page.locator('.git-reset-dialog');
+ assert.equal(await reset.locator('h2').textContent(),'Git Reset');
+ assert.equal((await reset.locator('.git-reset-target').textContent()).replace(/\s+/g,' '),'main -> 83f448f3 "Rename default user" por Ana Fixture');
+ assert.deepEqual(await reset.locator('.git-reset-mode span').allTextContents(),['Soft','Mixed','Hard','Keep']);
+ assert.equal(await reset.locator('input[value=mixed]').isChecked(),true,'Mixed is the default');
+ await page.screenshot({path:'.artifacts/git-reset.png'});
+ await reset.locator('button',{hasText:'Cancelar'}).click();
+ const before=await page.evaluate(()=>window.operations.length);
+ assert.equal(await page.locator('.git-reset-dialog').count(),0);
+ await row('83f448f3').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Redefinir branch atual'}).click();
+ await reset.locator('input[value=hard]').check();await reset.locator('button[type=submit]').click();
+ await page.waitForFunction(n=>window.operations.length===n+1,before);
+ assert.deepEqual(await operation(),{kind:'reset',target:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',mode:'hard',expectedHead:'6f946771'},'cancel sent nothing; Hard sends one reset');
+ await row('2618cba0').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Checkout da revisão'}).click();
+ await page.waitForFunction(n=>window.operations.length===n+2,before);
+ assert.equal((await operation()).kind,'checkout-revision');
+ await row('2618cba0').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Nova branch…'}).click();
+ const branch=page.locator('.git-new-branch-dialog');await branch.locator('input[name=name]').fill('from-log');await branch.locator('input[name=checkout]').uncheck();await branch.locator('button[type=submit]').click();
+ await page.waitForFunction(n=>window.operations.length===n+3,before);
+ assert.deepEqual(await operation(),{kind:'create-branch',target:'from-log',startPoint:'2618cba0'+'3'.repeat(32),checkout:false,expectedHead:'6f946771'});
+ await page.locator('#git-log-refs .git-ref-tag',{hasText:'v1.0'}).click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Checkout','Enviar para origin','Excluir']);
+ await page.keyboard.press('Escape');
+ console.log('WebKit: reset — Git Reset dialog, Mixed default, cancel, Hard, Checkout Revision, New Branch from commit and tag Checkout passed.');
+ // 7. Worktrees: tab shown with more than one worktree, list, New Worktree (branch already open → New branch), Delete, Prune.
+ assert.equal(await page.locator('#git-log-panel .git-worktrees-tab').isVisible(),true,'tab appears when the repository has two worktrees');
+ await page.locator('#git-worktrees-tab').click();
+ await page.waitForFunction(()=>document.querySelectorAll('.git-worktree-row').length===2);
+ assert.deepEqual(await page.locator('.git-worktree-row').first().locator('span,strong').allTextContents(),['✓','project','main','/tmp/project','']);
+ assert.equal(await page.locator('#git-log-panel .git-log-body').isHidden(),true,'Worktrees replaces the Log body');
+ await page.screenshot({path:'.artifacts/git-worktrees.png'});
+ await page.locator('.git-worktree-row').first().click();
+ assert.equal(await page.locator('#git-worktree-delete').isDisabled(),true,'main worktree cannot be deleted');
+ await page.locator('#git-worktree-new').click();
+ const wt=page.locator('.git-worktree-dialog');
+ assert.equal(await wt.locator('h2').textContent(),'Novo worktree');
+ assert.equal(await wt.locator('input[name=location]').inputValue(),'/tmp','location defaults to the project parent');
+ await wt.locator('select[name=branch]').selectOption('feature/report');
+ assert.equal(await wt.locator('input[name=useNew]').isChecked(),true,'a branch open in another worktree needs a new branch');
+ await wt.locator('input[name=newBranch]').fill('feature/report-2');
+ assert.equal(await wt.locator('input[name=name]').inputValue(),'project-report-2');
+ assert.equal(await wt.locator('.git-wt-hint').textContent(),'O worktree será criado em: /tmp/project-report-2');
+ await page.screenshot({path:'.artifacts/git-worktree-new.png'});
+ await wt.locator('button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-add');
+ assert.deepEqual(await operation(),{kind:'worktree-add',target:'/tmp/project-report-2',branch:'feature/report',newBranch:'feature/report-2',expectedHead:'6f946771'});
+ await page.locator('.git-worktree-row').nth(1).click();
+ await page.locator('#git-worktree-delete').click();
+ await page.locator('.git-worktree-confirm button[type=submit]').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-remove');
+ assert.equal((await operation()).target,'/tmp/project-wt');
+ await page.locator('#git-worktree-prune').click();
+ await page.waitForFunction(()=>window.operations.at(-1).kind==='worktree-prune');
+ await page.locator('.git-worktree-row').nth(1).dblclick();
+ assert.match(await page.locator('#git-log-status').textContent(),/\/tmp\/project-wt/);
+ await page.locator('#git-log-title').click();
+ assert.equal(await page.locator('#git-log-panel .git-log-body').isVisible(),true,'Log tab returns to the Log');
+ console.log('WebKit: worktrees — tab, list, New Worktree with new branch and location hint, Delete, Prune and open passed.');
+ assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}

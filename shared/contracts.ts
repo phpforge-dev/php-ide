@@ -9,12 +9,15 @@ export type WorkspaceInfo = { root: string; name: string };
 export type GitChange = { path: string; originalPath?: string; index: string; worktree: string };
 export type GitState = { branch: string; head: string | null; mergeHead: string | null; operation?: 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'conflict' | null; changes: GitChange[]; indexToken: string };
 export type GitDiff = { path: string; before: string; after: string; beforeLabel: string; afterLabel: string; token: string };
-export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string };
+export type GitBlameCommit = { hash: string; author?: string; email?: string; authorTime?: number; commitTime?: number; summary?: string; message?: string; previous?: { hash: string; path: string }; path?: string; uncommitted: boolean };
+export type GitBlame = { path: string; revision: string | null; content?: string | null; lines: { hash: string; original: number }[]; commits: Record<string, GitBlameCommit> };
+export type GitChangelist = { id: string; name: string; comment: string; active: boolean; files: string[] };
+export type GitCommit = { hash: string; author: string; date: string; subject: string; parents?: string[]; refs?: string; email?: string; committer?: string };
 export type GitBranch = { name: string; current: boolean; remote: boolean; upstream: string; tracking: string };
-export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[] };
+export type GitTools = { branches: GitBranch[]; remotes: string[]; stashes: { ref: string; subject: string }[]; user?: string; tags?: { name: string; commit: string; annotated: boolean }[]; worktrees?: { path: string; name: string; branch?: string; head?: string; current?: boolean; main?: boolean; detached?: boolean; locked?: string; prunable?: string }[] };
 export type GitHistory = { hash: string; parents: string[]; files: { path: string; oldPath?: string; status: string }[] };
 export type GitHunks = { token: string; hunks: { id: number; patch: string }[] };
-export type GitOperation = { kind: 'checkout-remote' | 'create-branch' | 'switch' | 'delete-branch' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'fetch' | 'pull' | 'push' | 'stash' | 'stash-apply' | 'merge-abort' | 'cherry-pick-abort' | 'revert-abort' | 'rebase-abort' | 'rebase-continue'; target?: string; checkout?: boolean; expectedBranch?: string; expectedHead: string | null };
+export type GitOperation = { kind: 'worktree-add' | 'worktree-remove' | 'worktree-prune' | 'reset' | 'checkout-revision' | 'create-tag' | 'delete-tag' | 'push-tag' | 'checkout-remote' | 'create-branch' | 'switch' | 'delete-branch' | 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'fetch' | 'pull' | 'push' | 'stash' | 'stash-apply' | 'merge-abort' | 'cherry-pick-abort' | 'revert-abort' | 'rebase-abort' | 'rebase-continue'; target?: string; checkout?: boolean; expectedBranch?: string; expectedHead: string | null; commit?: string; force?: boolean; message?: string; remote?: string; mode?: 'soft' | 'mixed' | 'hard' | 'keep'; startPoint?: string; branch?: string; newBranch?: string };
 export type GitConflict = { path: string; base: string; ours: string; theirs: string; result: string; token: string;
   operation: 'merge' | 'rebase' | 'cherry-pick' | 'revert' | 'conflict'; oursLabel: string; theirsLabel: string };
 export type LanguageMethod = 'textDocument/definition' | 'textDocument/completion' |
@@ -135,11 +138,16 @@ export interface IdeApi {
   gitStatus(): Promise<GitState>;
   gitEditorBase(path: string): Promise<{text: string; label: string}>;
   gitLineInfo(path: string, line: number, text: string): Promise<{hash: string; author: string; date: string; summary: string; uncommitted: boolean}>;
+  /** Annotate with Git Blame: buffer (`text`) ou revisão; opções -w/-M/-C do menu Options. */
+  gitBlame(input: { path: string; text?: string; revision?: string; ignoreWhitespace?: boolean; movesWithin?: boolean; movesAcross?: boolean }): Promise<GitBlame>;
+  /** Changelists da janela Commit (metadados no git-dir): list, create, move, set-active, edit, delete. */
+  gitChangelists(input: { action: 'list' | 'create' | 'move' | 'set-active' | 'edit' | 'delete'; id?: string; name?: string; comment?: string; setActive?: boolean; paths?: string[]; target?: string }): Promise<{ lists: GitChangelist[] }>;
   gitDiff(path: string, staged: boolean): Promise<GitDiff>;
   gitStage(path: string, staged: boolean, token: string): Promise<void>;
   gitCommitMessage(): Promise<string>;
   gitCommit(message: string, indexToken: string, amend?: boolean): Promise<string>;
-  gitLog(ref?: string): Promise<GitCommit[]>;
+  /** Sem argumento ou com ref: histórico simples; com filtros (Log do PhpStorm), aplicados pelo Git. */
+  gitLog(ref?: string | { ref?: string; refs?: string[]; authors?: string[]; since?: string; until?: string; paths?: string[]; text?: string; regex?: boolean; matchCase?: boolean; limit?: number }): Promise<GitCommit[]>;
   gitBranches(): Promise<GitBranch[]>;
   gitTools(): Promise<GitTools>;
   gitHistory(hash: string): Promise<GitHistory>;

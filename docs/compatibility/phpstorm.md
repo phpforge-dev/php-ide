@@ -273,6 +273,22 @@ TOOL-GIT-001 permanece **Em desenvolvimento / não validada**. Log e Commit reor
 
 Commit refinado a partir das duas capturas do usuário: toolbar, árvore com checkboxes, nomes/pastas e área Amend/mensagem/ações. Staging explícito, amend com revisão e Commit and Push ligado à revisão de envio. [Detalhes e limites](../research/git-ui-2026-10-23.md). Sem validação integral de equivalência.
 
+### Git — fidelidade de blame, changelists, linhas, Log, tags, reset e worktrees (04/11/2026)
+
+Observação autorizada do PhpStorm 2026.1.4 em repositório temporário (capturas locais G-00..G-26) mais documentação pública. Implementado no plugin `phpforge.git` (main local, sem release) com rotas `gitBlame`/`gitChangelists` liberadas no host. Validação própria: 31 testes Rust com Git real, 12 testes do plugin e 8 etapas WebKit; sem `test:native` do plugin novo e sem comparação lado a lado.
+
+| ID | Recorte | Estado de equivalência | Evidência e diferenças |
+|---|---|---|---|
+| GIT-ANNOTATE-001 | Annotate with Git Blame no gutter, popup, menu View/Options, Annotate (Previous) Revision | Em desenvolvimento | Sem Colors, Show Diff On Hover, Hide Revision; revisão em editor somente leitura |
+| GIT-CHANGELIST-001 | Changelists: grupos, ativa em negrito, mover/nova/editar/ativa/excluir, arrastar | Em desenvolvimento | Commit segue o index; sem Track context |
+| GIT-LINES-001 | Caixas por trecho/linha no diff, "N diferenças, M incluídas", preparar/retirar só linhas marcadas | Em desenvolvimento | Caixas sempre visíveis; arquivo novo/removido/binário só inteiro |
+| GIT-LOG-002 | Grafo contínuo, rótulos, branches por pasta/Tags, filtros Branch/Usuário/Data/Caminhos e texto com Regex/Cc no Git | Em desenvolvimento | Até 1000 commits; sem Favorites/Go to/rebase interativo |
+| GIT-TAG-001 | Nova tag (Log e Git), Forçar/mensagem, excluir, enviar ao remoto, checkout | Em desenvolvimento | Sem Push tags no diálogo de push |
+| GIT-RESET-001 | Git Reset Soft/Mixed/Hard/Keep a partir do Log, Checkout Revision, New Branch do commit | Em desenvolvimento | Sem Undo Commit/Edit Commit Message |
+| GIT-WORKTREE-001 | Aba Worktrees, novo (branch ou nova branch), excluir, Prune | Em desenvolvimento | Abrir em outra janela depende de rota do host |
+
+Critérios, evidências e limites: [phpstorm-git.md](../research/phpstorm-git.md#fidelidade-git-2026-11--blame-changelists-linhas-log-tags-reset-e-worktrees).
+
 ### Banco — diálogo e importação Laravel (23/10/2026)
 
 Diálogo reorganizado e importação de `.env` para rascunho revisável, sem conexão automática nem persistência de senha. Fixtures WebKit, Rust e janela Tauri passaram. Configuração PHP/cache, interpolação e opções adicionais de URL ficam fora do recorte. Estado comparativo permanece **Em desenvolvimento / não validada**. [Evidências e limites](../research/database-connection-laravel.md).
