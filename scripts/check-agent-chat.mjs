@@ -176,6 +176,42 @@ scenario('terminal', async () => {
  await page.close();
 });
 
+scenario('apply', async () => {
+ const {page, errors} = await page_({script: 'apply'});
+ const box = await page.locator('#editor').boundingBox();
+ assert.ok(box.width > 300 && box.height > 300, 'editor Monaco sem área: ' + JSON.stringify(box));
+ await page.waitForSelector('#editor .view-lines');
+ await startAgent(page);
+ await page.locator('#agent-prompt').fill('Melhore o método name'); await page.keyboard.press('Enter');
+ await page.waitForSelector('.agent-code .agent-code-apply');
+ assert.deepEqual(await page.locator('.agent-code-lang').allTextContents(), ['src/User.php', 'diff']);
+ await page.locator('.agent-code-apply').first().click();
+ await page.waitForSelector('dialog.agent-apply[open] .monaco-diff-editor');
+ await page.waitForFunction(() => document.querySelectorAll('dialog.agent-apply .line-insert, dialog.agent-apply .char-insert').length > 0);
+ assert.match(await page.locator('dialog.agent-apply header span').textContent(), /bloco localizado/);
+ await shot(page, 'apply-preview');
+ // Descartar tudo (Esc) não muda o editor.
+ await page.keyboard.press('Escape');
+ await page.waitForFunction(() => !document.querySelector('dialog.agent-apply'));
+ assert.match(await page.evaluate(() => window.editor.getModel().getValue()), /'Synthetic user'/);
+ // Aceitar tudo (⌘↩) aplica no buffer; ⌘Z desfaz.
+ await page.locator('.agent-code-apply').first().click();
+ await page.waitForSelector('dialog.agent-apply[open] .monaco-diff-editor');
+ await page.locator('dialog.agent-apply .agent-apply-accept').click();
+ await page.waitForFunction(() => window.editor.getModel().getValue().includes("strtoupper('synthetic user')"));
+ assert.match(await page.locator('#status').textContent(), /Alterações aplicadas em User\.php/);
+ await shot(page, 'apply-accepted');
+ await page.evaluate(() => { window.editor.focus(); window.editor.trigger('test', 'undo'); });
+ assert.match(await page.evaluate(() => window.editor.getModel().getValue()), /'Synthetic user'/);
+ // Diff unificado.
+ await page.locator('.agent-code-apply').nth(1).click();
+ await page.waitForSelector('dialog.agent-apply[open]');
+ await page.locator('dialog.agent-apply .agent-apply-accept').click();
+ await page.waitForFunction(() => window.editor.getModel().getValue().includes("'Edited by diff'"));
+ assert.deepEqual(errors, []);
+ await page.close();
+});
+
 const page_ = page;
 try {
  await server.listen();

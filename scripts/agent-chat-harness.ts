@@ -10,7 +10,7 @@ const {fakeApi} = await import(/* @vite-ignore */ `/@fs${plugin}/tests/fake-api.
 const {activate} = await import(/* @vite-ignore */ `/@fs${plugin}/workbench.js`);
 installEditorWorkers?.();
   document.documentElement.dataset.theme = 'dark';
-  document.body.innerHTML = '<div id="app"><main style="display:grid;grid-template-columns:1fr 460px;height:100vh"><section class="code"><div id="editor" style="height:100%"></div></section><aside class="tools" style="display:flex;flex-direction:column;padding:10px;min-height:0;height:100vh;box-sizing:border-box"><div id="agent" style="flex:1;min-height:0"></div></aside></main><footer><span id="status"></span></footer></div>';
+  document.body.innerHTML = '<div id="app"><div class="harness" style="display:flex;height:100vh;width:100vw"><div class="harness-code" style="width:calc(100vw - 460px);flex:none;height:100vh"><div id="editor" style="height:100%"></div></div><aside class="tools" style="width:460px;flex:none;max-width:none;min-width:0;display:flex;flex-direction:column;padding:10px;min-height:0;height:100vh;box-sizing:border-box"><div id="agent" style="flex:1;min-height:0"></div></aside></div><footer><span id="status"></span></footer></div>';
   const model = monaco.editor.createModel(USER, 'php', monaco.Uri.file('/project/src/User.php'));
   const editor = monaco.editor.create(document.getElementById('editor'), {model, theme: 'vs-dark', automaticLayout: true});
   window.monaco = monaco; window.editor = editor;
@@ -18,6 +18,9 @@ installEditorWorkers?.();
   const services = {};
   if (options.database) services.database = {sqlIntelligence: {entries: new Map([['s1', {session: {id: 's1', label: 'app@localhost', driver: 'postgres'}, model: {label: 'app', database: 'app', defaultSchema: 'public', schemas: [{name: 'public', tables: [{name: 'users', kind: 'table', columns: [{name: 'id', type: 'bigint'}, {name: 'email', type: 'varchar(255)', nullable: false}]}]}]}}]])}};
   const scripts = {
+   apply: async (text, extras, emit) => {
+    emit({type: 'message', text: 'Troque o retorno de `name()`:\n\n```php src/User.php\npublic function name(): string\n{\n    return strtoupper(\'synthetic user\');\n}\n```\n\nOu como diff:\n\n```diff\n@@ -9 +9 @@\n-        return \'Synthetic user\';\n+        return \'Edited by diff\';\n```\n'});
+   },
    terminal: async (text, extras, emit, api) => {
     emit({type: 'message', text: 'Vou rodar os testes. '});
     emit({type: 'terminal', id: 't1', command: 'php vendor/bin/phpunit --testdox', cwd: '', status: 'waiting'});
