@@ -386,8 +386,11 @@ async fn ide(
         return Err("Plugins são executados pela camada de linguagem da interface".into());
     }
     if method.starts_with("git") {
+        let config = std::env::var_os("PHP_IDE_STATE_DIR").map(PathBuf::from).unwrap_or(app.path().app_config_dir().map_err(err)?);
+        let accounts = git::Accounts::system(&config);
         let _lock = project.git.lock().await;
-        return git::dispatch(root, &method, &args).await;
+        if method.starts_with("gitAccounts") { return git::accounts::dispatch(&accounts, root, &method, &args).await; }
+        return git::dispatch_with(root, &method, &args, Some(&accounts)).await;
     }
     if method.starts_with("file") && method != "fileExists" {
         return files::dispatch(root, &project.history, &method, &args);
