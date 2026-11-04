@@ -1,6 +1,6 @@
 # Shell do editor: breadcrumbs, Problems, menus de contexto e keymap (03–04/11/2026)
 
-Catálogo: UI-BREADCRUMBS-001, UI-PROBLEMS-001, UI-CONTEXT-001, UI-KEYMAP-001. Estado: **Em desenvolvimento / não validada comparativamente** (harness próprio em WebKit; sem comparação lado a lado automatizada nem execução nativa desta fatia).
+Catálogo: UI-BREADCRUMBS-001, UI-PROBLEMS-001, UI-CONTEXT-001, UI-KEYMAP-001. Estado: **Em desenvolvimento / não validada comparativamente** (harness próprio em WebKit; sem comparação lado a lado automatizada nem execução nativa desta fatia). Segunda rodada (04/11/2026) mais abaixo.
 
 ## Ponto de partida
 
@@ -64,10 +64,58 @@ Nada foi extraído do produto. Ícones de método/função e do menu são desenh
 - `node --import tsx --test tests/code-structure.test.ts tests/keymap.test.ts`; `npm run test:unit` (199 aprovados), `npm run typecheck`, `npm test` (Rust), `node scripts/check-locales.mjs`, `node scripts/check-editor-chrome.mjs --webkit` (sem regressão).
 - Não executado nesta fatia: `npm run test:native` (porta 1420 compartilhada; a coordenação roda no release).
 
+## Segunda rodada (04/11/2026): lacunas da lista abaixo
+
+Fecha, no host, as lacunas registradas na primeira rodada. Nenhum plugin foi alterado; nenhuma observação nova foi feita na tela do PhpStorm nesta rodada (as capturas 31, 51, 53 e 57 já cobriam os menus, o Project Errors vazio e a engrenagem do Keymap).
+
+### Evidências (separadas)
+
+| Tipo | Item |
+|---|---|
+| Observação autorizada (capturas existentes) | **31** menu do editor (Generate… ⌘N depois de Refactor; Run/Debug/More Run/Debug; Compare with Clipboard); **51** Project Errors vazio com "No errors found by the IDE." e o link "Inspect Code…", e o botão de pré-visualização na barra lateral; **53** menu da aba (Split Right/Split and Move Right/Split Down/Split and Move Down; Pin Tab · Open Tab in New Window · Configure Editor Tabs…; Bookmarks ›; Run/Debug); **57** engrenagem com Duplicate… num keymap embutido. |
+| Documentação pública | Settings › Editor › General › Breadcrumbs (Show breadcrumbs; Placement Top/Bottom, Bottom por padrão; uma caixa por linguagem); Bookmarks (alternar, mnemônico com dígito/letra, mostrar todos, ^dígito; no submenu da aba: Add Bookmark/Add Mnemonic Bookmark para o arquivo; atalhos F11/Ctrl+F11/Shift+F11 no keymap Windows/Linux e F3/⌥F3/⌘F3 no macOS); Keymap (a engrenagem duplica, renomeia, remove e restaura; um keymap derivado guarda só as diferenças em relação ao pai). |
+| Requisito próprio | Inspect Code pelas mesmas fontes de diagnóstico de um editor aberto; resultados mantidos para arquivos fechados; pré-visualização somente leitura; Generate… e Run/Debug delegados a contribuições de plugins; mudanças de configuração aplicadas na hora; menu de posição com o botão direito na barra de breadcrumbs. |
+| Hipótese (não verificada) | Rótulo HTML `main#app.page` (tag, id e classes); itens de array JSON e de sequência YAML transparentes no caminho; padrão de 10 abas no limite; nome sugerido "<keymap> cópia"; layout do seletor mnemônico (grade 1–0, A–Z) e da lista de marcadores; título do diff "Área de transferência vs. arquivo". |
+
+### Critérios de aceitação (validados no harness `scripts/check-editor-shell-2.mjs`)
+
+**Breadcrumbs (UI-BREADCRUMBS-001)**
+1. JavaScript `Cart › total()`, TypeScript `Shop › format()`, JSON `autoload › psr-4 › Fixture\`, YAML `services › App\Mailer › arguments`, HTML `html › body › main#app.page › ul.items › li`, seguindo o cursor.
+2. Configurações do editor › Breadcrumbs: mostrar/ocultar, Topo/Rodapé (rodapé por padrão) e uma caixa por linguagem; aplica na hora e persiste.
+
+**Problems (UI-PROBLEMS-001)**
+1. Erros do projeto vazio: "Nenhum erro encontrado pela IDE." e "Inspecionar código…" (51).
+2. Inspecionar código lê todos os arquivos do projeto fora de `vendor/`, pede `textDocument/diagnostic` (e `php/diagnostics` em PHP) e usa os workers do Monaco num modelo temporário, descartado ao fim; os erros de arquivos fechados ficam listados por caminho; arquivos abertos mostram os marcadores vivos; marcadores de abas já fechadas não aparecem mais.
+3. Botão de pré-visualização: código do problema selecionado ao lado da árvore, somente leitura, na linha do problema; duplo clique abre o arquivo na posição.
+
+**Menus (UI-CONTEXT-001)**
+1. Aba: … Copiar caminho/referência… | Dividir à direita · Dividir para baixo (· Desfazer divisão) | Fixar aba · Configurar abas do editor… | Marcadores › | Executar › · Mais Executar/Depurar › (quando um plugin oferece) | Abrir em | Histórico local | Renomear arquivo….
+2. Dividir à direita/para baixo abre um segundo editor com o mesmo documento (edições compartilhadas); divisor arrastável e por setas; Desfazer divisão ou × fecha.
+3. Marcadores: F3 alterna na linha, ⌥F3 abre o seletor mnemônico, ⌘F3 lista (Enter abre, Delete remove), ^1 vai ao mnemônico 1; marca no gutter; acompanha edições; por projeto.
+4. Editor: Gerar… (⌘N) logo após Refatorar, com os itens dos provedores `generate.*` e ações de geração contribuídas; Executar/Mais Executar/Depurar com as ações `*.runContext`/`*.debugContext`/cobertura/configurações do keymap; Comparar com a área de transferência abre o diff lado a lado (Esc fecha).
+5. Configurar abas do editor… abre as configurações na seção Abas do editor: posição Topo/Nenhuma, ícone do arquivo, botão de fechar, limite de abas (fecha a menos usada que não está fixada nem modificada).
+
+**Keymap (UI-KEYMAP-001)**
+1. Engrenagem de um keymap embutido: Duplicar… (sem Excluir), como em 57; de uma cópia: Duplicar…, Renomear…, Excluir; e Exportar…/Importar…/Restaurar padrões.
+2. Duplicar pede o nome (sugere "<keymap> cópia"), cria a cópia ativa que herda os padrões do keymap embutido de origem e começa com as personalizações atuais; personalizar a cópia não muda a origem; excluir a cópia ativa volta à origem; tudo persiste.
+
+### Mudança
+
+- `src/code-structure.ts` (`jsStructure`, `jsonStructure`, `yamlStructure`, `htmlStructure`, grupos de linguagem), `src/code-breadcrumbs.ts` (posição, ocultação por linguagem, menu de posição) e `src/editor-settings.ts/.css` (página Breadcrumbs e Abas do editor; ação `ide.editorSettings`, botão "Editor…" no diálogo Aparência).
+- `src/inspect-code.ts` e `src/problems.ts/.css` (Inspecionar código, progresso com Cancelar, pré-visualização, ação `code.inspect`); `src/main.ts` fornece arquivos, leitura e diagnósticos.
+- `src/editor-split.ts/.css`, `src/bookmarks.ts/.css`, `src/compare-clipboard.ts/.css`, `src/run-context.ts`, `src/plugin-services.ts` (`pluginServices(prefixo)`), `src/editor-menu.ts` (Gerar…, `editor.generate`, `editor.compareClipboard`), `src/tab-menu.ts`; `src/main.ts` (abas conforme as configurações, limite de abas, marcadores ao renomear/mover).
+- `src/keymap.ts` (`duplicateProfile`, `renameProfile`, `deleteProfile`, `profileList`, `baseProfile`; persistência de cópias) e `src/keymap-settings.ts/keymap.css` (diálogo de nome); `src/context-menu.ts` abre o menu dentro do diálogo modal ativo (antes ficava atrás dele e não recebia cliques).
+
+### Validação
+
+- `node scripts/check-editor-shell-2.mjs` (WebKit, escuro e claro; `--no-assert`, `--dump`, `--dark-only`): capturas em `.artifacts/editor-shell-2/` (depois) e `.artifacts/editor-shell-2/before/` (mesmo harness na base `2e4c790`, gravado antes das mudanças).
+- `node scripts/check-editor-shell.mjs` (primeira rodada; ordem da aba atualizada e rótulo "Incorporar…" do plugin PHP atual), `node scripts/check-editor-chrome.mjs --webkit`, `npm run typecheck`, `npm run test:unit` (206 aprovados, 1 ignorado), `npm test` (Rust), `node scripts/check-locales.mjs`, `node scripts/check-architecture.mjs`.
+- Não executado: `npm run test:native` (porta 1420 compartilhada; a coordenação roda no release).
+
 ## Limitações e diferenças conhecidas
 
-- Breadcrumbs: estrutura por varredura própria (não usa o índice do Phpactor); só PHP e Markdown; sem breadcrumbs de HTML/JS/YAML; sem configuração de posição (topo/rodapé) nem ocultação por linguagem.
-- Problems: sem "Server Problem", Vulnerable Dependencies, Qodana e abas de IA; "Erros do projeto" cobre arquivos com modelo aberto (não roda Inspect Code no projeto); sem pré-visualização do código nem autoscroll.
-- Menus: faltam AI Actions, Generate…, Run/Debug, Compare with Clipboard, snippets/gists, Diagrams, Split, Open Tab in New Window, Configure Editor Tabs, Bookmarks e Override File Type (recursos inexistentes aqui); "Copiar caminho/referência…" é submenu em vez do popup do PhpStorm; menu do gutter não implementado.
-- Keymap: sem keymaps duplicados/nomeados (perfis fixos com personalização); exportação em JSON próprio (não XML); importação XML só mapeia ~35 ids públicos; atalhos de mouse e abreviações não suportados; o chord não expira por tempo.
+- Breadcrumbs: estrutura por varredura própria (não usa o índice do Phpactor nem dos servidores de JS/TS); sem breadcrumbs de CSS, Twig, Vue e Blade; JS/TS não mostram callbacks nem métodos de objetos literais; formato do rótulo HTML e transparência de arrays/sequências são hipóteses.
+- Problems: Inspect Code não roda as inspeções que o plugin PHP calcula só no editor ativo (literais/tipos próprios) em arquivos fechados, apenas o servidor PHP e os diagnósticos do canal de linguagem; sem perfil de inspeção, escopo, janela Inspection Results nem resultados por severidade além de erro em Erros do projeto; limite de 2000 arquivos e 512 KB por arquivo; sem "Server Problem", Vulnerable Dependencies, Qodana e abas de IA; sem autoscroll.
+- Menus: o painel dividido mostra um documento (sem abas próprias); navegação, inspeções, breadcrumbs e ações do keymap seguem o editor principal; sem "Split and Move", Open Tab in New Window, Override File Type, AI, snippets/gists, Diagrams e menu do gutter. Marcadores: uma lista, sem janela Bookmarks e sem edição da descrição no lugar; F3 deixa de ser "Localizar próximo" do Monaco no editor (como no keymap macOS da referência). Gerar…/Executar/Depurar dependem de plugins: hoje nenhum plugin publicado oferece `generate.*` nem `*.debugContext`, então Gerar… fica desabilitado e Depurar não aparece; o PHP Tests oferece Executar. Comparar com a área de transferência com seleção mostra a seleção somente leitura. "Mark modified (*)" e demais opções de abas não reproduzidas.
+- Keymap: cópia nomeada derivada só de keymaps embutidos (a cópia de uma cópia herda o mesmo pai embutido e copia as personalizações); exportação em JSON próprio (não XML); importação XML só mapeia ~35 ids públicos; atalhos de mouse e abreviações não suportados; o chord não expira por tempo.
 - Nada foi comparado lado a lado com o PhpStorm de forma automatizada; as capturas da referência servem de oráculo visual manual.
