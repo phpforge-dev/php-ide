@@ -171,6 +171,23 @@ jobs:
       - name: Rust tests on target OS
         run: cargo test --release --locked --manifest-path src-tauri/Cargo.toml
 
+      - name: Import Windows Authenticode certificate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if (-not $env:WINDOWS_CERTIFICATE) { Write-Host 'No Authenticode certificate configured'; exit 0 }
+          $pfx = Join-Path $env:RUNNER_TEMP 'authenticode.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          $password = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Remove-Item $pfx
+          "WINDOWS_CERTIFICATE_THUMBPRINT=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Install Azure Trusted Signing client
+        if: runner.os == 'Windows' && vars.AZURE_TRUSTED_SIGNING_ACCOUNT != ''
+        run: cargo install trusted-signing-cli --locked
       - name: Write signing configuration
         id: signing
         env:
@@ -265,6 +282,16 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=2 "$app"
           spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+      - name: Verify Windows installer signature
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING: ${{ steps.signing.outputs.windows }}
+        run: |
+          $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          Write-Host "Authenticode: $($signature.Status) $($signature.SignerCertificate.Subject)"
+          if ($env:WINDOWS_SIGNING -ne 'unsigned' -and $signature.Status -ne 'Valid') { throw 'The NSIS installer is not validly signed' }
       - name: Check Linux package and startup
         if: runner.os == 'Linux'
         run: |
