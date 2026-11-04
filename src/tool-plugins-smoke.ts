@@ -46,13 +46,14 @@ export async function toolPluginsSmoke(_info:unknown){
  await wait(()=>document.getElementById('debug-listen')?.getAttribute('aria-pressed')==='true','debug listener did not start');
  assert((await native(debuggerEntry,'debugStatus')).listening.port===port,'listener state incorrect');
  editor.setPosition({lineNumber:4,column:1});assert(keymap.run('debug.toggleBreakpoint'),'debug action missing');
- await wait(()=>!!editor.getModel()?.getAllDecorations().some(d=>String(d.options.glyphMarginClassName).startsWith('debug-bp')),'breakpoint decoration missing');
+ await wait(()=>!!editor.getModel()?.getAllDecorations().some(d=>String(d.options.lineNumberClassName).startsWith('debug-bp')),'breakpoint decoration missing');
  checks.push('Xdebug: external Rust listener and real plugin workbench controls');
+ if((_info as any).docker?.xdebug)checks.push(...await xdebugSession({editor,wait,assert,call}));
  // Revocation is native, not merely hiding the workbench panel.
  await call('pluginSetState',debuggerEntry.key,{enabled:false});
  let denied=false;try{await native(debuggerEntry,'debugStatus')}catch{denied=true}assert(denied,'disabled native provider still accepts calls');reload();
  await wait(()=>!document.getElementById('debug-panel'),'debug UI remained after disable');assert(!document.getElementById('show-debug'),'debug rail remained');
- const decorations=editor.getModel()?.getAllDecorations().filter(d=>String(d.options.glyphMarginClassName).startsWith('debug-'))??[];assert(!decorations.length,'debug decorations leaked');
+ const decorations=editor.getModel()?.getAllDecorations().filter(d=>/debug-/.test(String(d.options.lineNumberClassName)+String(d.options.className)+String(d.options.glyphMarginClassName)))??[];assert(!decorations.length,'debug decorations leaked');
  await call('pluginSetState',debuggerEntry.key,{enabled:true});reload();await wait(()=>!!document.getElementById('debug-panel'),'debug UI did not restore');
  const restarted=await native(debuggerEntry,'debugStatus');assert(restarted.listening===null,'old listener survived disable');checks.push('Native lifecycle: disable revokes IPC, removes UI/decorations and closes listener; enable starts clean');
  // Removing the packages must leave a usable ordinary PHP editor and no fallback provider.
@@ -60,5 +61,69 @@ export async function toolPluginsSmoke(_info:unknown){
  reload();await wait(()=>!document.getElementById('debug-panel')&&!document.getElementById('composer-panel')&&!document.getElementById('test-panel'),'removed plugins kept tool UI');
  assert(!!editor.getModel(),'core editor disappeared');const model=editor.getModel()!;model.setValue(model.getValue()+'\n// editable without tool plugins\n');assert(model.getValue().includes('editable without'),'editor not usable');
  checks.push('Plugin removal: all three tools disappear and PHP editing remains available');
+ return checks;
+}
+
+/** Real Xdebug 3 (container from scripts/check-native.mjs --xdebug) driven through the plugin UI in the Tauri window:
+ *  breakpoint on the line number, exception breakpoint from View Breakpoints, frames, variables, inline values,
+ *  Evaluate (field and ⌥F8), stepping, exception stop and stop. Criteria: docs/research/xdebug-fidelity.md. */
+async function xdebugSession({editor,wait,assert,call}:{editor:monaco.editor.ICodeEditor;wait:(test:()=>boolean,label:string)=>Promise<void>;assert:(ok:unknown,message:string)=>void;call:(method:string,...args:unknown[])=>Promise<any>}){
+ const checks:string[]=[];const $=<T extends HTMLElement>(s:string)=>document.querySelector<T>(s);
+ const shot=async(name:string)=>{await call('nativeSmokeProgress',`shot:${name}:0:0:1:1`);await new Promise(r=>setTimeout(r,1200));};
+ const pause=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+ const input=(el:HTMLInputElement,value:string)=>{el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));};
+ // Clean slate: the toggle check above left a breakpoint in another file.
+ document.querySelector<HTMLButtonElement>('#tree button[aria-label="debug-app.php"]')!.click();
+ await wait(()=>editor.getModel()?.uri.path.endsWith('/debug-app.php')??false,'debug-app.php did not open');await pause(300);
+ // Path mapping through the settings view: container /app → project root.
+ $<HTMLButtonElement>('#debug-more')!.click();[...document.querySelectorAll<HTMLButtonElement>('.debug-more-menu button')].find(b=>b.textContent?.includes('Configurações'))!.click();
+ $<HTMLInputElement>('#debug-map-server')!.value='/app';$<HTMLFormElement>('#debug-mapping-form')!.requestSubmit();
+ await wait(()=>!!$('#debug-mappings')?.textContent?.includes('/app'),'mapping not saved');$<HTMLButtonElement>('#debug-settings-close')!.click();
+ // Breakpoint by clicking line number 21 (real Monaco hit test through the host gutter remap).
+ editor.revealLineInCenter(21);await pause(200);
+ const number=(line:number)=>{const top=editor.getTopForLineNumber(line)-editor.getScrollTop()+editor.getDomNode()!.getBoundingClientRect().top+4;return [...document.querySelectorAll<HTMLElement>('#editor .margin-view-overlays .line-numbers')].find(el=>{const r=el.getBoundingClientRect();return r.top<=top&&r.bottom>top;});};
+ const cell=number(21);assert(cell,'line number 21 not rendered');const r=cell!.getBoundingClientRect();
+ for(const type of ['pointerdown','mousedown','pointerup','mouseup'])cell!.dispatchEvent(new (type.startsWith('pointer')?PointerEvent:MouseEvent)(type,{bubbles:true,cancelable:true,composed:true,clientX:r.right-6,clientY:r.top+r.height/2,button:0,buttons:type.endsWith('down')?1:0,...(type.startsWith('pointer')?{pointerId:1,pointerType:'mouse',isPrimary:true}:{})} as any));
+ await wait(()=>/debug-bp-line/.test(number(21)?.className??''),'click on line number 21 did not create a breakpoint');
+ assert(editor.getSelection()?.isEmpty(),'clicking the line number selected the line');
+ checks.push('Xdebug UI: click on the line number creates the breakpoint in place of the number (no line selection)');
+ // Exception breakpoint through View Breakpoints → + → PHP exception.
+ $<HTMLButtonElement>('#debug-view-breakpoints')!.click();await wait(()=>!!$('.debug-breakpoints-dialog'),'Breakpoints dialog did not open');
+ $<HTMLButtonElement>('.debug-breakpoints-dialog .debug-bp-tools button')!.click();$<HTMLButtonElement>('.debug-add-menu button')!.click();
+ await wait(()=>!!$('.debug-add-exception input'),'Add exception dialog did not open');input($<HTMLInputElement>('.debug-add-exception input')!,'InvalidArgumentException');
+ [...document.querySelectorAll<HTMLButtonElement>('.debug-add-exception button')].find(b=>b.textContent==='OK')!.click();
+ await wait(()=>!!$('.debug-bp-tree')?.textContent?.includes('InvalidArgumentException'),'exception breakpoint not listed');await shot('xdebug-01-breakpoints-dialog');
+ [...document.querySelectorAll<HTMLButtonElement>('.debug-breakpoints-dialog button')].find(b=>b.textContent==='Concluir')!.click();
+ checks.push('Xdebug UI: PHP exception breakpoint added from View Breakpoints');
+ // Real session from the container (it retries every second while the IDE listens).
+ await wait(()=>!!$('#debug-frames')?.textContent?.includes('debug-app.php:21, checkout()'),'Xdebug did not stop at debug-app.php:21: '+$('#debug-console')?.textContent?.slice(-400));
+ await wait(()=>!!$('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('$order = {Order}'),'variables missing: '+$('#debug-tree')?.textContent);
+ await wait(()=>/debug-bp-verified/.test(number(21)?.className??''),'breakpoint not verified by Xdebug: '+number(21)?.className);
+ await wait(()=>[...document.querySelectorAll('#editor .debug-inline-value')].some(e=>e.textContent?.replace(/\u00a0/g,' ').includes('$order: Order')),'inline values missing');
+ assert(document.querySelectorAll('#editor .debug-exec-line').length===1,'execution line not highlighted');
+ assert($<HTMLButtonElement>('#debug-pause')!.disabled,'Pause should be disabled while paused');
+ await shot('xdebug-02-paused');
+ checks.push('Xdebug real: stops at the clicked breakpoint (verified ✓), frames "file:line, function()", {type} variables, inline values');
+ // Evaluate from the field (Enter) and from ⌥F8.
+ const field=$<HTMLInputElement>('#debug-eval')!;field.value='$order->total() + 1';$<HTMLFormElement>('#debug-eval-form')!.requestSubmit();
+ await wait(()=>!!$('#debug-tree > li')?.textContent?.replace(/\s+/g,' ').includes('result = {int} 61'),'evaluate field result missing: '+$('#debug-tree')?.textContent);
+ editor.setPosition({lineNumber:21,column:20});editor.focus();keymap.run('debug.evaluate');await wait(()=>!!$('.debug-evaluate input'),'Evaluate window did not open');
+ const ev=$<HTMLInputElement>('.debug-evaluate input')!;ev.value='$order';[...document.querySelectorAll<HTMLButtonElement>('.debug-evaluate button')].find(b=>b.textContent==='Avaliar')!.click();
+ await wait(()=>!!$('.debug-evaluate-result')?.textContent?.includes('"A-1"'),'⌥F8 result missing: '+$('.debug-evaluate-result')?.textContent);
+ await shot('xdebug-03-evaluate');[...document.querySelectorAll<HTMLButtonElement>('.debug-evaluate button')].find(b=>b.textContent==='Fechar')!.click();
+ checks.push('Xdebug real: Evaluate (field and ⌥F8 window) against the paused frame');
+ // Step over, then resume to the second checkout() and to the exception breakpoint.
+ keymap.run('debug.stepOver');await wait(()=>!!$('#debug-frames')?.textContent?.includes('debug-app.php:22, checkout()'),'step over did not reach line 22');
+ assert($('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('$total = {int} 60'),'variables not refreshed after step');
+ keymap.run('debug.resume');await wait(()=>!!$('#debug-frames')?.textContent?.includes('debug-app.php:21, checkout()')&&!!$('#debug-frames')?.textContent?.includes(':34'),'second checkout() stop missing: '+$('#debug-frames')?.textContent);
+ keymap.run('debug.resume');await wait(()=>!!$('#debug-tree')?.textContent?.replace(/\s+/g,' ').includes('Exception = {InvalidArgumentException}'),'exception stop missing: '+$('#debug-frames')?.textContent+' '+$('#debug-console')?.textContent?.slice(-300));
+ await wait(()=>/debug-bp-exception/.test(number(23)?.className??''),'exception icon missing on line 23');
+ await shot('xdebug-04-exception');
+ checks.push('Xdebug real: step over, resume and stop on the PHP exception breakpoint (lightning on the line number)');
+ // Stop listening first (the container retries), then stop the session.
+ $<HTMLButtonElement>('#debug-listen')!.click();await wait(()=>$('#debug-listen')?.getAttribute('aria-pressed')==='false','listener did not stop');
+ keymap.run('debug.stop');await wait(()=>!!$('#debug-frames')?.textContent?.includes('Sem sessão'),'session did not end: '+$('#debug-frames')?.textContent);
+ assert(!document.querySelector('#editor .debug-exec-line')&&!document.querySelector('#editor .debug-inline-value'),'execution decorations leaked after stop');
+ checks.push('Xdebug real: stop ends the session and clears execution decorations');
  return checks;
 }
