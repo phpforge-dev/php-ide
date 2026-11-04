@@ -417,8 +417,31 @@ Estados permitidos: Não investigada → Investigada → Especificada → Em des
 - **Estado de implementação:** Em desenvolvimento; [recorte 04](implementation-slice-04.md) amplia staging por trecho, histórico/diff, branches, merge/rebase, conflitos, stash e remoto, com testes próprios. [Recorte 27](implementation-slice-27.md): testes Rust de merge/rebase/cherry-pick/revert/stash com conflito, push/pull/fetch SSH e HTTPS contra servidores descartáveis e recarga de arquivo aberto alterado fora da IDE; quatro correções (abort de cherry-pick/revert, aceitar lado em exclusão/binário novo, arquivo externo).
 - **Diferenças conhecidas:** faltam changelists, seleção por linha, grafo/filtros do Log, perfis avançados de branches/conflitos/remoto, tags, reset, blame e worktrees. Staging versus changelists e divergência entre páginas oficiais precisam de ensaio na versão local. Nenhuma compatibilidade validada.
 
-- **Contas por repositório:** [recorte 07](implementation-slice-07.md): identidade local, usuário HTTPS/chave SSH e teste de leitura; OAuth e comparação pendentes.
+- **Contas por repositório:** [recorte 07](implementation-slice-07.md): identidade local, usuário HTTPS/chave SSH e teste de leitura; login OAuth do GitHub adicionado em 04/11/2026 (ver abaixo); comparação pendente.
 - **Contas Git da IDE por projeto (30/10/2026, plugin Git 1.1.0):** [registro](git-accounts.md) separa documentação JetBrains, print do usuário e requisito próprio. Contas GitHub/GitLab/Bitbucket/hosts genéricos (+, −, ✓ padrão, editar) com token no cofre do sistema; escolha perguntada no primeiro commit/push e guardada em `phpide.account`; commit com autor da conta; fetch/pull/push com credential helper efêmero. Provado em remoto HTTP local com Basic Auth e contas falsas. Limitações: sem OAuth/Generate, avatar por iniciais, padrão global (não por projeto), SSH ignora o token, hooks `pre-push` veem o ambiente, sem validação do token antes do push; sem comparação com o PhpStorm.
+- **Login via GitHub, Generate e token expirado (04/11/2026, plugin Git local, sem bump):** detalhes em [git-accounts.md](git-accounts.md).
+  - *Observado* no PhpStorm 2026.1.4 (A-02 a A-08):
+    - menu do + no GitHub: via GitHub, com token, Enterprise;
+    - "Add GitHub Account" só com Server/Token/Generate e a dica de escopos;
+    - "Token cannot be empty";
+    - "Log In to GitHub" com "Logging in…";
+    - no GitLab, só token, com o botão *Log In*.
+  - *Implementado*:
+    - *Entrar via GitHub…* com OAuth device flow, sem segredo de cliente, com o client id público configurável e o token só no Keychain;
+    - formulário de token só com servidor e token, com *Gerar…* para GitHub/GitLab e validação em `/user`, que completa login, nome e e-mail;
+    - *Entrar no GitHub Enterprise…*;
+    - aviso de token expirado no push com *Usar token…*.
+  - *Validação*:
+    - testes nativos com servidor OAuth falso e `git http-backend`;
+    - DOM;
+    - harness WebKit, etapa 8.
+  - *Limitações*:
+    - device flow com código, em vez do redirect local do PhpStorm;
+    - exige um OAuth App do usuário e ainda não teve login real;
+    - GitHub Enterprise e GitLab só com token;
+    - aviso no diálogo de operações, não como balão;
+    - avatar por iniciais.
+  - Serviço novo `gitAccountsLogin` na allowlist do host. Equivalência **Em desenvolvimento / não validada comparativamente**.
 - **Recorte 12:** [Resolve Conflicts e Merge Revisions observados e reproduzidos](implementation-slice-12.md): resultado inicia pela base, contador de alterações/conflitos, aplicar não conflitantes, conflitos simples, confirmação ao aplicar com pendências, lista que fecha sozinha. Ações por chunk sem oracle.
 
 ## TOOL-PHPUNIT-001 — PHPUnit

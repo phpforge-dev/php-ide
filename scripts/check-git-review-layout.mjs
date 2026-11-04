@@ -51,7 +51,7 @@ const bootstrap=`
   mountWorkbench({gitStatus:async()=>({branch:'main'})});
   const editor=monaco.editor.create(document.getElementById('editor'),{value:${JSON.stringify(userPhp)},language:'php',automaticLayout:true,theme:'vs-dark'});
   editorPreviewLayout(editor);mountEditorChrome(editor);window.statuses=[];
-  window.opened=[];
+  window.opened=[];window.accountsState=[];window.loginCalls=[];window.accountSaves=[];
   // Changelists kept in memory with the native semantics: unique names, active list receives moves with "Set active".
   window.toolsState=${JSON.stringify(tools)};
   window.lists=[{id:'default',name:'Changes',comment:'',active:true,files:['app/DTOs/Payment/SaveCreditCardTokenDTO.php','src/User.php']}];
@@ -66,7 +66,15 @@ const bootstrap=`
    gitChangelists:async input=>changelists(input),
    gitTools:async()=>structuredClone(window.toolsState),
    workspace:async()=>({root:'/tmp/project',name:'project'}),
-   gitOperation:async input=>{window.operations=(window.operations??[]).concat([input]);return 'ok';},gitBranches:async()=>(${JSON.stringify(tools.branches)}),
+   gitOperation:async input=>{window.operations=(window.operations??[]).concat([input]);if(input.kind==='push'&&window.pushError){const e=window.pushError;window.pushError=undefined;throw Error(e);}return 'ok';},
+   // Contas: device flow falso (sem rede); o token nunca passa pela interface.
+   gitAccounts:async()=>({accounts:structuredClone(window.accountsState),project:{binding:window.accountsState[0]?.id??'system',account:window.accountsState[0]??null,missing:false}}),
+   gitAccountsLogin:async input=>{window.loginCalls.push(input);
+    if(input.action==='start')return {session:'s1',userCode:'WDJB-MJHT',verificationUri:'https://github.com/login/device',interval:0,expiresIn:900,opened:true};
+    if(input.action==='poll'){if(window.loginCalls.filter(c=>c.action==='poll').length<3||!window.authorize)return {status:'pending',interval:0.2};window.accountsState.push({id:'gh-1',kind:'github',host:'github.com',login:'octocat',name:'Mona Lisa',email:'mona@example.invalid',default:true,hasSecret:true});return {status:'done',id:'gh-1',login:'octocat',updated:false};}
+    if(input.action==='generate')return {url:'https://github.com/settings/tokens/new?description=PHP+IDE&scopes=repo',opened:true};return null;},
+   gitAccountsSave:async input=>{window.accountSaves.push(input);return input.id??'new';},gitAccountsUse:async()=>null,
+   gitCommit:async()=>'deadbeefcafe',gitBranches:async()=>(${JSON.stringify(tools.branches)}),
    gitLog:async filter=>{window.logRequests=(window.logRequests??[]).concat([filter]);let list=${JSON.stringify(logCommits)};
     if(filter.authors?.length)list=list.filter(c=>filter.authors.includes(c.author));
     if(filter.text)list=list.filter(c=>filter.regex?new RegExp(filter.text,filter.matchCase?'':'i').test(c.subject):(filter.matchCase?c.subject:c.subject.toLowerCase()).includes(filter.matchCase?filter.text:filter.text.toLowerCase()));
@@ -345,5 +353,47 @@ await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitFor
  await page.locator('#git-log-title').click();
  assert.equal(await page.locator('#git-log-panel .git-log-body').isVisible(),true,'Log tab returns to the Log');
  console.log('WebKit: worktrees — tab, list, New Worktree with new branch and location hint, Delete, Prune and open passed.');
+ // 8. Contas: + com Entrar via GitHub / Entrar com token, código do device flow, Gerar e aviso de token expirado no push.
+ await page.evaluate(()=>document.getElementById('git-accounts-menu').click());
+ await page.waitForFunction(()=>document.getElementById('git-accounts-settings').open);
+ await page.locator('#git-accounts-add').click();
+ assert.deepEqual(await page.locator('#git-accounts-add-menu [role=menuitem]').allTextContents(),['Entrar via GitHub…','Entrar com token…','Entrar no GitHub Enterprise…']);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'git-accounts-login-browser','menu takes focus');
+ await page.screenshot({path:'.artifacts/git-accounts-add-menu.png'});
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(()=>document.getElementById('git-account-code').textContent==='WDJB-MJHT');
+ assert.match(await page.locator('#git-account-browser-text').textContent(),/github\.com\/login\/device/);
+ assert.match(await page.locator('#git-account-browser-status').textContent(),/Aguardando autorização/);
+ await page.screenshot({path:'.artifacts/git-accounts-device-code.png'});
+ await page.evaluate(()=>{window.authorize=true;});
+ await page.waitForFunction(()=>!document.getElementById('git-account-browser').open,null,{timeout:5000});
+ assert.match(await page.locator('#git-accounts-status').textContent(),/octocat adicionada/);
+ assert.match(await page.locator('.git-accounts-row').first().textContent(),/Mona Lisa.*octocat/);
+ await page.locator('#git-accounts-add').click();await page.locator('#git-accounts-login-token').click();
+ assert.equal(await page.locator('#git-account-generate').isVisible(),true);
+ assert.equal(await page.locator('#git-account-login').isVisible(),false,'Add GitHub Account asks only server and token');
+ await page.locator('#git-account-generate').click();
+ await page.waitForFunction(()=>window.loginCalls.at(-1).action==='generate');
+ await page.screenshot({path:'.artifacts/git-accounts-token.png'});
+ await page.locator('#git-account-form-cancel').click();await page.locator('#git-accounts-close').click();
+ await page.evaluate(()=>{window.pushError='[git-account-token:gh-1] O token da conta octocat (github.com) expirou ou foi revogado. Use Token para informar um novo.\nfatal: Authentication failed';
+  document.getElementById('git-amend').checked=true;const m=document.getElementById('git-message');m.value='push';m.dispatchEvent(new Event('input'));const b=document.getElementById('git-commit-push');b.disabled=false;b.click();});
+ await page.waitForFunction(()=>document.querySelector('dialog[open] #git-confirm-commit'));
+ await page.locator('#git-confirm-commit').click();
+ await page.waitForFunction(()=>document.getElementById('git-operations').open);
+ await page.locator('#git-operation-run').click();
+ await page.waitForSelector('#git-operation-use-token');
+ assert.match(await page.locator('#git-operation-result').textContent(),/expirou ou foi revogado/);
+ await page.screenshot({path:'.artifacts/git-push-expired-token.png'});
+ await page.locator('#git-operation-use-token').click();
+ assert.equal(await page.locator('#git-account-form-title').textContent(),'Entrar no GitHub');
+ assert.equal(await page.locator('#git-account-login').isVisible(),false,'only server and token');
+ await page.locator('#git-account-secret').fill('new-token');await page.locator('#git-account-form-save').click();
+ await page.waitForFunction(()=>window.accountSaves.length===1);
+ assert.deepEqual(await page.evaluate(()=>({id:window.accountSaves[0].id,secret:window.accountSaves[0].secret})),{id:'gh-1',secret:'new-token'});
+ assert.match(await page.locator('#git-operation-result').textContent(),/Token atualizado/);
+ await page.locator('#git-operation-run').click();
+ await page.waitForFunction(()=>document.getElementById('git-operation-result').textContent==='ok');
+ console.log('WebKit: accounts — + menu, Log In via GitHub device code, Generate, expired-token push warning and Use Token passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}
