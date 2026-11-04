@@ -10,7 +10,7 @@ import { registerDotenvLanguage } from './dotenv-language';
 import { isEnvPath } from '../shared/env-document';
 import { t as tr, msg, html } from './i18n';
 import { fileIcon } from './file-icons';
-import { showTabMenu } from './tab-menu';
+import { showTabMenu, configureTabs } from './tab-menu';
 
 import { mountRecentProjects } from './recent-projects';
 const isPhpDeclaration=(text:string,offset:number)=>pluginService('phpIntelligence')?.isPhpDeclaration(text,offset)??false;
@@ -23,6 +23,7 @@ import { editorColors, editorFont, editorRules } from './editor-theme';
 import { mountEditorChrome } from './editor-chrome';
 import { mountCodeBreadcrumbs } from './code-breadcrumbs';
 import { mountProblems } from './problems';
+import { mountEditorMenu } from './editor-menu';
 
 import { mountProjectActions } from './project-actions';
 
@@ -145,7 +146,7 @@ function tabs() {
  $<HTMLButtonElement>('references').disabled=!(phpLike.includes(language)||webLanguage(language));
  $<HTMLButtonElement>('implementations').disabled=!(phpLike.includes(language)||language==='vue');
  if (codeBreadcrumbs) codeBreadcrumbs.refresh(); else $('breadcrumbs').textContent = active ? active.split('/').join('  ›  ') : tr('Selecione um arquivo no projeto');
- $('tabs').replaceChildren(...[...opened].filter(path => buffers.has(path)).map(path => {
+ $('tabs').replaceChildren(...tabOrder().map(path => {
   const b = buffers.get(path)!; const tab = document.createElement('div'); tab.className = 'file-tab';
   const text = b.model.getValue(); const icon = fileIcon(path,false,text);
   const button = document.createElement('button');
@@ -154,24 +155,31 @@ function tabs() {
   const entry = treeButtons.get(path);
   if(entry?.firstElementChild?.getAttribute('data-icon')!==icon.dataset.icon)entry?.firstElementChild?.replaceWith(icon.cloneNode(true));
   const close = document.createElement('button'); close.textContent = '×'; close.className = 'close-tab'; close.setAttribute('aria-label', tr('Fechar ') + path); close.onclick = () => closeFile(path);
+  // Pinned tabs come first and show a pin in place of ×; clicking it unpins (UI-CONTEXT-001, Pin Tab).
+  if (pinned.has(path)) { tab.classList.add('pinned'); const pin = document.createElement('button'); pin.className = 'pin-tab'; pin.setAttribute('aria-label', tr('Desafixar aba') + ' ' + path); pin.title = tr('Desafixar aba'); pin.onclick = () => { pinned.delete(path); tabs(); }; close.hidden = true; tab.append(pin); }
   // Prevent WebView autoscroll; close only on release, through the same dirty-buffer guard.
   tab.onmousedown = event => { if (event.button === 1) event.preventDefault(); };
   tab.onauxclick = event => { if (event.button === 1) { event.preventDefault(); closeFile(path); } };
   tab.oncontextmenu = event => {
    event.preventDefault();
    const rect = tab.getBoundingClientRect();
-   showTabMenu(tab, event.clientX || rect.left, event.clientY || rect.bottom, scope => {
-    const targets = scope === 'this' ? [path] : [...opened].filter(item => scope === 'all' || item !== path);
-    for (const target of targets) closeFile(target);
-   });
+   showTabMenu(tab, path, event.clientX || rect.left, event.clientY || rect.bottom);
   };
-  tab.append(button, close); return tab;
+  tab.prepend(button, close); return tab;
  }));
 }
+const pinned = new Set<string>();
+const tabOrder = () => { const paths = [...opened].filter(path => buffers.has(path)); return [...paths.filter(p => pinned.has(p)), ...paths.filter(p => !pinned.has(p))]; };
+configureTabs({
+ order: tabOrder, active: () => active, isPinned: path => pinned.has(path),
+ setPinned: (path, value) => { if (value) pinned.add(path); else pinned.delete(path); tabs(); },
+ close: paths => { for (const path of paths) closeFile(path); },
+ fileItems: path => { const b = buffers.get(path); if (!b || b.virtual) return undefined; const items = projectActions.fileItems(path); return { copyPath: items['copy-path'], openIn: items['open-in'], history: items['local-history'], rename: () => projectActions.rename(path) }; },
+});
 function closeFile(path: string) {
  const b = buffers.get(path); if (!b) return;
  if (dirty(b)) { status(tr('Salve as alterações antes de fechar esta aba.')); return; }
- opened.delete(path);
+ opened.delete(path); pinned.delete(path);
  if (active === path) { const next = [...opened].at(-1); if (next) activate(next); else { editor.setModel(null); active = undefined; } }
  if(!webProject.retain(b.model))b.model.dispose(); buffers.delete(path); views.delete(path); tabs();
 }
@@ -454,6 +462,12 @@ const projectActions = mountProjectActions(api, {
  reload: async path => { const b = buffers.get(path); if (!b || dirty(b)) return; if (b.virtual === 'image') { imagePreview.reload(); return; } const file = await api.read(path); b.file = file; b.saved = file.text; b.model.setValue(file.text); tabs(); },
  findUsages: async (path, line, column) => { await open(path); const position = new monaco.Position(line, column); editor.setPosition(position); editor.revealPositionInCenter(position); await usages.show(position); },
  terminal: cwd => terminalPanel.open(cwd),
+});
+// UI-CONTEXT-001: editor context menu (PhpStorm order) reusing the project tree's file submenus.
+mountEditorMenu(editor, {
+ path: () => active && !buffers.get(active)?.virtual ? active : undefined,
+ fileItems: path => { const items = projectActions.fileItems(path); return { copyPath: items['copy-path'], openIn: items['open-in'], history: items['local-history'] }; },
+ status,
 });
 const dockerPanel=optionalPluginService('docker',p=>p.mount(api,terminalPanel));
 mountPluginLanguages(api, { status, path: m => [...buffers.values()].find(b => b.model === m)?.file.path });

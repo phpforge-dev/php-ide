@@ -148,7 +148,7 @@ try {
    const monacoMenu=await page.evaluate(()=>!!document.querySelector('.monaco-menu-container,.context-view .monaco-menu'));
    await page.screenshot({path:`${out}/editor-menu-${theme}.png`});
    // Submenu by keyboard: Go To › opens and lists the navigation actions.
-   await page.locator('.context-menu[data-depth="0"] button',{hasText:/^(Ir para|Go To)$/}).hover();await page.waitForTimeout(100);
+   await page.locator('.context-menu[data-depth="0"] button',{hasText:/^(Ir para|Go To)›?$/}).hover();await page.waitForTimeout(100);
    const goTo=await page.evaluate(()=>[...document.querySelectorAll('.context-menu[data-depth="1"] button span')].map(s=>s.textContent));
    await page.keyboard.press('Escape');
    // Close Tabs to the Left (from Broken.php, the last tab) keeps only Broken.php.

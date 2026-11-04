@@ -8,6 +8,7 @@ type Refactorings={
  moveClassFile(path:string,directory:string,namespace:string):Promise<void>;
 };
 import { keymap } from './keymap';
+import { openMenu as openFloatingMenu, type MenuItem } from './context-menu';
 // Menu de contexto da árvore do projeto: Novo, Recortar/Copiar/Colar, Copiar caminho, Encontrar
 // usos, Refatorar (renomear/mover/copiar/excluir), Abrir em e Histórico local. Estrutura de menu
 // e atalhos seguem a ajuda pública do PhpStorm; rótulos, diálogos e comportamento são próprios.
@@ -25,7 +26,7 @@ export type ProjectHooks = {
  refactor?: Refactorings;
 };
 type Target = { path: string; directory: boolean };
-type Item = { label: string; shortcut?: string; disabled?: boolean; run?: () => unknown; children?: Item[] } | '-';
+type Item = MenuItem;
 const mac = /Mac|iPhone|iPad/.test(navigator.platform);
 /** Atalho atual da ação no keymap central (UI-KEYMAP-001), para menus e mensagens. */
 const sc = (id: string) => keymap.shortcut(id) || undefined;
@@ -33,42 +34,6 @@ const base = (path: string) => path.split('/').pop() ?? path;
 const parentOf = (path: string) => path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
 const join = (dir: string, name: string) => dir ? `${dir}/${name}` : name;
 const phpDeclaration = /^[ \t]*(?:(?:final|abstract|readonly)\s+)*(class|interface|trait|enum)\s+([A-Za-z_\x80-￿][\w\x80-￿]*)/m;
-
-/** Menu flutuante com submenus e teclado (setas, Enter, Esc). */
-function popup(items: Item[], x: number, y: number, onClose: () => void, depth = 0): HTMLElement {
- const menu = document.createElement('div'); menu.className = 'context-menu'; menu.setAttribute('role', 'menu'); menu.dataset.depth = String(depth);
- let child: HTMLElement | undefined;
- const closeChild = () => { child?.remove(); child = undefined; };
- for (const item of items) {
-  if (item === '-') { const line = document.createElement('div'); line.className = 'context-separator'; line.setAttribute('role', 'separator'); menu.append(line); continue; }
-  const button = document.createElement('button'); button.type = 'button'; button.setAttribute('role', 'menuitem'); button.disabled = !!item.disabled;
-  const label = document.createElement('span'); label.textContent = item.label; const hint = document.createElement('kbd'); hint.textContent = item.children ? '›' : item.shortcut ?? '';
-  button.append(label, hint);
-  if (item.children) {
-   button.setAttribute('aria-haspopup', 'menu');
-   const openChild = (focus: boolean) => { if (button.disabled) return; closeChild(); const r = button.getBoundingClientRect(); child = popup(item.children!, r.right - 2, r.top - 4, onClose, depth + 1); button.setAttribute('aria-expanded', 'true'); if (focus) child.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus(); };
-   button.onmouseenter = () => openChild(false); button.onclick = () => openChild(true);
-   button.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); openChild(true); } });
-  } else {
-   button.onmouseenter = () => { closeChild(); button.focus(); };
-   button.onclick = () => { onClose(); void item.run?.(); };
-  }
-  menu.append(button);
- }
- menu.addEventListener('keydown', e => {
-  const buttons = [...menu.querySelectorAll<HTMLButtonElement>(':scope > button:not(:disabled)')];
-  const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); buttons[(at + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length]?.focus(); }
-  else if (e.key === 'ArrowLeft' && depth > 0) { e.preventDefault(); e.stopPropagation(); const owner = document.querySelector<HTMLButtonElement>(`.context-menu[data-depth="${depth - 1}"] [aria-expanded=true]`); menu.remove(); owner?.removeAttribute('aria-expanded'); owner?.focus(); }
-  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(); }
-  else if (e.key === 'Tab') e.preventDefault();
- });
- document.body.append(menu);
- const r = menu.getBoundingClientRect();
- menu.style.left = Math.max(4, x + r.width > innerWidth ? (depth ? x - r.width * 2 + 4 : innerWidth - r.width - 4) : x) + 'px';
- menu.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
- return menu;
-}
 
 function dialog(title: string, body: (form: HTMLElement) => void, ok = 'OK'): Promise<FormData | undefined> {
  return new Promise(resolve => {
@@ -316,7 +281,7 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
    '-',
    { label: tr('Recortar'), shortcut: sc('project.cut'), disabled: root, run: () => { clipboard = { mode: 'cut', target: t }; markCut(); hooks.status(msg`Recortado ${t.path}: cole em um diretório com ${sc('project.paste') ?? tr('Colar')}`); } },
    { label: tr('Copiar'), shortcut: sc('project.copy'), disabled: root, run: () => { clipboard = { mode: 'copy', target: t }; markCut(); hooks.status(msg`Copiado ${t.path}: cole em um diretório com ${sc('project.paste') ?? tr('Colar')}`); } },
-   { label: tr('Copiar caminho/referência'), children: [
+   { id: 'copy-path', label: tr('Copiar caminho/referência'), children: [
     { label: 'Caminho absoluto', shortcut: sc('project.copyAbsolutePath'), run: act(async () => copyText(await absolute(t.path), 'Caminho absoluto')) },
     { label: tr('Caminho a partir da raiz do projeto'), shortcut: sc('project.copyRelativePath'), run: act(async () => copyText(t.path || '.', 'Caminho relativo')) },
     { label: file ? tr('Nome do arquivo') : tr('Nome do diretório'), run: act(async () => copyText(root ? base((await api.workspace()).root.replace(/[\\/]$/, '')) : base(t.path), tr('Nome'))) },
@@ -327,7 +292,7 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
    '-',
    { label: 'Encontrar usos', shortcut: sc('project.findUsages'), disabled: root, run: act(() => usages(t)) },
    '-',
-   { label: 'Refatorar', disabled: root, children: [
+   { id: 'refactor', label: 'Refatorar', disabled: root, children: [
     { label: tr('Renomear…'), shortcut: sc('project.rename'), run: act(() => rename(t)) },
     { label: 'Mover…', shortcut: sc('project.move'), run: act(() => moveTo(t)) },
     { label: tr('Copiar…'), shortcut: sc('project.copyTo'), run: act(() => copyTo(t)) },
@@ -336,12 +301,12 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
    ] },
    { label: tr('Excluir…'), shortcut: sc('project.delete'), disabled: root, run: act(() => remove(t)) },
    '-',
-   { label: tr('Abrir em'), children: [
+   { id: 'open-in', label: tr('Abrir em'), children: [
     { label: mac ? 'Mostrar no Finder' : `Mostrar no ${opener}`, run: act(async () => { await api.fileReveal(t.path); hooks.status(`Aberto no ${opener}`); }) },
     { label: tr('Aplicativo padrão do sistema'), disabled: !file, run: act(async () => { await api.fileOpenDefault(t.path); hooks.status(msg`Aberto no aplicativo padrão: ${t.path}`); }) },
     { label: 'Terminal', run: act(() => hooks.terminal(dirFor(t))) },
    ] },
-   { label: tr('Histórico local'), children: [
+   { id: 'local-history', label: tr('Histórico local'), children: [
     { label: root ? tr('Mostrar histórico do projeto') : tr('Mostrar histórico'), run: act(() => history(t)) },
    ] },
   ];
@@ -350,10 +315,7 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
   closeMenu?.(); const node = t.path ? nodeOf(t.path) : undefined; node?.classList.add('tree-context');
   const previous = document.activeElement as HTMLElement | null;
   let list = items(t); if (only) list = (list.find(i => i !== '-' && i.label === only) as any)?.children ?? list;
-  const close = () => { const refocus = !!document.activeElement?.closest('.context-menu'); document.querySelectorAll('.context-menu').forEach(m => m.remove()); node?.classList.remove('tree-context'); document.removeEventListener('mousedown', outside, true); window.removeEventListener('blur', close); closeMenu = undefined; if (refocus) (node ?? previous)?.focus(); };
-  const outside = (e: MouseEvent) => { if (!(e.target as Element).closest?.('.context-menu')) close(); };
-  closeMenu = close; popup(list, x, y, close).querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
-  document.addEventListener('mousedown', outside, true); window.addEventListener('blur', close);
+  closeMenu = openFloatingMenu(list, x, y, { restore: node ?? previous, onClose: () => { node?.classList.remove('tree-context'); closeMenu = undefined; } });
  }
  pane.addEventListener('contextmenu', e => { const t = targetOf(e.target as Element); if (!t) return; e.preventDefault(); (t.path ? nodeOf(t.path) : undefined)?.focus(); openMenu(t, e.clientX, e.clientY); });
  // UI-KEYMAP-001: atalhos da árvore são ações do keymap central no contexto 'project-node' (botão
@@ -374,5 +336,7 @@ export function mountProjectActions(api: IdeApi, hooks: ProjectHooks) {
  treeAction('project.copyTo', 'Copiar arquivo ou diretório para…', 'F5', 'F5', t => run(() => copyTo(t)), 'copy refactor');
  treeAction('project.findUsages', 'Encontrar usos do arquivo', 'Alt+F7', 'Alt+F7', t => run(() => usages(t)), 'find usages');
  treeAction('project.delete', 'Excluir arquivo ou diretório', ['Meta+Backspace', 'Delete'], 'Delete', t => run(() => remove(t)), 'delete remove');
- return { open: openMenu, reveal, markCut, relocateFile };
+ /** Submenus of a file node reused by the editor tab and editor menus (UI-CONTEXT-001): same actions, same dialogs. */
+ const fileItems = (path: string) => Object.fromEntries(items({ path, directory: false }).filter((i): i is Exclude<Item, '-'> => i !== '-' && !!i.id).map(i => [i.id!, i])) as Record<'copy-path' | 'open-in' | 'local-history' | 'refactor', Exclude<Item, '-'>>;
+ return { open: openMenu, reveal, markCut, relocateFile, fileItems, rename: (path: string) => run(() => rename({ path, directory: false })) };
 }
