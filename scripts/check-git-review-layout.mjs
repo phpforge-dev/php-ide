@@ -268,7 +268,7 @@ await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitFor
  assert.deepEqual(await operation(),{kind:'delete-tag',target:'v1.1',expectedHead:'6f946771'});
  await page.evaluate(()=>{window.toolsState.remotes=['origin'];});await page.locator('#git-log-refresh').click();await page.waitForTimeout(200);
  await page.locator('#git-log-refs .git-ref-tag',{hasText:'v1.0'}).click({button:'right'});
- assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Enviar para origin','Excluir']);
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Checkout','Enviar para origin','Excluir']);
  await page.locator('.git-menu-item',{hasText:'Enviar para origin'}).click();
  await page.waitForFunction(()=>window.operations?.length===3);
  assert.deepEqual(await operation(),{kind:'push-tag',target:'v1.0',remote:'origin',expectedHead:'6f946771'});
@@ -281,5 +281,34 @@ await page.locator('#git-log .git-commit-row').nth(2).click();await page.waitFor
  await page.waitForFunction(()=>window.operations?.length===4);
  assert.deepEqual(await operation(),{kind:'create-tag',target:'v2.0',commit:'HEAD',force:true,message:'Release 2.0',expectedHead:'6f946771'});
  console.log('WebKit: tags — New Tag from the Log, Tag submenu delete, push from the Tags node and annotated New Tag passed.');
+ // 6. Reset Current Branch to Here: Git Reset dialog (Mixed by default), Hard, cancel; Checkout Revision; New Branch from a commit.
+ await row('83f448f3').click({button:'right'});
+ const order=await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents();
+ assert.deepEqual(order,['Copiar número da revisão','Cherry-pick','Checkout da revisão','Redefinir branch atual até aqui…','Reverter commit','Nova branch…','Nova tag…','Ir para o commit filho','Ir para o commit pai'],'PhpStorm menu order');
+ await page.locator('.git-menu-item',{hasText:'Redefinir branch atual'}).click();
+ const reset=page.locator('.git-reset-dialog');
+ assert.equal(await reset.locator('h2').textContent(),'Git Reset');
+ assert.equal((await reset.locator('.git-reset-target').textContent()).replace(/\s+/g,' '),'main -> 83f448f3 "Rename default user" por Ana Fixture');
+ assert.deepEqual(await reset.locator('.git-reset-mode span').allTextContents(),['Soft','Mixed','Hard','Keep']);
+ assert.equal(await reset.locator('input[value=mixed]').isChecked(),true,'Mixed is the default');
+ await page.screenshot({path:'.artifacts/git-reset.png'});
+ await reset.locator('button',{hasText:'Cancelar'}).click();
+ const before=await page.evaluate(()=>window.operations.length);
+ assert.equal(await page.locator('.git-reset-dialog').count(),0);
+ await row('83f448f3').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Redefinir branch atual'}).click();
+ await reset.locator('input[value=hard]').check();await reset.locator('button[type=submit]').click();
+ await page.waitForFunction(n=>window.operations.length===n+1,before);
+ assert.deepEqual(await operation(),{kind:'reset',target:'83f448f3528a4a52efed24c1d2e3f4a5b6c7d8e9',mode:'hard',expectedHead:'6f946771'},'cancel sent nothing; Hard sends one reset');
+ await row('2618cba0').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Checkout da revisão'}).click();
+ await page.waitForFunction(n=>window.operations.length===n+2,before);
+ assert.equal((await operation()).kind,'checkout-revision');
+ await row('2618cba0').click({button:'right'});await page.locator('.git-menu-item',{hasText:'Nova branch…'}).click();
+ const branch=page.locator('.git-new-branch-dialog');await branch.locator('input[name=name]').fill('from-log');await branch.locator('input[name=checkout]').uncheck();await branch.locator('button[type=submit]').click();
+ await page.waitForFunction(n=>window.operations.length===n+3,before);
+ assert.deepEqual(await operation(),{kind:'create-branch',target:'from-log',startPoint:'2618cba0'+'3'.repeat(32),checkout:false,expectedHead:'6f946771'});
+ await page.locator('#git-log-refs .git-ref-tag',{hasText:'v1.0'}).click({button:'right'});
+ assert.deepEqual(await page.locator('.git-menu').last().locator('.git-menu-label').allTextContents(),['Checkout','Enviar para origin','Excluir']);
+ await page.keyboard.press('Escape');
+ console.log('WebKit: reset — Git Reset dialog, Mixed default, cancel, Hard, Checkout Revision, New Branch from commit and tag Checkout passed.');
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();await server.close();}
