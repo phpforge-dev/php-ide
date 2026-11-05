@@ -49,7 +49,7 @@ export function mountToolPlugins(api:IdeApi,host:Host){
     const url=URL.createObjectURL(new Blob([source.code],{type:'text/javascript'}));own(()=>URL.revokeObjectURL(url));
     const module=await import(/* @vite-ignore */ url);if(epoch!==generation){await stop();return;}
     controller=module.activate({service:pluginService,provide:(name:string,value:unknown)=>{const off=providePluginService(entry.key,name,value);own(off);return off;},fileIcon,editorFont,activeLanguage,api:toolApi,host,monaco,tr,msg,html,keymap:scopedKeymap,listen:scopedListen,own,dockWindow,resizeToolWindow,toolIcon,editorPreviewLayout,projectTree})??{};
-    for(const el of document.querySelectorAll('.code > *, .left-rail > *'))if(!before.has(el)&&!el.contains(host.editor.getDomNode()))own(()=>el.remove());
+    for(const el of document.querySelectorAll('.code > *, .left-rail > *'))if(!before.has(el)&&!el.contains(host.editor.getContainerDomNode()))own(()=>el.remove());
     if(epoch!==generation){await stop();return;}
     mounted.set(entry.key,{stop,controller,methods:entry.manifest.tool?.methods??[]});window.dispatchEvent(new CustomEvent('ide-tool-state',{detail:{key:entry.key,state:'active'}}));
    }catch(error){await stop();window.dispatchEvent(new CustomEvent('ide-tool-state',{detail:{key:entry.key,state:'failed',error:String(error)}}));host.status(`${entry.manifest.name}: ${String(error)} · Plugins → Recarregar`);}
