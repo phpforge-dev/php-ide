@@ -17,6 +17,7 @@ mod rpc;
 mod startup;
 mod native_splash;
 mod shell;
+mod shell_env;
 use phpforge_terminal as terminal;
 mod workspace;
 use notify::Watcher;
@@ -517,6 +518,7 @@ fn config_placeholder(cache: &std::path::Path) -> PathBuf {
     cache.join("empty-workspace")
 }
 fn main() {
+    shell_env::import();
     configure_path();
     #[allow(unused_mut)]
     let mut context = tauri::generate_context!();
